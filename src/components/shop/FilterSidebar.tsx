@@ -1,4 +1,4 @@
-import { categories, brands } from '../../data/products';
+// import { categories, brands } from '../../data/products';
 
 export interface Filters {
   category: string | null;
@@ -7,9 +7,15 @@ export interface Filters {
   inStockOnly: boolean;
 }
 
-export default function FilterSidebar({ filters, onChange, maxPriceLimit }: {
-  filters: Filters; onChange: (f: Filters) => void; maxPriceLimit: number;
-}) {
+interface FilterSidebarProps {
+  filters: Filters;
+  onChange: (f: Filters) => void;
+  maxPriceLimit: number;
+  categories: { id: string; name: string }[];
+  brands: string[];
+}
+
+export default function FilterSidebar({ filters, onChange, maxPriceLimit, categories, brands }: FilterSidebarProps) {
   return (
     <aside className="w-full lg:w-64 shrink-0 space-y-8">
       <div>

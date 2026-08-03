@@ -1,7 +1,7 @@
 import type { Product } from '../types';
 import { products as generatedProducts } from './generated';
 
-export { categories, brands, getCategory, getSubcategory } from './taxonomy';
+// export { categories, brands, getCategory, getSubcategory } from './taxonomy';
 export type { Category, Subcategory } from './taxonomy';
 
 /**

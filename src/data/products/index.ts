@@ -1,7 +1,5 @@
 import type { Product } from '../../types';
 import { skincareProducts } from './skincare';
-import { makeupProducts } from './makeup';
-import { fragranceProducts } from './fragrance';
 import { haircareProducts } from './haircare';
 import { bodycareProducts } from './bodycare';
 
@@ -24,8 +22,6 @@ export const brands = ['Dr. Karam', 'Lumière', 'Velvet Atelier', 'Noir Botanics
  */
 export const products: Product[] = [
   ...skincareProducts,
-  ...makeupProducts,
-  ...fragranceProducts,
   ...haircareProducts,
   ...bodycareProducts,
 ];

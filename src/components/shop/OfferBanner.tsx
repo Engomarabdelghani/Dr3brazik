@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion';
-import { useCountdown } from '../../hooks/useCountdown';
+// import { useCountdown } from '../../hooks/useCountdown';
 
 export default function OfferBanner() {
-  const { h, m, s } = useCountdown(18);
+  // const { h, m, s } = useCountdown(18);
 
   return (
     <section className="relative h-[260px] md:h-[320px] overflow-hidden">

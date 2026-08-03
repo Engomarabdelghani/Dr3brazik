@@ -3,12 +3,12 @@
 // only keeps the shared TypeScript shapes that the storefront components use.
 
 export interface Subcategory {
-  id: string; // slug
+  id: string;
   name: string;
 }
 
 export interface Category {
-  id: string; // slug
+  id: string;
   name: string;
   nameAr?: string;
   image: string;

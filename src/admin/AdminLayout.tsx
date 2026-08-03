@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  FiGrid, FiBox, FiTag, FiPercent, FiSettings, FiLogOut, FiMenu, FiX, FiExternalLink,
+  FiGrid, FiBox, FiTag, FiPercent,  FiLogOut, FiMenu, FiX, FiExternalLink,
 } from 'react-icons/fi';
 import { useAdminAuth } from '../context/AdminAuthContext';
 

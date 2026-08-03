@@ -8,6 +8,7 @@ import { useCategories } from '../hooks/useCatalog';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useRecentlyViewed } from '../context/RecentlyViewedContext';
+import type { Subcategory } from '../data/taxonomy';
 import { WHATSAPP_NUMBER, buildWhatsAppOrderMessage } from '../data/constants';
 import Gallery from '../components/product/Gallery';
 import RatingStars from '../components/ui/RatingStars';
@@ -43,7 +44,7 @@ export default function ProductDetails() {
   const related = getRelated(product, allProducts);
   const otherRecentlyViewed = recentlyViewed.filter((p) => p.id !== product.id);
   const productCategory = categories.find((c) => c.id === product.category);
-  const productSubcategory = productCategory?.subcategories.find((s) => s.id === product.subcategory);
+  const productSubcategory = productCategory?.subcategories.find((s: Subcategory) => s.id === product.subcategory);
 
   const whatsappMessage = buildWhatsAppOrderMessage({
     items: [{ name: product.name, quantity, price: product.price }],

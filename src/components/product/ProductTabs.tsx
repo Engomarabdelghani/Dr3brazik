@@ -5,8 +5,8 @@ import { FiCheck, FiStar, FiTrash2 } from 'react-icons/fi';
 import type { Product, FAQ } from '../../types';
 import { fetchReviews, createReview, deleteReview } from '../../lib/api/reviews';
 import { useAdminAuth } from '../../context/AdminAuthContext';
-import { cld } from '../../utils/cloudinary';
 import RatingStars from '../ui/RatingStars';
+import { cld } from '../../utils/cloudinary';
 
 const sampleFaqs: FAQ[] = [
   { question: 'How often should I use this product?', answer: 'For best results, use as directed in the description — typically once or twice daily as part of your skincare routine.' },
@@ -221,7 +221,7 @@ export default function ProductTabs({ product, allProducts = [] }: ProductTabsPr
             {related.map((item) => (
               <Link key={item.id} to={`/product/${item.slug}`} className="card-luxe p-3 block hover:-translate-y-1 transition-transform">
                 <img
-                  // src={item.images[0] ? cld(item.images[0], 300) : 'https://picsum.photos/seed/placeholder/300/300'}
+                  src={item.images[0] ? cld(item.images[0], 340) : 'https://picsum.photos/seed/placeholder/340/340'}
                   alt={item.name}
                   className="w-full aspect-square object-cover rounded-xl mb-3"
                 />
