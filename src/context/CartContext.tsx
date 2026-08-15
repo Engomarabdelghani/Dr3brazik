@@ -1,6 +1,9 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import type { CartItem, Product } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { fetchOffers, isOfferActive, getBogoLabel } from '../lib/api/offers';
+import { computeBogoDiscount, findActiveBogoOfferFor } from '../utils/bogo';
 
 interface CartContextValue {
   items: CartItem[];
@@ -15,6 +18,8 @@ interface CartContextValue {
   itemCount: number;
   coupon: string | null;
   discount: number;
+  bogoDiscount: number;
+  bogoLabel: string | null;
   applyCoupon: (code: string) => boolean;
   removeCoupon: () => void;
 }
@@ -30,6 +35,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useLocalStorage<CartItem[]>('dk-cart', []);
   const [isOpen, setIsOpen] = useState(false);
   const [coupon, setCoupon] = useLocalStorage<string | null>('dk-coupon', null);
+  const { data: offers = [] } = useQuery({ queryKey: ['offers'], queryFn: fetchOffers, staleTime: 60_000 });
 
   const addItem = useCallback((product: Product, quantity = 1) => {
     setItems((prev) => {
@@ -65,10 +71,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const itemCount = useMemo(() => items.reduce((sum, i) => sum + i.quantity, 0), [items]);
 
-  const discount = useMemo(() => {
+  const couponDiscount = useMemo(() => {
     if (!coupon || !VALID_COUPONS[coupon]) return 0;
     return Math.round(subtotal * VALID_COUPONS[coupon]);
   }, [coupon, subtotal]);
+
+  const bogoDiscount = useMemo(() => computeBogoDiscount(items, offers), [items, offers]);
+
+  const bogoLabel = useMemo(() => {
+    if (bogoDiscount <= 0) return null;
+    const activeBogo = offers.filter((o) => o.discountType === 'bogo' && isOfferActive(o));
+    const matched = items
+      .map((i) => findActiveBogoOfferFor({ id: i.product.id, categoryId: i.product.categoryId }, activeBogo))
+      .find(Boolean);
+    return matched ? getBogoLabel(matched) : null;
+  }, [bogoDiscount, offers, items]);
+
+  const discount = couponDiscount + bogoDiscount;
 
   const applyCoupon = useCallback((code: string) => {
     const upper = code.trim().toUpperCase();
@@ -84,7 +103,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const value: CartContextValue = {
     items, addItem, removeItem, updateQuantity, clearCart,
     isOpen, openCart: () => setIsOpen(true), closeCart: () => setIsOpen(false),
-    subtotal, itemCount, coupon, discount, applyCoupon, removeCoupon,
+    subtotal, itemCount, coupon, discount, bogoDiscount, bogoLabel, applyCoupon, removeCoupon,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

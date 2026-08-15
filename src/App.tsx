@@ -23,6 +23,8 @@ import ProductForm from './admin/pages/products/ProductForm';
 import AdminCategories from './admin/pages/Categories';
 import AdminOffers from './admin/pages/Offers';
 import OfferForm from './admin/pages/OfferForm';
+import AdminPromoBanners from './admin/pages/PromoBanners';
+import AdminShippingZones from './admin/pages/ShippingZones';
 import AdminSettings from './admin/pages/Settings';
 
 export default function App() {
@@ -64,6 +66,8 @@ export default function App() {
                   <Route path="offers" element={<AdminOffers />} />
                   <Route path="offers/new" element={<OfferForm />} />
                   <Route path="offers/:id/edit" element={<OfferForm />} />
+                  <Route path="promo-banners" element={<AdminPromoBanners />} />
+                  <Route path="shipping-zones" element={<AdminShippingZones />} />
                   <Route path="settings" element={<AdminSettings />} />
                 </Route>
               </Routes>

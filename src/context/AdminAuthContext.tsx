@@ -42,8 +42,23 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return { error: error.message };
+    const cleanEmail = email.trim();
+
+    console.log('LOGIN DEBUG:', {
+      email: JSON.stringify(cleanEmail),
+      passwordLength: password.length,
+    });
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: cleanEmail,
+      password,
+    });
+
+    if (error) {
+      console.error('SUPABASE LOGIN ERROR:', error);
+      return { error: error.message };
+    }
+
     return { error: null };
   };
 

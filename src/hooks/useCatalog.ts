@@ -1,6 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchStorefrontProducts, fetchProductBySlug } from '../lib/api/products';
 import { fetchCategories } from '../lib/api/categories';
+import { fetchOffers } from '../lib/api/offers';
+import { fetchPromoBanners } from '../lib/api/promoBanners';
+import { fetchShippingZones } from '../lib/api/shippingZones';
 import type { Product } from '../types';
 
 export function useCategories() {
@@ -17,6 +20,18 @@ export function useProduct(slug: string | undefined) {
     queryFn: () => fetchProductBySlug(slug!),
     enabled: Boolean(slug),
   });
+}
+
+export function useOffers() {
+  return useQuery({ queryKey: ['offers'], queryFn: fetchOffers, staleTime: 60_000 });
+}
+
+export function usePromoBanners() {
+  return useQuery({ queryKey: ['promo-banners'], queryFn: fetchPromoBanners, staleTime: 5 * 60_000 });
+}
+
+export function useShippingZones() {
+  return useQuery({ queryKey: ['shipping-zones'], queryFn: fetchShippingZones, staleTime: 5 * 60_000 });
 }
 
 export const getFeatured = (products: Product[]) => products.filter((p) => p.isFeatured);

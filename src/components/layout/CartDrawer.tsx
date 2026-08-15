@@ -44,7 +44,7 @@ export default function CartDrawer() {
                       <img src={cld(product.images[0], 200)} alt={product.name} loading="lazy" decoding="async" className="w-20 h-24 object-cover rounded-xl" />
                       <div className="flex-1 flex flex-col justify-between">
                         <div>
-                          <p className="text-xs" style={{ color: 'var(--color-muted)' }}>{product.brand}</p>
+                          <p className="text-xs" style={{ color: 'var(--color-muted)' }}>{product.isDeal ? 'Special Offer' : product.brand}</p>
                           <p className="font-semibold text-sm">{product.name}</p>
                           <p className="text-sm font-medium mt-1">{product.price.toLocaleString()} {product.currency}</p>
                         </div>

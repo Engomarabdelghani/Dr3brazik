@@ -18,3 +18,6 @@ export const supabase = createClient(url ?? '', anonKey ?? '', {
 });
 
 export const PRODUCT_IMAGES_BUCKET = 'product-images';
+// Shared bucket for single-image uploads that aren't product photos:
+// category images, offer banners, promo banners.
+export const SITE_IMAGES_BUCKET = 'site-images';

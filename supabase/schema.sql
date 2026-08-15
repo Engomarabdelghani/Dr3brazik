@@ -273,3 +273,157 @@ create policy "admin delete product images" on storage.objects
 --      insert into admins (user_id) values ('paste-uuid-here');
 -- 3. Copy your Project URL + anon public key (Settings > API) into your .env file.
 -- ============================================================================
+
+-- ============================================================================
+-- BLOCK: BOGO offers + Promo Banners + Shipping Zones + shared site-images bucket
+-- Adds:
+--   1. BOGO ("buy X get Y at Z% off") support on the existing `offers` table
+--   2. `promo_banners` table — circular/arch banners shown on the Home page
+--   3. `shipping_zones` table — governorate list + delivery price for Checkout
+--   4. A shared public `site-images` storage bucket (category images, offer
+--      banners, promo banners) with the same public-read / admin-write policy
+--      shape already used for `product-images`.
+-- Safe to re-run.
+-- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- OFFERS: BOGO support
+-- ----------------------------------------------------------------------------
+alter table offers drop constraint if exists offers_discount_type_check;
+alter table offers add constraint offers_discount_type_check
+  check (discount_type in ('percent', 'fixed', 'bogo'));
+
+alter table offers alter column discount_value drop not null;
+alter table offers add column if not exists bogo_buy_qty integer not null default 1;
+alter table offers add column if not exists bogo_get_qty integer not null default 1;
+alter table offers add column if not exists bogo_get_discount_percent numeric(5,2) not null default 100;
+
+-- BOGO offers are quantity-dependent (cart-level), not a flat per-unit price,
+-- so they must never affect the live effective_price view — only percent/fixed do.
+drop view if exists products_with_effective_price cascade;
+create or replace view products_with_effective_price as
+select
+  p.*,
+  coalesce(
+    (
+      select case o.discount_type
+        when 'percent' then round(p.price * (1 - o.discount_value / 100), 2)
+        when 'fixed' then greatest(p.price - o.discount_value, 0)
+      end
+      from offers o
+      left join offer_products op on op.offer_id = o.id
+      where o.is_enabled
+        and o.discount_type in ('percent', 'fixed')
+        and now() between o.start_date and o.end_date
+        and (
+          (o.target_type = 'products' and op.product_id = p.id)
+          or (o.target_type = 'category' and o.category_id = p.category_id)
+        )
+      order by o.discount_value desc
+      limit 1
+    ),
+    p.price
+  ) as effective_price
+from products p;
+
+-- ----------------------------------------------------------------------------
+-- PROMO BANNERS  (circular/arch banners on the Home page)
+-- ----------------------------------------------------------------------------
+create table if not exists promo_banners (
+  id uuid primary key default gen_random_uuid()
+);
+-- Add each column individually (if not exists) so this heals a table that may
+-- already exist from a partial/earlier run, instead of only working on a
+-- brand-new table.
+alter table promo_banners add column if not exists title text not null default '';
+alter table promo_banners add column if not exists image text not null default '';
+alter table promo_banners add column if not exists link text;
+alter table promo_banners add column if not exists sort_order integer not null default 0;
+alter table promo_banners add column if not exists is_enabled boolean not null default true;
+alter table promo_banners add column if not exists created_at timestamptz not null default now();
+
+create index if not exists idx_promo_banners_sort on promo_banners(sort_order);
+
+alter table promo_banners enable row level security;
+
+drop policy if exists "public read enabled promo banners" on promo_banners;
+create policy "public read enabled promo banners" on promo_banners
+  for select using (is_enabled = true);
+
+drop policy if exists "admin full access promo banners" on promo_banners;
+create policy "admin full access promo banners" on promo_banners
+  for all using (is_admin()) with check (is_admin());
+
+-- ----------------------------------------------------------------------------
+-- SHIPPING ZONES  (governorate -> delivery price, used at Checkout)
+-- ----------------------------------------------------------------------------
+create table if not exists shipping_zones (
+  id uuid primary key default gen_random_uuid()
+);
+alter table shipping_zones add column if not exists name text not null default '';
+alter table shipping_zones add column if not exists price numeric(10,2) not null default 0;
+alter table shipping_zones add column if not exists sort_order integer not null default 0;
+alter table shipping_zones add column if not exists is_enabled boolean not null default true;
+alter table shipping_zones add column if not exists created_at timestamptz not null default now();
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'shipping_zones_name_key'
+  ) then
+    alter table shipping_zones add constraint shipping_zones_name_key unique (name);
+  end if;
+end $$;
+
+create index if not exists idx_shipping_zones_sort on shipping_zones(sort_order);
+
+alter table shipping_zones enable row level security;
+
+drop policy if exists "public read enabled shipping zones" on shipping_zones;
+create policy "public read enabled shipping zones" on shipping_zones
+  for select using (is_enabled = true);
+
+drop policy if exists "admin full access shipping zones" on shipping_zones;
+create policy "admin full access shipping zones" on shipping_zones
+  for all using (is_admin()) with check (is_admin());
+
+-- ----------------------------------------------------------------------------
+-- STORAGE  (shared bucket for category images, offer banners, promo banners)
+-- ----------------------------------------------------------------------------
+insert into storage.buckets (id, name, public)
+values ('site-images', 'site-images', true)
+on conflict (id) do nothing;
+
+drop policy if exists "public read site images" on storage.objects;
+create policy "public read site images" on storage.objects
+  for select using (bucket_id = 'site-images');
+
+drop policy if exists "admin upload site images" on storage.objects;
+create policy "admin upload site images" on storage.objects
+  for insert with check (bucket_id = 'site-images' and is_admin());
+
+drop policy if exists "admin update site images" on storage.objects;
+create policy "admin update site images" on storage.objects
+  for update using (bucket_id = 'site-images' and is_admin());
+
+drop policy if exists "admin delete site images" on storage.objects;
+create policy "admin delete site images" on storage.objects
+  for delete using (bucket_id = 'site-images' and is_admin());
+
+-- ============================================================================
+-- AFTER RUNNING THIS BLOCK:
+-- Seed shipping zones for Egypt's governorates from the dashboard
+-- (Admin > Shipping Zones), or bulk-insert your own list, e.g.:
+--   insert into shipping_zones (name, price, sort_order) values
+--     ('القاهرة', 60, 1), ('الجيزة', 60, 2), ('الإسكندرية', 70, 3);
+-- ============================================================================
+
+-- ============================================================================
+-- BLOCK: Shoppable promo banners (optional price -> tap-to-cart)
+-- Lets the admin give a promo banner a price. When a banner has a price, tapping
+-- it on the storefront adds it straight to the cart as a quick-buy deal instead
+-- of just navigating to `link`. Banners without a price keep working exactly as
+-- before (plain marketing link).
+-- Safe to re-run.
+-- ============================================================================
+alter table promo_banners add column if not exists price numeric(10,2);

@@ -6,6 +6,7 @@ import {
   fetchCategoryRows, fetchSubcategoryRows, createCategory, updateCategory, deleteCategory,
   createSubcategory, updateSubcategory, deleteSubcategory, type CategoryRow, type SubcategoryRow,
 } from '../../lib/api/categories';
+import SingleImageUploader from '../components/SingleImageUploader';
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
@@ -155,7 +156,10 @@ function CategoryModal({ category, onClose, onSaved }: { category: CategoryRow |
         <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className="input-luxe" />
         <input value={nameAr} onChange={(e) => setNameAr(e.target.value)} placeholder="Arabic Name (optional)" className="input-luxe" dir="rtl" />
         <input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="Slug (auto-generated if blank)" className="input-luxe" />
-        <input value={image} onChange={(e) => setImage(e.target.value)} placeholder="Image URL" className="input-luxe" />
+        <div>
+          <label className="text-xs mb-1.5 block" style={{ color: 'var(--color-muted)' }}>Category Image</label>
+          <SingleImageUploader value={image} onChange={setImage} folder="categories" aspectClassName="aspect-[4/3]" />
+        </div>
         {error && <p className="text-xs" style={{ color: '#dc2626' }}>{error}</p>}
         <button type="submit" disabled={saving} className="btn-primary w-full">{saving ? 'Saving…' : 'Save'}</button>
       </form>

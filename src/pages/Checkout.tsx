@@ -1,35 +1,55 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { FaWhatsapp } from 'react-icons/fa';
 import { FiCreditCard, FiTruck } from 'react-icons/fi';
 import { useCart } from '../context/CartContext';
 import { WHATSAPP_NUMBER, buildWhatsAppOrderMessage } from '../data/constants';
+import { fetchShippingZones } from '../lib/api/shippingZones';
 import { cld } from '../utils/cloudinary';
 import Button from '../components/ui/Button';
 
 type PaymentMethod = 'cod' | 'card';
 
 export default function Checkout() {
-  const { items, subtotal, discount, clearCart } = useCart();
+  const { items, subtotal, discount, bogoLabel, clearCart } = useCart();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', phone: '', address: '', city: '', notes: '' });
+  const { data: shippingZones = [] } = useQuery({ queryKey: ['shipping-zones'], queryFn: fetchShippingZones });
+  const [form, setForm] = useState({ name: '', phone: '', address: '', governorateId: '', notes: '' });
   const [payment, setPayment] = useState<PaymentMethod>('cod');
+  const [error, setError] = useState<string | null>(null);
 
   if (items.length === 0) return <Navigate to="/cart" replace />;
 
+  const enabledZones = shippingZones.filter((z) => z.isEnabled);
+  const selectedZone = enabledZones.find((z) => z.id === form.governorateId);
+
   const total = subtotal - discount;
-  const shipping = total >= 2000 ? 0 : 75;
+  const shipping = selectedZone?.price ?? 0;
   const grandTotal = total + shipping;
 
-  const onChange = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+  const onChange = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [field]: e.target.value }));
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedZone) {
+      setError('Please choose your governorate to calculate delivery.');
+      return;
+    }
+    setError(null);
+
     const message = buildWhatsAppOrderMessage({
       items: items.map((i) => ({ name: i.product.name, quantity: i.quantity, price: i.product.price })),
+      subtotal,
+      discount,
+      shippingPrice: shipping,
       total: grandTotal,
       customerName: form.name,
+      customerPhone: form.phone,
+      address: form.address,
+      governorate: selectedZone.name,
+      notes: form.notes || undefined,
     });
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, '_blank');
     clearCart();
@@ -47,9 +67,14 @@ export default function Checkout() {
             <h2 className="font-bold mb-5">Customer Information</h2>
             <div className="grid md:grid-cols-2 gap-4">
               <input required value={form.name} onChange={onChange('name')} placeholder="Full Name" className="input-luxe" />
-              <input required value={form.phone} onChange={onChange('phone')} placeholder="Phone Number" className="input-luxe" />
-              <input required value={form.city} onChange={onChange('city')} placeholder="City" className="input-luxe" />
-              <input required value={form.address} onChange={onChange('address')} placeholder="Delivery Address" className="input-luxe" />
+              <input required type="tel" value={form.phone} onChange={onChange('phone')} placeholder="Phone Number" className="input-luxe" />
+              <select required value={form.governorateId} onChange={onChange('governorateId')} className="input-luxe">
+                <option value="">Select Governorate</option>
+                {enabledZones.map((z) => (
+                  <option key={z.id} value={z.id}>{z.name} — {z.price.toLocaleString()} EGP</option>
+                ))}
+              </select>
+              <input required value={form.address} onChange={onChange('address')} placeholder="Detailed Address (street, building, floor…)" className="input-luxe" />
             </div>
             <textarea
               value={form.notes}
@@ -63,7 +88,9 @@ export default function Checkout() {
           <div className="card-luxe p-6 md:p-8">
             <h2 className="font-bold mb-5 flex items-center gap-2"><FiTruck /> Delivery</h2>
             <p className="text-sm" style={{ color: 'var(--color-muted)' }}>
-              {/* Standard delivery in 2–5 business days. Free shipping on orders over 2,000 EGP. */}
+              {selectedZone
+                ? `Delivery to ${selectedZone.name}: ${selectedZone.price.toLocaleString()} EGP`
+                : 'Choose your governorate above to see the delivery price.'}
             </p>
           </div>
 
@@ -103,11 +130,21 @@ export default function Checkout() {
           <div className="h-px" style={{ backgroundColor: 'var(--color-border)' }} />
           <div className="space-y-2 text-sm">
             <div className="flex justify-between"><span style={{ color: 'var(--color-muted)' }}>Subtotal</span><span>{subtotal.toLocaleString()} EGP</span></div>
-            {discount > 0 && <div className="flex justify-between"><span style={{ color: 'var(--color-muted)' }}>Discount</span><span>-{discount.toLocaleString()} EGP</span></div>}
-            <div className="flex justify-between"><span style={{ color: 'var(--color-muted)' }}>Shipping</span><span>{shipping === 0 ? 'Free' : `${shipping} EGP`}</span></div>
+            {discount > 0 && (
+              <div className="flex justify-between">
+                <span style={{ color: 'var(--color-muted)' }}>{bogoLabel ? `Discount (${bogoLabel})` : 'Discount'}</span>
+                <span>-{discount.toLocaleString()} EGP</span>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <span style={{ color: 'var(--color-muted)' }}>Shipping</span>
+              <span>{selectedZone ? `${shipping.toLocaleString()} EGP` : 'Select governorate'}</span>
+            </div>
           </div>
           <div className="h-px" style={{ backgroundColor: 'var(--color-border)' }} />
           <div className="flex justify-between font-bold text-lg"><span>Total</span><span>{grandTotal.toLocaleString()} EGP</span></div>
+
+          {error && <p className="text-xs" style={{ color: '#dc2626' }}>{error}</p>}
 
           <Button type="submit" variant="primary" fullWidth>Place Order</Button>
           <p className="text-xs text-center" style={{ color: 'var(--color-muted)' }}>

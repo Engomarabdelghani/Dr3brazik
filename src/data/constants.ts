@@ -19,16 +19,45 @@ export const SOCIAL_LINKS = [
 
 export function buildWhatsAppOrderMessage(params: {
   items: { name: string; quantity: number; price: number }[];
+  subtotal: number;
+  discount?: number;
+  shippingPrice: number;
   total: number;
-  customerName?: string;
+  customerName: string;
+  customerPhone: string;
+  address: string;
+  governorate: string;
+  notes?: string;
 }) {
   const lines = [
     `Hello ${SITE_NAME}, I'd like to place an order:`,
     '',
+    'Order Details:',
     ...params.items.map((i) => `• ${i.name} x${i.quantity} — ${i.price * i.quantity} EGP`),
     '',
-    `Total: ${params.total} EGP`,
+    `Subtotal: ${params.subtotal} EGP`,
   ];
-  if (params.customerName) lines.push('', `Name: ${params.customerName}`);
+  if (params.discount) lines.push(`Discount: -${params.discount} EGP`);
+  lines.push(
+    `Shipping (${params.governorate}): ${params.shippingPrice} EGP`,
+    `Total: ${params.total} EGP`,
+    '',
+    'Customer Details:',
+    `Name: ${params.customerName}`,
+    `Phone: ${params.customerPhone}`,
+    `Governorate: ${params.governorate}`,
+    `Address: ${params.address}`,
+  );
+  if (params.notes) lines.push(`Notes: ${params.notes}`);
+  return encodeURIComponent(lines.join('\n'));
+}
+
+/** Lightweight "I'm interested in this product" message — used on the Product Details page (outside Checkout). */
+export function buildWhatsAppProductInquiryMessage(params: { name: string; quantity: number; price: number }) {
+  const lines = [
+    `Hello ${SITE_NAME}, I'm interested in this product:`,
+    '',
+    `• ${params.name} x${params.quantity} — ${params.price * params.quantity} EGP`,
+  ];
   return encodeURIComponent(lines.join('\n'));
 }

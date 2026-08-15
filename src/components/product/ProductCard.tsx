@@ -4,6 +4,9 @@ import { FiHeart, FiEye, FiShoppingBag } from 'react-icons/fi';
 import type { Product } from '../../types';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
+import { useOffers } from '../../hooks/useCatalog';
+import { getBogoLabel } from '../../lib/api/offers';
+import { findActiveBogoOfferFor } from '../../utils/bogo';
 import { cld } from '../../utils/cloudinary';
 import RatingStars from '../ui/RatingStars';
 import PriceTag from '../ui/PriceTag';
@@ -12,10 +15,12 @@ import Badge from '../ui/Badge';
 export default function ProductCard({ product, onQuickView }: { product: Product; onQuickView?: (p: Product) => void }) {
   const { addItem } = useCart();
   const { toggle, isInWishlist } = useWishlist();
+  const { data: offers = [] } = useOffers();
   const wished = isInWishlist(product.id);
   const discount = product.oldPrice
     ? Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)
     : product.discountPercent;
+  const bogoOffer = findActiveBogoOfferFor({ id: product.id, categoryId: product.categoryId }, offers);
 
   return (
     <motion.div
@@ -41,6 +46,7 @@ export default function ProductCard({ product, onQuickView }: { product: Product
         <div className="absolute top-3 left-3 flex flex-col gap-2">
           {product.isNew && <Badge tone="ink">New</Badge>}
           {discount ? <Badge tone="gold">-{discount}%</Badge> : null}
+          {bogoOffer && <Badge tone="success">{getBogoLabel(bogoOffer)}</Badge>}
         </div>
 
         <button

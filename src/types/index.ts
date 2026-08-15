@@ -42,6 +42,7 @@ export interface Product {
   discountPercent?: number;
   tags: string[];
   attributes?: Record<string, string[]>;
+  isDeal?: boolean; // true for synthetic "cart items" built from a shoppable promo banner — not a real catalog product
 }
 
 export interface CartItem {
@@ -65,7 +66,7 @@ export interface FAQ {
 
 export type SortOption = 'featured' | 'price-asc' | 'price-desc' | 'newest' | 'rating';
 
-export type DiscountType = 'percent' | 'fixed';
+export type DiscountType = 'percent' | 'fixed' | 'bogo';
 export type OfferTargetType = 'products' | 'category';
 
 export interface Offer {
@@ -79,6 +80,28 @@ export interface Offer {
   bannerImage?: string;
   startDate: string;
   endDate: string;
+  isEnabled: boolean;
+  // BOGO ("buy X get Y at Z% off") — only meaningful when discountType === 'bogo'
+  bogoBuyQty: number;
+  bogoGetQty: number;
+  bogoGetDiscountPercent: number;
+}
+
+export interface PromoBanner {
+  id: string;
+  title: string;
+  image: string;
+  link?: string;
+  price?: number; // when set, tapping the banner on the storefront adds it straight to cart instead of navigating to `link`
+  sortOrder: number;
+  isEnabled: boolean;
+}
+
+export interface ShippingZone {
+  id: string;
+  name: string;
+  price: number;
+  sortOrder: number;
   isEnabled: boolean;
 }
 

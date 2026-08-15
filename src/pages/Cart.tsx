@@ -49,10 +49,14 @@ export default function Cart() {
               <div className="flex-1 flex flex-col justify-between">
                 <div className="flex justify-between gap-4">
                   <div>
-                    <p className="text-xs" style={{ color: 'var(--color-muted)' }}>{product.brand}</p>
-                    <Link to={`/product/${product.slug}`} className="font-semibold hover:text-[var(--color-gold)] transition-colors">
-                      {product.name}
-                    </Link>
+                    <p className="text-xs" style={{ color: 'var(--color-muted)' }}>{product.isDeal ? 'Special Offer' : product.brand}</p>
+                    {product.isDeal ? (
+                      <p className="font-semibold">{product.name}</p>
+                    ) : (
+                      <Link to={`/product/${product.slug}`} className="font-semibold hover:text-[var(--color-gold)] transition-colors">
+                        {product.name}
+                      </Link>
+                    )}
                     <p className="text-sm font-medium mt-1">{product.price.toLocaleString()} {product.currency}</p>
                   </div>
                   <button aria-label="Remove item" onClick={() => removeItem(product.id)} className="text-gray-400 hover:text-red-500 transition-colors h-fit">

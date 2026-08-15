@@ -3,13 +3,15 @@ import { useParams, Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiHeart, FiShoppingBag, FiTruck, FiShield, FiRotateCcw } from 'react-icons/fi';
 import { FaWhatsapp } from 'react-icons/fa';
-import { useProduct, useProducts, getRelated } from '../hooks/useCatalog';
+import { useProduct, useProducts, getRelated, useOffers } from '../hooks/useCatalog';
 import { useCategories } from '../hooks/useCatalog';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useRecentlyViewed } from '../context/RecentlyViewedContext';
 import type { Subcategory } from '../data/taxonomy';
-import { WHATSAPP_NUMBER, buildWhatsAppOrderMessage } from '../data/constants';
+import { WHATSAPP_NUMBER, buildWhatsAppProductInquiryMessage } from '../data/constants';
+import { getBogoLabel } from '../lib/api/offers';
+import { findActiveBogoOfferFor } from '../utils/bogo';
 import Gallery from '../components/product/Gallery';
 import RatingStars from '../components/ui/RatingStars';
 import PriceTag from '../components/ui/PriceTag';
@@ -28,6 +30,7 @@ export default function ProductDetails() {
   const { addItem } = useCart();
   const { toggle, isInWishlist } = useWishlist();
   const { items: recentlyViewed, addView } = useRecentlyViewed();
+  const { data: offers = [] } = useOffers();
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
@@ -45,11 +48,9 @@ export default function ProductDetails() {
   const otherRecentlyViewed = recentlyViewed.filter((p) => p.id !== product.id);
   const productCategory = categories.find((c) => c.id === product.category);
   const productSubcategory = productCategory?.subcategories.find((s: Subcategory) => s.id === product.subcategory);
+  const bogoOffer = findActiveBogoOfferFor({ id: product.id, categoryId: product.categoryId }, offers);
 
-  const whatsappMessage = buildWhatsAppOrderMessage({
-    items: [{ name: product.name, quantity, price: product.price }],
-    total: product.price * quantity,
-  });
+  const whatsappMessage = buildWhatsAppProductInquiryMessage({ name: product.name, quantity, price: product.price });
 
   return (
     <div className="container-luxe py-12">
@@ -80,8 +81,9 @@ export default function ProductDetails() {
 
           <p className="mt-5 text-sm leading-relaxed" style={{ color: 'var(--color-muted)' }}>{product.shortDescription}</p>
 
-          <div className="mt-4">
+          <div className="mt-4 flex items-center gap-2">
             {product.inStock ? <Badge tone="success">In Stock</Badge> : <Badge tone="muted">Out of Stock</Badge>}
+            {bogoOffer && <Badge tone="success">{getBogoLabel(bogoOffer)}</Badge>}
           </div>
 
           <div className="flex items-center gap-4 mt-8">
