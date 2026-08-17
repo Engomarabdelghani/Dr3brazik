@@ -121,17 +121,17 @@ export interface Testimonial {
   isEnabled: boolean;
 }
 
-export interface SiteSettings {
-  siteName: string;
-  logoUrl?: string;
-  faviconUrl?: string;
-  whatsapp?: string;
-  facebook?: string;
-  instagram?: string;
-  tiktok?: string;
-  email?: string;
-  address?: string;
-  heroImages: string[];
-  seoTitle?: string;
-  seoDescription?: string;
-}
+// export interface SiteSettings {
+//   siteName: string;
+//   logoUrl?: string;
+//   faviconUrl?: string;
+//   whatsapp?: string;
+//   facebook?: string;
+//   instagram?: string;
+//   tiktok?: string;
+//   email?: string;
+//   address?: string;
+//   heroImages: string[];
+//   seoTitle?: string;
+//   seoDescription?: string;
+// }
