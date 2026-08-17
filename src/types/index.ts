@@ -114,6 +114,13 @@ export interface SocialPost {
   isEnabled: boolean;
 }
 
+export interface Testimonial {
+  id: string;
+  image: string; // required — a real screenshot (WhatsApp message, review site, etc.), uploaded by the admin
+  sortOrder: number;
+  isEnabled: boolean;
+}
+
 export interface SiteSettings {
   siteName: string;
   logoUrl?: string;

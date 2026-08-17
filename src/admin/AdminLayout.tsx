@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  FiGrid, FiBox, FiTag, FiPercent, FiImage, FiTruck, FiInstagram, FiLogOut, FiMenu, FiX, FiExternalLink,
+  FiGrid, FiBox, FiTag, FiPercent, FiImage, FiTruck, FiInstagram, FiMessageSquare, FiLogOut, FiMenu, FiX, FiExternalLink,
 } from 'react-icons/fi';
 import { useAdminAuth } from '../context/AdminAuthContext';
 
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { to: '/admin/promo-banners', label: 'Promo Banners', icon: FiImage },
   { to: '/admin/shipping-zones', label: 'Shipping Zones', icon: FiTruck },
   { to: '/admin/social-posts', label: 'Social Posts', icon: FiInstagram },
+  { to: '/admin/testimonials', label: 'Testimonials', icon: FiMessageSquare },
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {

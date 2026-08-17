@@ -460,3 +460,31 @@ create policy "public read enabled social posts" on social_posts
 drop policy if exists "admin full access social posts" on social_posts;
 create policy "admin full access social posts" on social_posts
   for all using (is_admin()) with check (is_admin());
+
+-- ============================================================================
+-- BLOCK: Testimonials (screenshot-based reviews on Home page)
+-- Lets the admin upload real screenshots (WhatsApp messages, review site
+-- screenshots, etc.) instead of the previous hardcoded fake testimonial text.
+-- Self-healing: builds column-by-column so this works even if a table with
+-- this name already exists in a different shape from an earlier attempt.
+-- Safe to re-run.
+-- ============================================================================
+create table if not exists testimonials (
+  id uuid primary key default gen_random_uuid()
+);
+alter table testimonials add column if not exists image text not null default '';
+alter table testimonials add column if not exists sort_order integer not null default 0;
+alter table testimonials add column if not exists is_enabled boolean not null default true;
+alter table testimonials add column if not exists created_at timestamptz not null default now();
+
+create index if not exists idx_testimonials_sort on testimonials(sort_order);
+
+alter table testimonials enable row level security;
+
+drop policy if exists "public read enabled testimonials" on testimonials;
+create policy "public read enabled testimonials" on testimonials
+  for select using (is_enabled = true);
+
+drop policy if exists "admin full access testimonials" on testimonials;
+create policy "admin full access testimonials" on testimonials
+  for all using (is_admin()) with check (is_admin());

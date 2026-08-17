@@ -5,6 +5,7 @@ import { fetchOffers } from '../lib/api/offers';
 import { fetchPromoBanners } from '../lib/api/promoBanners';
 import { fetchShippingZones } from '../lib/api/shippingZones';
 import { fetchSocialPosts } from '../lib/api/socialPosts';
+import { fetchTestimonials } from '../lib/api/testimonials';
 import type { Product } from '../types';
 
 export function useCategories() {
@@ -37,6 +38,10 @@ export function useShippingZones() {
 
 export function useSocialPosts() {
   return useQuery({ queryKey: ['social-posts'], queryFn: fetchSocialPosts, staleTime: 5 * 60_000 });
+}
+
+export function useTestimonials() {
+  return useQuery({ queryKey: ['testimonials'], queryFn: fetchTestimonials, staleTime: 5 * 60_000 });
 }
 
 export const getFeatured = (products: Product[]) => products.filter((p) => p.isFeatured);
