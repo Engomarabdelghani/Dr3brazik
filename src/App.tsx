@@ -25,6 +25,7 @@ import AdminOffers from './admin/pages/Offers';
 import OfferForm from './admin/pages/OfferForm';
 import AdminPromoBanners from './admin/pages/PromoBanners';
 import AdminShippingZones from './admin/pages/ShippingZones';
+import AdminSocialPosts from './admin/pages/SocialPosts';
 import AdminSettings from './admin/pages/Settings';
 
 export default function App() {
@@ -68,6 +69,7 @@ export default function App() {
                   <Route path="offers/:id/edit" element={<OfferForm />} />
                   <Route path="promo-banners" element={<AdminPromoBanners />} />
                   <Route path="shipping-zones" element={<AdminShippingZones />} />
+                  <Route path="social-posts" element={<AdminSocialPosts />} />
                   <Route path="settings" element={<AdminSettings />} />
                 </Route>
               </Routes>

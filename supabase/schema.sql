@@ -427,3 +427,36 @@ create policy "admin delete site images" on storage.objects
 -- Safe to re-run.
 -- ============================================================================
 alter table promo_banners add column if not exists price numeric(10,2);
+
+-- ============================================================================
+-- BLOCK: Social posts ("Follow the Ritual" Instagram/TikTok gallery on Home)
+-- Lets the admin manage the Home page's video/reel gallery instead of it being
+-- hardcoded in the frontend. Each post is just a link (Instagram/TikTok reel
+-- or post) plus an optional custom thumbnail image — if no image is uploaded,
+-- the storefront tries to auto-derive a thumbnail from the link itself, same
+-- as the previous hardcoded behavior.
+-- Self-healing: builds column-by-column so this works even if a table with
+-- this name already exists in a different shape from an earlier attempt.
+-- Safe to re-run.
+-- ============================================================================
+create table if not exists social_posts (
+  id uuid primary key default gen_random_uuid()
+);
+alter table social_posts add column if not exists link text not null default '';
+alter table social_posts add column if not exists image text;
+alter table social_posts add column if not exists is_video boolean not null default false;
+alter table social_posts add column if not exists sort_order integer not null default 0;
+alter table social_posts add column if not exists is_enabled boolean not null default true;
+alter table social_posts add column if not exists created_at timestamptz not null default now();
+
+create index if not exists idx_social_posts_sort on social_posts(sort_order);
+
+alter table social_posts enable row level security;
+
+drop policy if exists "public read enabled social posts" on social_posts;
+create policy "public read enabled social posts" on social_posts
+  for select using (is_enabled = true);
+
+drop policy if exists "admin full access social posts" on social_posts;
+create policy "admin full access social posts" on social_posts
+  for all using (is_admin()) with check (is_admin());

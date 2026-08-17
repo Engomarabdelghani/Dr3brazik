@@ -105,6 +105,15 @@ export interface ShippingZone {
   isEnabled: boolean;
 }
 
+export interface SocialPost {
+  id: string;
+  link: string;
+  image?: string; // custom thumbnail; if empty, storefront tries to auto-derive one from the link
+  isVideo: boolean;
+  sortOrder: number;
+  isEnabled: boolean;
+}
+
 export interface SiteSettings {
   siteName: string;
   logoUrl?: string;
