@@ -53,8 +53,8 @@ export default function About() {
         <div className="container-luxe grid grid-cols-2 md:grid-cols-4 gap-8">
           <AnimatedCounter to={2018} label="Founded" />
           <AnimatedCounter to={15000} suffix="+" label="Happy Clients" />
-          <AnimatedCounter to={120} suffix="+" label="Products" />
-          <AnimatedCounter to={40} suffix="+" label="Cities Served" />
+          <AnimatedCounter to={2000} suffix="+" label="Products" />
+          <AnimatedCounter to={100} suffix="+" label="Cities Served" />
         </div>
       </section>
     </div>
