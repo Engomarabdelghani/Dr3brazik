@@ -14,6 +14,11 @@ const DRAG_THRESHOLD = 60; // px of horizontal drag before it counts as a swipe 
  * campaign banners. Fully admin-managed from /admin/promo-banners. Auto-rotates
  * and supports swipe/drag on touch devices; tapping (without dragging) opens
  * the slide's link.
+ *
+ * Each slide shows the FULL uploaded image, never cropped, regardless of its
+ * aspect ratio — a blurred, scaled copy of the same image fills any leftover
+ * space behind it (same technique as Instagram/Facebook story banners), so
+ * admins never have to fight image dimensions to avoid an ugly crop.
  */
 export default function PromoBanners() {
   const { data: banners = [], isLoading } = usePromoBanners();
@@ -65,12 +70,10 @@ export default function PromoBanners() {
 
   return (
     <section className="container-luxe pt-6 md:pt-8">
-      <div className="relative w-full h-[180px] sm:h-[260px] md:h-[340px] lg:h-[400px] overflow-hidden rounded-3xl">
+      <div className="relative w-full h-[180px] sm:h-[260px] md:h-[340px] lg:h-[400px] overflow-hidden rounded-3xl bg-black">
         <AnimatePresence initial={false} mode="wait">
-          <motion.img
+          <motion.div
             key={current.id}
-            src={current.image}
-            alt={current.title}
             initial={{ opacity: 0, x: direction > 0 ? 60 : -60 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: direction > 0 ? -60 : 60 }}
@@ -89,8 +92,24 @@ export default function PromoBanners() {
               setTimeout(() => { draggedRef.current = false; }, 50);
             }}
             onClick={onTap}
-            className={`absolute inset-0 w-full h-full object-cover ${active.length > 1 ? 'cursor-grab active:cursor-grabbing' : (current.link || isShoppable) ? 'cursor-pointer' : ''}`}
-          />
+            className={`absolute inset-0 ${active.length > 1 ? 'cursor-grab active:cursor-grabbing' : (current.link || isShoppable) ? 'cursor-pointer' : ''}`}
+          >
+            {/* Blurred, scaled backdrop — fills any leftover space so the image never has to be cropped */}
+            <img
+              src={current.image}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-60"
+            />
+            <div className="absolute inset-0 bg-black/25" />
+            {/* The full, uncropped image */}
+            <img
+              src={current.image}
+              alt={current.title}
+              draggable={false}
+              className="relative w-full h-full object-contain select-none"
+            />
+          </motion.div>
         </AnimatePresence>
 
         {isShoppable && (
