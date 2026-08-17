@@ -108,7 +108,7 @@ export interface ShippingZone {
 export interface SocialPost {
   id: string;
   link: string;
-  image?: string; // custom thumbnail; if empty, storefront tries to auto-derive one from the link
+  image: string; // required — a real screenshot/thumbnail from the video, uploaded by the admin
   isVideo: boolean;
   sortOrder: number;
   isEnabled: boolean;

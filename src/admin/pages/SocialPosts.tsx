@@ -2,9 +2,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiInstagram, FiPlay } from 'react-icons/fi';
-import {
-  fetchSocialPosts, createSocialPost, updateSocialPost, deleteSocialPost, deriveThumbnail, type SocialPostInput,
-} from '../../lib/api/socialPosts';
+import { fetchSocialPosts, createSocialPost, updateSocialPost, deleteSocialPost, type SocialPostInput } from '../../lib/api/socialPosts';
 import type { SocialPost } from '../../types';
 import SingleImageUploader from '../components/SingleImageUploader';
 
@@ -30,8 +28,8 @@ export default function AdminSocialPosts() {
         <div>
           <h1 className="text-2xl font-bold">Social Posts</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--color-muted)' }}>
-            "Follow the Ritual" video/reel gallery on the Home page. Add a link — upload a custom thumbnail, or leave it
-            blank to auto-detect one from Instagram. {posts.length} posts.
+            "Follow the Ritual" video/reel gallery on the Home page. Upload a real screenshot from each video as its
+            thumbnail — Instagram/TikTok don't allow auto-fetching thumbnails, so this keeps every image accurate. {posts.length} posts.
           </p>
         </div>
         <button onClick={() => setEditing('new')} className="btn-primary"><FiPlus /> Add Post</button>
@@ -47,11 +45,18 @@ export default function AdminSocialPosts() {
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-          {posts.map((p, i) => (
+          {posts.map((p) => (
             <div key={p.id} className="card-luxe overflow-hidden">
-              <div className="relative aspect-square">
-                <img src={deriveThumbnail(p, `admin-${i}`)} alt="" className="w-full h-full object-cover" />
-                {p.isVideo && (
+              <div className="relative aspect-square" style={{ backgroundColor: 'var(--color-blush)' }}>
+                {p.image ? (
+                  <img src={p.image} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-center px-2">
+                    <FiInstagram size={18} style={{ color: 'var(--color-gold)' }} />
+                    <p className="text-[9px] font-semibold mt-1" style={{ color: '#dc2626' }}>No thumbnail — hidden from Home</p>
+                  </div>
+                )}
+                {p.isVideo && p.image && (
                   <div className="absolute top-2 right-2 bg-black/60 text-white p-1.5 rounded-full">
                     <FiPlay size={11} fill="white" />
                   </div>
@@ -104,10 +109,14 @@ function PostModal({ post, nextSortOrder, onClose, onSaved }: {
       setError('Please add the Instagram/TikTok link.');
       return;
     }
+    if (!image) {
+      setError('Please upload a screenshot from the video as its thumbnail.');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
-      const input: SocialPostInput = { link: link.trim(), image: image || undefined, isVideo, sortOrder: Number(sortOrder) || 0, isEnabled };
+      const input: SocialPostInput = { link: link.trim(), image, isVideo, sortOrder: Number(sortOrder) || 0, isEnabled };
       if (post) await updateSocialPost(post.id, input);
       else await createSocialPost(input);
       onSaved();
@@ -137,9 +146,12 @@ function PostModal({ post, nextSortOrder, onClose, onSaved }: {
           />
 
           <div>
-            <label className="text-xs mb-1.5 block" style={{ color: 'var(--color-muted)' }}>
-              Thumbnail — optional (auto-detected from the link if left blank)
+            <label className="text-xs mb-1.5 block font-semibold" style={{ color: 'var(--color-heading)' }}>
+              Video Thumbnail — required
             </label>
+            <p className="text-[11px] mb-2" style={{ color: 'var(--color-muted)' }}>
+              Take a screenshot of the video (open it, pause on a good frame, screenshot it) and upload that image here.
+            </p>
             <SingleImageUploader value={image} onChange={setImage} folder="social-posts" aspectClassName="aspect-square" />
           </div>
 
