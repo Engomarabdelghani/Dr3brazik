@@ -17,9 +17,15 @@ export default function ProductCard({ product, onQuickView }: { product: Product
   const { toggle, isInWishlist } = useWishlist();
   const { data: offers = [] } = useOffers();
   const wished = isInWishlist(product.id);
-  const discount = product.oldPrice
-    ? Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)
-    : product.discountPercent;
+  // A live active Offer (effectivePrice) always wins over a static, manually-set
+  // "old price" on the product itself — the Offer is the current campaign, so it
+  // should be what customers see everywhere, not just on its dedicated page.
+  const hasActiveOfferPrice = product.effectivePrice != null && product.effectivePrice < product.price;
+  const discount = hasActiveOfferPrice
+    ? Math.round(((product.price - product.effectivePrice!) / product.price) * 100)
+    : product.oldPrice
+      ? Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)
+      : product.discountPercent;
   const bogoOffer = findActiveBogoOfferFor({ id: product.id, categoryId: product.categoryId }, offers);
 
   return (
@@ -85,7 +91,11 @@ export default function ProductCard({ product, onQuickView }: { product: Product
         </Link>
         <RatingStars rating={product.rating} reviewCount={product.reviewCount} size={12} />
         <div className="mt-2">
-          <PriceTag price={product.price} oldPrice={product.oldPrice} currency={product.currency} />
+          <PriceTag
+            price={product.effectivePrice ?? product.price}
+            oldPrice={hasActiveOfferPrice ? product.price : product.oldPrice}
+            currency={product.currency}
+          />
         </div>
       </div>
     </motion.div>

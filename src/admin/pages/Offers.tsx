@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { FiPlus, FiEdit2, FiTrash2, FiPercent } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiPercent, FiLink, FiCheck } from 'react-icons/fi';
 import { fetchOffers, deleteOffer, setOfferEnabled, isOfferActive, getBogoLabel } from '../../lib/api/offers';
 import { fetchCategoryRows } from '../../lib/api/categories';
 
@@ -8,6 +9,7 @@ export default function AdminOffers() {
   const queryClient = useQueryClient();
   const { data: offers = [], isLoading } = useQuery({ queryKey: ['admin', 'offers'], queryFn: fetchOffers });
   const { data: categories = [] } = useQuery({ queryKey: ['admin', 'categories-raw'], queryFn: fetchCategoryRows });
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['admin', 'offers'] });
 
@@ -20,6 +22,13 @@ export default function AdminOffers() {
   const onToggle = async (id: string, current: boolean) => {
     await setOfferEnabled(id, !current);
     invalidate();
+  };
+
+  const onCopyLink = (id: string) => {
+    const path = `/offer/${id}`;
+    navigator.clipboard.writeText(`${window.location.origin}${path}`);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 1500);
   };
 
   const discountLabel = (offer: (typeof offers)[number]) => {
@@ -92,6 +101,14 @@ export default function AdminOffers() {
                       {offer.isEnabled ? 'Enabled' : 'Disabled'}
                     </button>
                     <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => onCopyLink(offer.id)}
+                        aria-label="Copy offer link"
+                        className="hover:text-[var(--color-gold)] transition-colors"
+                        title="Copy this offer's page link — paste it into a Promo Banner's Link field"
+                      >
+                        {copiedId === offer.id ? <FiCheck size={15} color="#16a34a" /> : <FiLink size={15} />}
+                      </button>
                       <Link to={`/admin/offers/${offer.id}/edit`} aria-label="Edit" className="hover:text-[var(--color-gold)] transition-colors">
                         <FiEdit2 size={15} />
                       </Link>

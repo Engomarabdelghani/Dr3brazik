@@ -5,6 +5,7 @@ import { FiPlus, FiEdit2, FiTrash2, FiX, FiImage, FiShoppingBag } from 'react-ic
 import {
     fetchPromoBanners, createPromoBanner, updatePromoBanner, deletePromoBanner, type PromoBannerInput,
 } from '../../lib/api/promoBanners';
+import { fetchOffers, isOfferActive, getBogoLabel } from '../../lib/api/offers';
 import type { PromoBanner } from '../../types';
 import SingleImageUploader from '../components/SingleImageUploader';
 
@@ -95,6 +96,9 @@ export default function AdminPromoBanners() {
 function BannerModal({ banner, nextSortOrder, onClose, onSaved }: {
     banner: PromoBanner | null; nextSortOrder: number; onClose: () => void; onSaved: () => void;
 }) {
+    const { data: offers = [] } = useQuery({ queryKey: ['admin', 'offers'], queryFn: fetchOffers });
+    const activeOffers = offers.filter(isOfferActive);
+
     const [title, setTitle] = useState(banner?.title ?? '');
     const [image, setImage] = useState(banner?.image ?? '');
     const [link, setLink] = useState(banner?.link ?? '');
@@ -103,6 +107,13 @@ function BannerModal({ banner, nextSortOrder, onClose, onSaved }: {
     const [isEnabled, setIsEnabled] = useState(banner?.isEnabled ?? true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Pre-select the matching offer in the dropdown when editing a banner that already links to one.
+    const linkedOfferId = link.startsWith('/offer/') ? link.replace('/offer/', '') : '';
+
+    const offerLabel = (offer: (typeof offers)[number]) =>
+        offer.discountType === 'bogo' ? getBogoLabel(offer)
+            : offer.discountType === 'percent' ? `${offer.discountValue}% Off` : `${offer.discountValue} EGP Off`;
 
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -161,9 +172,35 @@ function BannerModal({ banner, nextSortOrder, onClose, onSaved }: {
                         </p>
                     </div>
 
+                    <div>
+                        <label className="text-xs mb-1.5 block font-semibold" style={{ color: 'var(--color-heading)' }}>
+                            Link to an offer — easiest way
+                        </label>
+                        <select
+                            value={linkedOfferId}
+                            disabled={Boolean(price)}
+                            onChange={(e) => setLink(e.target.value ? `/offer/${e.target.value}` : '')}
+                            className="input-luxe"
+                        >
+                            <option value="">— Choose an active offer (optional) —</option>
+                            {activeOffers.map((o) => (
+                                <option key={o.id} value={o.id}>{o.title} — {offerLabel(o)}</option>
+                            ))}
+                        </select>
+                        <p className="text-[11px] mt-1.5" style={{ color: 'var(--color-muted)' }}>
+                            Tapping the banner will open a page showing only that offer's products with the discount already applied.
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border)' }} />
+                        <span className="text-[11px]" style={{ color: 'var(--color-muted)' }}>or a custom link</span>
+                        <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border)' }} />
+                    </div>
+
                     <input
                         value={link} onChange={(e) => setLink(e.target.value)}
-                        placeholder="Link (e.g. /shop?category=... — ignored if a price is set)"
+                        placeholder="Link (e.g. /shop — ignored if a price is set)"
                         className="input-luxe" disabled={Boolean(price)}
                     />
                     <div>

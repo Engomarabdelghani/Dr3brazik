@@ -17,9 +17,9 @@ export default function Home() {
   return (
     <>
       <PromoBanners />
+      <Categories />
       <Hero />
       <BrandsSlider />
-      <Categories />
       <ProductSection
         eyebrow="Handpicked"
         title="Featured Products"

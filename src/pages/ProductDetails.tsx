@@ -76,7 +76,11 @@ export default function ProductDetails() {
           </div>
 
           <div className="mt-5">
-            <PriceTag price={product.effectivePrice ?? product.price} oldPrice={product.oldPrice ?? (product.effectivePrice && product.effectivePrice < product.price ? product.price : undefined)} currency={product.currency} size="lg" />
+            <PriceTag
+              price={product.effectivePrice ?? product.price}
+              oldPrice={product.effectivePrice != null && product.effectivePrice < product.price ? product.price : product.oldPrice}
+              currency={product.currency} size="lg"
+            />
           </div>
 
           <p className="mt-5 text-sm leading-relaxed" style={{ color: 'var(--color-muted)' }}>{product.shortDescription}</p>

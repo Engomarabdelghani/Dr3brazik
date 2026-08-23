@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import Shop from './pages/Shop';
 import ProductDetails from './pages/ProductDetails';
 import Offers from './pages/Offers';
+import OfferCollection from './pages/OfferCollection';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import Cart from './pages/Cart';
@@ -27,7 +28,6 @@ import AdminPromoBanners from './admin/pages/PromoBanners';
 import AdminShippingZones from './admin/pages/ShippingZones';
 import AdminSocialPosts from './admin/pages/SocialPosts';
 import AdminTestimonials from './admin/pages/Testimonials';
-// import AdminSettings from './admin/pages/Settings';
 
 export default function App() {
   return (
@@ -42,6 +42,7 @@ export default function App() {
                   <Route path="/shop" element={<Shop />} />
                   <Route path="/product/:slug" element={<ProductDetails />} />
                   <Route path="/offers" element={<Offers />} />
+                  <Route path="/offer/:id" element={<OfferCollection />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/cart" element={<Cart />} />
@@ -72,7 +73,6 @@ export default function App() {
                   <Route path="shipping-zones" element={<AdminShippingZones />} />
                   <Route path="social-posts" element={<AdminSocialPosts />} />
                   <Route path="testimonials" element={<AdminTestimonials />} />
-                  {/* <Route path="settings" element={<AdminSettings />} /> */}
                 </Route>
               </Routes>
             </BrowserRouter>

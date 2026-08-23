@@ -106,9 +106,6 @@ export default function AdminDashboard() {
             <Link to="/admin/offers/new" className="flex items-center gap-3 p-3 rounded-xl hover:bg-black/5 transition-colors text-sm font-medium">
               <FiPercent size={16} style={{ color: 'var(--color-gold)' }} /> Create an Offer
             </Link>
-            {/* <Link to="/admin/settings" className="flex items-center gap-3 p-3 rounded-xl hover:bg-black/5 transition-colors text-sm font-medium">
-              <FiTag size={16} style={{ color: 'var(--color-gold)' }} /> Edit Site Settings
-            </Link> */}
           </div>
         </div>
       </div>

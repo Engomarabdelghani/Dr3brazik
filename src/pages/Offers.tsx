@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiTag } from 'react-icons/fi';
 import type { Product } from '../types';
-import { useProducts, useOffers, useCategories } from '../hooks/useCatalog';
+import { useProducts, useOffers } from '../hooks/useCatalog';
 import { isOfferActive, getBogoLabel, offerTargetsProduct } from '../lib/api/offers';
 import ProductCard from '../components/product/ProductCard';
 import { ProductCardSkeleton } from '../components/ui/Skeleton';
@@ -19,7 +19,6 @@ function discountPercentOf(p: Product) {
 export default function Offers() {
   const { data: products = [], isLoading } = useProducts();
   const { data: offers = [] } = useOffers();
-  const { data: categories = [] } = useCategories();
 
   const activeOffers = useMemo(() => offers.filter(isOfferActive), [offers]);
 
@@ -41,8 +40,7 @@ export default function Offers() {
           <SectionHeading eyebrow="Active Promotions" title="Current Offers" description="Every deal running right now — tap one to shop it." />
           <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {activeOffers.map((offer, i) => {
-              const category = categories.find((c) => c.id === offer.categoryId);
-              const href = offer.targetType === 'category' && category ? `/shop?category=${category.id}` : '/shop';
+              const href = `/offer/${offer.id}`;
               const label = offer.discountType === 'bogo'
                 ? getBogoLabel(offer)
                 : offer.discountType === 'percent'
