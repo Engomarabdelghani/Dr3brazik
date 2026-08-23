@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { FiArrowLeft, FiTag } from 'react-icons/fi';
 import { useProducts, useOffers } from '../hooks/useCatalog';
-import { isOfferActive, getBogoLabel, offerTargetsProduct } from '../lib/api/offers';
+import {  getBogoLabel, offerTargetsProduct } from '../lib/api/offers';
 import ProductCard from '../components/product/ProductCard';
 import { ProductCardSkeleton } from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
