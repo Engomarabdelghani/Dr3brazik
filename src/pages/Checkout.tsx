@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { FaWhatsapp } from 'react-icons/fa';
 import { FiCreditCard, FiTruck } from 'react-icons/fi';
+import emailjs from '@emailjs/browser';
 import { useCart } from '../context/CartContext';
 import {
   WHATSAPP_NUMBER,
@@ -76,6 +77,36 @@ export default function Checkout() {
 
     setError(null);
 
+    // 1. تجهيز ملخص المنتجات في نص واحد للإيميل
+    const itemsSummaryText = items
+      .map(({ product, quantity }) => `• ${product.name} x${quantity} — ${product.price * quantity} EGP`)
+      .join('\n');
+
+    // 2. إرسال تفاصيل الأوردر على الإيميل فوراً عبر EmailJS
+    const templateParams = {
+      customer_name: form.name,
+      customer_phone: form.phone,
+      customer_address: form.address,
+      governorate: selectedZone.name,
+      payment_method: payment === 'cod' ? 'Cash on Delivery' : 'Instapay / Vodafone Cash',
+      order_items: itemsSummaryText,
+      subtotal: `${subtotal} EGP`,
+      discount: discount > 0 ? `-${discount} EGP` : '0 EGP',
+      shipping_price: `${shipping} EGP`,
+      total_price: `${grandTotal} EGP`,
+      notes: form.notes || 'No notes',
+    };
+
+    emailjs.send(
+      'service_m45cstt',
+      'template_d58fazt', // استبدلها بـ Template ID
+      templateParams,
+      'JoP02i58JPAUycgB9'   // استبدلها بـ Public Key
+    ).catch((err) => {
+      console.error('Failed to send email notification:', err);
+    });
+
+    // 3. تجهيز رسالة الواتساب وفتحها
     const message = buildWhatsAppOrderMessage({
       items: items.map(({ product, quantity }) => ({
         name: product.name,

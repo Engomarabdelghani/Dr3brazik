@@ -132,7 +132,7 @@ export default function ProductDetails() {
         </motion.div>
       </div>
 
-      <ProductTabs product={product} allProducts={allProducts} />
+      <ProductTabs product={product} />
 
       {related.length > 0 && (
         <section className="mt-20">

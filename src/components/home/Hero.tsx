@@ -23,7 +23,7 @@ export default function Hero() {
             className="max-w-xl"
           >
             <span className="text-xs font-bold tracking-[0.28em] uppercase" style={{ color: 'var(--color-gold)' }}>
-              Beauty &middot; Skincare &middot; Makeup &middot; Fragrances
+              bodycare &middot; Skincare &middot; haircare &middot; Kids &middot; korean beauty
             </span>
 
             <h1

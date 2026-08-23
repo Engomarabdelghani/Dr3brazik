@@ -1,5 +1,5 @@
-export const SITE_NAME = 'Dr. Karam AbdelRazek';
-export const WHATSAPP_NUMBER = '2001063919780'; // TODO: replace with real business number
+export const SITE_NAME = 'Dr3brazik';
+export const WHATSAPP_NUMBER = '201061959922';
 export const CURRENCY = 'EGP';
 
 export const NAV_LINKS = [
@@ -50,6 +50,48 @@ export function buildWhatsAppOrderMessage(params: {
   );
   if (params.notes) lines.push(`Notes: ${params.notes}`);
   return encodeURIComponent(lines.join('\n'));
+}
+export function buildEmailOrderMessage(params: {
+  items: { name: string; quantity: number; price: number }[];
+  subtotal: number;
+  discount?: number;
+  shippingPrice: number;
+  total: number;
+  customerName: string;
+  customerPhone: string;
+  address: string;
+  governorate: string;
+  notes?: string;
+}) {
+  const itemsList = params.items
+    .map((i) => `• ${i.name} (الكمية: ${i.quantity}) — ${i.price * i.quantity} EGP`)
+    .join('\n');
+
+  const lines = [
+    `طلب جديد عبر موقع ${SITE_NAME}`,
+    '----------------------------------',
+    'تفاصيل المنتجات:',
+    itemsList,
+    '',
+    `المجموع الفرعي: ${params.subtotal} ${CURRENCY}`,
+  ];
+
+  if (params.discount) lines.push(`الخصم: -${params.discount} ${CURRENCY}`);
+  
+  lines.push(
+    `مصاريف الشحن (${params.governorate}): ${params.shippingPrice} ${CURRENCY}`,
+    `الإجمالي النهائي: ${params.total} ${CURRENCY}`,
+    '----------------------------------',
+    'بيانات العميل:',
+    `الاسم: ${params.customerName}`,
+    `رقم الموبايل: ${params.customerPhone}`,
+    `المحافظة: ${params.governorate}`,
+    `العنوان بالتفصيل: ${params.address}`
+  );
+
+  if (params.notes) lines.push(`ملاحظات: ${params.notes}`);
+
+  return lines.join('\n');
 }
 
 /** Lightweight "I'm interested in this product" message — used on the Product Details page (outside Checkout). */

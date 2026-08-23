@@ -1,12 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
 import { FiCheck, FiStar, FiTrash2 } from 'react-icons/fi';
 import type { Product, FAQ } from '../../types';
 import { fetchReviews, createReview, deleteReview } from '../../lib/api/reviews';
 import { useAdminAuth } from '../../context/AdminAuthContext';
 import RatingStars from '../ui/RatingStars';
-import { cld } from '../../utils/cloudinary';
 
 const sampleFaqs: FAQ[] = [
   { question: 'How often should I use this product?', answer: 'For best results, use as directed in the description — typically once or twice daily as part of your skincare routine.' },
@@ -19,12 +17,9 @@ type Tab = typeof tabs[number];
 
 interface ProductTabsProps {
   product: Product;
-  /** Full live product catalog — pass `products` from useProducts() in the parent page.
-   *  Used to show real, different "You May Also Like" items per product. */
-  allProducts?: Product[];
 }
 
-export default function ProductTabs({ product, allProducts = [] }: ProductTabsProps) {
+export default function ProductTabs({ product }: ProductTabsProps) {
   const [active, setActive] = useState<Tab>('Description');
   const queryClient = useQueryClient();
   const { isAdmin } = useAdminAuth(); // real Supabase admin session — same one used by /admin
@@ -66,15 +61,6 @@ export default function ProductTabs({ product, allProducts = [] }: ProductTabsPr
       alert('Could not delete this review.');
     }
   };
-
-  const [related, setRelated] = useState<Product[]>([]);
-
-  useEffect(() => {
-    if (allProducts.length === 0) return;
-    const sameCategory = allProducts.filter((p) => p.id !== product.id && p.category === product.category);
-    const others = allProducts.filter((p) => p.id !== product.id && p.category !== product.category);
-    setRelated([...sameCategory, ...others].slice(0, 4));
-  }, [product.id, product.category, allProducts]);
 
   return (
     <div className="mt-20 relative">
@@ -213,27 +199,6 @@ export default function ProductTabs({ product, allProducts = [] }: ProductTabsPr
           </div>
         )}
       </div>
-
-      {related.length > 0 && (
-        <div className="mt-16 pt-10 border-t" style={{ borderColor: 'var(--color-border)' }}>
-          <h3 className="text-xl font-bold mb-6">You May Also Like</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-5">
-            {related.map((item) => (
-              <Link key={item.id} to={`/product/${item.slug}`} className="card-luxe p-3 block hover:-translate-y-1 transition-transform">
-                <img
-                  src={item.images[0] ? cld(item.images[0], 340) : 'https://picsum.photos/seed/placeholder/340/340'}
-                  alt={item.name}
-                  className="w-full aspect-square object-cover rounded-xl mb-3"
-                />
-                <h4 className="font-semibold text-sm truncate">{item.name}</h4>
-                <p className="text-sm mt-1 font-semibold" style={{ color: 'var(--color-gold)' }}>
-                  {item.price.toLocaleString()} {item.currency}
-                </p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

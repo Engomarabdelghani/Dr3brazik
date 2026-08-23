@@ -1,19 +1,42 @@
 import { useState } from 'react';
 import { FiMail, FiMapPin, FiPhone } from 'react-icons/fi';
 import { FaWhatsapp } from 'react-icons/fa';
+import emailjs from '@emailjs/browser';
 import Button from '../components/ui/Button';
 import { WHATSAPP_NUMBER } from '../data/constants';
 
 export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const onChange = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [field]: e.target.value }));
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSent(true);
+    setLoading(true);
+
+    try {
+      // استبدل القيم دي بالـ Service ID و Template ID والـ Public Key الخاص بصفحة التواصل
+      const SERVICE_ID = 'service_m45cstt';
+      const TEMPLATE_ID = 'template_sfhx0oi';
+      const PUBLIC_KEY = 'JoP02i58JPAUycgB9';
+
+      const templateParams = {
+        from_name: form.name,
+        from_email: form.email,
+        message: form.message,
+      };
+
+      await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, PUBLIC_KEY);
+      setSent(true);
+    } catch (error) {
+      console.error('Failed to send email:', error);
+      alert('حدث خطأ أثناء إرسال الرسالة، يرجى المحاولة مرة أخرى.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -34,14 +57,14 @@ export default function Contact() {
             <FiPhone size={20} style={{ color: 'var(--color-gold)' }} className="shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold text-sm">Phone</p>
-              <p className="text-sm" style={{ color: 'var(--color-muted)' }}>+201063919780</p>
+              <p className="text-sm" style={{ color: 'var(--color-muted)' }}>+201061959922</p>
             </div>
           </div>
           <div className="card-luxe p-6 flex items-start gap-4">
             <FiMail size={20} style={{ color: 'var(--color-gold)' }} className="shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold text-sm">Email</p>
-              <p className="text-sm" style={{ color: 'var(--color-muted)' }}>drkaram@webpulse.com</p>
+              <p className="text-sm" style={{ color: 'var(--color-muted)' }}>3brazikstore99@gmail.com</p>
             </div>
           </div>
           <a
@@ -68,7 +91,9 @@ export default function Contact() {
                 <input required type="email" value={form.email} onChange={onChange('email')} placeholder="Your Email" className="input-luxe" />
               </div>
               <textarea required rows={6} value={form.message} onChange={onChange('message')} placeholder="Your Message" className="input-luxe" />
-              <Button type="submit" variant="primary">Send Message</Button>
+              <Button type="submit" variant="primary" disabled={loading}>
+                {loading ? 'Sending...' : 'Send Message'}
+              </Button>
             </form>
           )}
         </div>
