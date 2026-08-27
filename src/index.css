@@ -28,6 +28,10 @@
 
 html { scroll-behavior: smooth; }
 
+/* When the site promo is visible we offset fixed header and main content */
+.has-site-promo header { top: var(--site-promo-offset, 0px); }
+.has-site-promo main { padding-top: calc(5rem + var(--site-promo-offset, 0px)); }
+
 body {
   background-color: var(--color-bg);
   color: var(--color-ink);

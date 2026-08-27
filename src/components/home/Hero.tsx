@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { FiArrowRight } from 'react-icons/fi';
-import HeroFeatureBar from './HeroFeatureBar';
 
 /**
  * Compact brand strip — intentionally text-only (no competing photo) since the
@@ -22,9 +21,7 @@ export default function Hero() {
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             className="max-w-xl"
           >
-            <span className="text-xs font-bold tracking-[0.28em] uppercase" style={{ color: 'var(--color-gold)' }}>
-              bodycare &middot; Skincare &middot; haircare &middot; Kids &middot; korean beauty
-            </span>
+          
 
             <h1
               className="font-display mt-4 italic"
@@ -56,20 +53,12 @@ export default function Hero() {
                   Shop Collection <FiArrowRight />
                 </button>
               </Link>
-              <Link to="/about">
-                <button
-                  className="inline-flex items-center gap-2 rounded-full px-8 py-[0.9rem] text-sm font-semibold border-[1.5px] transition-colors"
-                  style={{ borderColor: 'var(--color-gold)', color: 'var(--color-heading)' }}
-                >
-                  Explore Now
-                </button>
-              </Link>
             </div>
           </motion.div>
         </div>
       </div>
 
-      <HeroFeatureBar />
+      
     </section>
   );
 }

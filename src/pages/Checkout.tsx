@@ -14,7 +14,9 @@ type PaymentMethod = 'cod' | 'card';
 
 export default function Checkout() {
   useSeo({ title: 'Checkout', path: '/checkout', noindex: true });
-  const { items, subtotal, discount, coupon, bogoLabel, clearCart } = useCart();
+  const { items, subtotal, discount, coupon, bogoLabel, clearCart, applyCoupon, removeCoupon } = useCart();
+  const [code, setCode] = useState('');
+  const [applyError, setApplyError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { data: shippingZones = [] } = useQuery({ queryKey: ['shipping-zones'], queryFn: fetchShippingZones });
   const [form, setForm] = useState({ name: '', phone: '', address: '', governorateId: '', notes: '' });
@@ -130,6 +132,35 @@ export default function Checkout() {
             </div>
           ))}
           <div className="h-px" style={{ backgroundColor: 'var(--color-border)' }} />
+
+          <div className="flex gap-2 mb-3">
+            <div className="relative flex-1">
+              <input
+                value={code}
+                onChange={(e) => { setCode(e.target.value); setApplyError(null); }}
+                placeholder="Coupon code"
+                className="input-luxe py-2.5 text-sm"
+                disabled={!!coupon}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const res = applyCoupon(code);
+                if (!res.ok) setApplyError(res.message ?? 'Invalid coupon code');
+                else { setApplyError(null); setCode(''); }
+              }}
+              disabled={!!coupon}
+              className="btn-secondary px-4 text-xs"
+            >Apply</button>
+          </div>
+          {applyError && <p className="text-xs text-red-500 -mt-2 mb-2">{applyError}</p>}
+          {coupon && (
+            <div className="flex items-center justify-between text-xs mb-4 px-3 py-2 rounded-lg" style={{ backgroundColor: 'rgba(201,162,39,0.1)' }}>
+              <span>Coupon <strong>{coupon}</strong> applied</span>
+              <button onClick={() => removeCoupon()} className="font-semibold">Remove</button>
+            </div>
+          )}
           <div className="space-y-2 text-sm">
             <div className="flex justify-between"><span style={{ color: 'var(--color-muted)' }}>Subtotal</span><span>{subtotal.toLocaleString()} EGP</span></div>
             {discount > 0 && (

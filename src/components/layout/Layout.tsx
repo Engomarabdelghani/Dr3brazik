@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
+import SitePromoBanner from '../common/SitePromoBanner';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import CartDrawer from './CartDrawer';
@@ -14,6 +15,7 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SitePromoBanner />
       <Navbar />
       <main className="flex-1 pt-20">
         <Outlet />

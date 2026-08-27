@@ -40,7 +40,8 @@ export default function Navbar() {
   return (
     <>
       <header
-        className={`fixed top-0 inset-x-0 z-40 transition-all duration-500 ${scrolled ? 'glass shadow-sm py-3' : 'bg-transparent py-5'}`}
+        style={{ top: 'var(--site-promo-offset, 0px)' }}
+        className={`fixed inset-x-0 z-40 transition-all duration-500 ${scrolled ? 'glass shadow-sm py-3' : 'bg-transparent py-5'}`}
       >
         <div className="container-luxe flex items-center justify-between">
           <Link to="/" className="flex items-center">
