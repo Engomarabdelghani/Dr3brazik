@@ -4,6 +4,7 @@ import type { CartItem, Product } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { fetchOffers, isOfferActive, getBogoLabel } from '../lib/api/offers';
 import { computeBogoDiscount, findActiveBogoOfferFor } from '../utils/bogo';
+import { fetchCoupons, evaluateCoupon, type CouponValidationResult } from '../lib/api/coupons';
 
 interface CartContextValue {
   items: CartItem[];
@@ -17,25 +18,22 @@ interface CartContextValue {
   subtotal: number;
   itemCount: number;
   coupon: string | null;
+  couponDiscount: number;
   discount: number;
   bogoDiscount: number;
   bogoLabel: string | null;
-  applyCoupon: (code: string) => boolean;
+  applyCoupon: (code: string) => CouponValidationResult;
   removeCoupon: () => void;
 }
 
 const CartContext = createContext<CartContextValue | undefined>(undefined);
-
-const VALID_COUPONS: Record<string, number> = {
-  KARAM10: 0.1,
-  GOLD15: 0.15,
-};
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useLocalStorage<CartItem[]>('dk-cart', []);
   const [isOpen, setIsOpen] = useState(false);
   const [coupon, setCoupon] = useLocalStorage<string | null>('dk-coupon', null);
   const { data: offers = [] } = useQuery({ queryKey: ['offers'], queryFn: fetchOffers, staleTime: 60_000 });
+  const { data: coupons = [] } = useQuery({ queryKey: ['coupons'], queryFn: fetchCoupons, staleTime: 60_000 });
 
   const addItem = useCallback((product: Product, quantity = 1) => {
     setItems((prev) => {
@@ -65,16 +63,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const clearCart = useCallback(() => setItems([]), [setItems]);
 
   const subtotal = useMemo(
-    () => items.reduce((sum, i) => sum + i.product.price * i.quantity, 0),
+    () => items.reduce((sum, i) => sum + (i.product.effectivePrice ?? i.product.price) * i.quantity, 0),
     [items]
   );
 
   const itemCount = useMemo(() => items.reduce((sum, i) => sum + i.quantity, 0), [items]);
 
-  const couponDiscount = useMemo(() => {
-    if (!coupon || !VALID_COUPONS[coupon]) return 0;
-    return Math.round(subtotal * VALID_COUPONS[coupon]);
-  }, [coupon, subtotal]);
+  // Re-evaluated live against the current cart + coupon list — so if the admin
+  // disables/deletes/edits a coupon mid-session, the applied discount updates
+  // automatically instead of silently staying stale.
+  const couponResult = useMemo(() => {
+    if (!coupon) return { ok: false } as CouponValidationResult;
+    const match = coupons.find((c) => c.code === coupon);
+    return evaluateCoupon(match, items, subtotal);
+  }, [coupon, coupons, items, subtotal]);
+
+  const couponDiscount = couponResult.ok ? (couponResult.discount ?? 0) : 0;
 
   const bogoDiscount = useMemo(() => computeBogoDiscount(items, offers), [items, offers]);
 
@@ -89,21 +93,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const discount = couponDiscount + bogoDiscount;
 
-  const applyCoupon = useCallback((code: string) => {
+  const applyCoupon = useCallback((code: string): CouponValidationResult => {
     const upper = code.trim().toUpperCase();
-    if (VALID_COUPONS[upper]) {
-      setCoupon(upper);
-      return true;
-    }
-    return false;
-  }, [setCoupon]);
+    const match = coupons.find((c) => c.code === upper);
+    const result = evaluateCoupon(match, items, subtotal);
+    if (result.ok) setCoupon(upper);
+    return result;
+  }, [coupons, items, subtotal, setCoupon]);
 
   const removeCoupon = useCallback(() => setCoupon(null), [setCoupon]);
 
   const value: CartContextValue = {
     items, addItem, removeItem, updateQuantity, clearCart,
     isOpen, openCart: () => setIsOpen(true), closeCart: () => setIsOpen(false),
-    subtotal, itemCount, coupon, discount, bogoDiscount, bogoLabel, applyCoupon, removeCoupon,
+    subtotal, itemCount, coupon: couponResult.ok ? coupon : null, couponDiscount, discount, bogoDiscount, bogoLabel, applyCoupon, removeCoupon,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

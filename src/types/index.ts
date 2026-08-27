@@ -121,17 +121,57 @@ export interface Testimonial {
   isEnabled: boolean;
 }
 
-// export interface SiteSettings {
-//   siteName: string;
-//   logoUrl?: string;
-//   faviconUrl?: string;
-//   whatsapp?: string;
-//   facebook?: string;
-//   instagram?: string;
-//   tiktok?: string;
-//   email?: string;
-//   address?: string;
-//   heroImages: string[];
-//   seoTitle?: string;
-//   seoDescription?: string;
-// }
+export type OrderStatus = 'new' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+
+export interface OrderItem {
+  name: string;
+  quantity: number;
+  price: number; // price at the time the order was placed
+}
+
+export interface Order {
+  id: string;
+  customerName: string;
+  customerPhone: string;
+  address: string;
+  governorate: string;
+  notes?: string;
+  items: OrderItem[];
+  subtotal: number;
+  discount: number;
+  shippingPrice: number;
+  total: number;
+  status: OrderStatus;
+  createdAt: string;
+}
+
+export type CouponDiscountType = 'percent' | 'fixed';
+export type CouponTargetType = 'all' | 'products';
+
+export interface Coupon {
+  id: string;
+  code: string;
+  discountType: CouponDiscountType;
+  discountValue: number;
+  targetType: CouponTargetType;
+  productIds?: string[]; // only when targetType === 'products'
+  minOrderAmount?: number;
+  startDate?: string;
+  endDate?: string;
+  isEnabled: boolean;
+}
+
+export interface SiteSettings {
+  siteName: string;
+  logoUrl?: string;
+  faviconUrl?: string;
+  whatsapp?: string;
+  facebook?: string;
+  instagram?: string;
+  tiktok?: string;
+  email?: string;
+  address?: string;
+  heroImages: string[];
+  seoTitle?: string;
+  seoDescription?: string;
+}

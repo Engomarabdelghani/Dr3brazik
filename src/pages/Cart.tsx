@@ -6,16 +6,19 @@ import { cld } from '../utils/cloudinary';
 import QuantityStepper from '../components/ui/QuantityStepper';
 import Button from '../components/ui/Button';
 import EmptyState from '../components/ui/EmptyState';
+import { useSeo } from '../hooks/useSeo';
 
 export default function Cart() {
+  useSeo({ title: 'Shopping Cart', path: '/cart', noindex: true });
   const { items, updateQuantity, removeItem, subtotal, coupon, discount, applyCoupon, removeCoupon } = useCart();
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
 
   const onApply = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!applyCoupon(code)) {
-      setError('Invalid coupon code');
+    const result = applyCoupon(code);
+    if (!result.ok) {
+      setError(result.message ?? 'Invalid coupon code');
     } else {
       setError('');
       setCode('');
@@ -57,7 +60,14 @@ export default function Cart() {
                         {product.name}
                       </Link>
                     )}
-                    <p className="text-sm font-medium mt-1">{product.price.toLocaleString()} {product.currency}</p>
+                    {product.effectivePrice != null && product.effectivePrice < product.price ? (
+                      <p className="text-sm font-medium mt-1">
+                        <span className="line-through mr-1.5" style={{ color: 'var(--color-muted)' }}>{product.price.toLocaleString()}</span>
+                        {product.effectivePrice.toLocaleString()} {product.currency}
+                      </p>
+                    ) : (
+                      <p className="text-sm font-medium mt-1">{product.price.toLocaleString()} {product.currency}</p>
+                    )}
                   </div>
                   <button aria-label="Remove item" onClick={() => removeItem(product.id)} className="text-gray-400 hover:text-red-500 transition-colors h-fit">
                     <FiTrash2 size={18} />
@@ -65,7 +75,7 @@ export default function Cart() {
                 </div>
                 <div className="flex items-center justify-between mt-4">
                   <QuantityStepper value={quantity} onChange={(q) => updateQuantity(product.id, q)} />
-                  <p className="font-bold">{(product.price * quantity).toLocaleString()} {product.currency}</p>
+                  <p className="font-bold">{((product.effectivePrice ?? product.price) * quantity).toLocaleString()} {product.currency}</p>
                 </div>
               </div>
             </div>

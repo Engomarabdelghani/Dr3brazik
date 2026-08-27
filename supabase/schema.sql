@@ -488,3 +488,124 @@ create policy "public read enabled testimonials" on testimonials
 drop policy if exists "admin full access testimonials" on testimonials;
 create policy "admin full access testimonials" on testimonials
   for all using (is_admin()) with check (is_admin());
+
+-- ============================================================================
+-- BLOCK: Orders (tamper-proof record of what the customer actually ordered)
+-- The storefront still opens WhatsApp as a convenience for the customer to
+-- confirm, but before doing so it now saves the real order (items, prices,
+-- discount, shipping, total) straight to this table. The WhatsApp message
+-- text can be edited by anyone before sending — this table can't be, so it's
+-- the source of truth the admin should check before fulfilling any order.
+-- Self-healing: builds column-by-column so this works even if a table with
+-- this name already exists in a different shape from an earlier attempt.
+-- Safe to re-run.
+-- ============================================================================
+create table if not exists orders (
+  id uuid primary key default gen_random_uuid()
+);
+alter table orders add column if not exists customer_name text not null default '';
+alter table orders add column if not exists customer_phone text not null default '';
+alter table orders add column if not exists address text not null default '';
+alter table orders add column if not exists governorate text not null default '';
+alter table orders add column if not exists notes text;
+alter table orders add column if not exists items jsonb not null default '[]'::jsonb;
+alter table orders add column if not exists subtotal numeric(10,2) not null default 0;
+alter table orders add column if not exists discount numeric(10,2) not null default 0;
+alter table orders add column if not exists shipping_price numeric(10,2) not null default 0;
+alter table orders add column if not exists total numeric(10,2) not null default 0;
+alter table orders add column if not exists status text not null default 'new';
+alter table orders add column if not exists created_at timestamptz not null default now();
+
+alter table orders drop constraint if exists orders_status_check;
+alter table orders add constraint orders_status_check
+  check (status in ('new', 'confirmed', 'shipped', 'delivered', 'cancelled'));
+
+create index if not exists idx_orders_created on orders(created_at desc);
+
+alter table orders enable row level security;
+
+-- Anyone can place an order (insert), but only the admin can read/manage them —
+-- this is intentionally one-way: a customer can create an order, never read
+-- someone else's or tamper with an existing one.
+drop policy if exists "public can create orders" on orders;
+create policy "public can create orders" on orders
+  for insert with check (true);
+
+drop policy if exists "admin full access orders" on orders;
+create policy "admin full access orders" on orders
+  for all using (is_admin()) with check (is_admin());
+
+drop policy if exists "admin select orders" on orders;
+create policy "admin select orders" on orders
+  for select using (is_admin());
+
+drop policy if exists "admin update orders" on orders;
+create policy "admin update orders" on orders
+  for update using (is_admin());
+
+drop policy if exists "admin delete orders" on orders;
+create policy "admin delete orders" on orders
+  for delete using (is_admin());
+
+-- ============================================================================
+-- BLOCK: Discount coupons (admin-managed, replaces the hardcoded coupon codes)
+-- The admin creates codes with a percent/fixed discount, optional date range,
+-- optional minimum order amount, and can optionally restrict a code to
+-- specific products (like Offers) instead of the whole store.
+-- Self-healing: builds column-by-column so this works even if a table with
+-- this name already exists in a different shape from an earlier attempt.
+-- Safe to re-run.
+-- ============================================================================
+create table if not exists coupons (
+  id uuid primary key default gen_random_uuid()
+);
+alter table coupons add column if not exists code text not null default '';
+alter table coupons add column if not exists discount_type text not null default 'percent';
+alter table coupons add column if not exists discount_value numeric(10,2) not null default 0;
+alter table coupons add column if not exists target_type text not null default 'all';
+alter table coupons add column if not exists min_order_amount numeric(10,2);
+alter table coupons add column if not exists start_date timestamptz;
+alter table coupons add column if not exists end_date timestamptz;
+alter table coupons add column if not exists is_enabled boolean not null default true;
+alter table coupons add column if not exists created_at timestamptz not null default now();
+
+alter table coupons drop constraint if exists coupons_discount_type_check;
+alter table coupons add constraint coupons_discount_type_check check (discount_type in ('percent', 'fixed'));
+
+alter table coupons drop constraint if exists coupons_target_type_check;
+alter table coupons add constraint coupons_target_type_check check (target_type in ('all', 'products'));
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'coupons_code_key') then
+    alter table coupons add constraint coupons_code_key unique (code);
+  end if;
+end $$;
+
+create table if not exists coupon_products (
+  id uuid primary key default gen_random_uuid()
+);
+alter table coupon_products add column if not exists coupon_id uuid references coupons(id) on delete cascade;
+alter table coupon_products add column if not exists product_id uuid references products(id) on delete cascade;
+
+create index if not exists idx_coupon_products_coupon on coupon_products(coupon_id);
+
+alter table coupons enable row level security;
+alter table coupon_products enable row level security;
+
+-- Public can only read enabled coupons — needed so the storefront can validate
+-- a code the customer types in at checkout without needing admin auth.
+drop policy if exists "public read enabled coupons" on coupons;
+create policy "public read enabled coupons" on coupons
+  for select using (is_enabled = true);
+
+drop policy if exists "admin full access coupons" on coupons;
+create policy "admin full access coupons" on coupons
+  for all using (is_admin()) with check (is_admin());
+
+drop policy if exists "public read coupon_products" on coupon_products;
+create policy "public read coupon_products" on coupon_products for select using (true);
+
+drop policy if exists "admin full access coupon_products" on coupon_products;
+create policy "admin full access coupon_products" on coupon_products
+  for all using (is_admin()) with check (is_admin());
