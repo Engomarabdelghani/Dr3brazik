@@ -99,7 +99,6 @@ function AddAdminModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { data: currentUserId } = useQuery({ queryKey: ['admin', 'current-user'], queryFn: getCurrentUserId });
-  const ownerId = undefined; // placeholder, will be checked by parent UI as well
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
