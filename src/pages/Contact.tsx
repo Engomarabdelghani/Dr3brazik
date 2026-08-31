@@ -48,7 +48,7 @@ export default function Contact() {
               <FiMapPin size={20} style={{ color: 'var(--color-gold)' }} className="shrink-0 mt-0.5" />
               <div>
                 <p className="font-semibold text-sm">Our Location</p>
-                
+                <p className="text-sm" style={{ color: 'var(--color-muted)' }}>بنها الفلل شارع مسلم فرع اتصالات  امام كافيه ورد dr 3brazik</p>
               </div>
             </a>
           </div>
