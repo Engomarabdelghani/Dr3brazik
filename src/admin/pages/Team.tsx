@@ -22,8 +22,10 @@ export default function AdminTeam() {
     invalidate();
   };
 
-  // Determine the owner: by default the earliest-added admin (first in the list)
-  const ownerId = admins.length ? admins[0].userId : undefined;
+  // Determine the owner: the earliest-added admin (smallest createdAt)
+  const ownerId = admins.length
+    ? admins.reduce((min, a) => (new Date(a.createdAt).getTime() < new Date(min.createdAt).getTime() ? a : min), admins[0]).userId
+    : undefined;
 
   return (
     <div>
@@ -34,7 +36,10 @@ export default function AdminTeam() {
             Everyone with access to this dashboard. {admins.length} member{admins.length === 1 ? '' : 's'}.
           </p>
         </div>
-        <button onClick={() => setShowAdd(true)} className="btn-primary"><FiPlus /> Add Team Member</button>
+        {/* Only the owner can add team members */}
+        {currentUserId === ownerId && (
+          <button onClick={() => setShowAdd(true)} className="btn-primary"><FiPlus /> Add Team Member</button>
+        )}
       </div>
 
 
@@ -93,6 +98,8 @@ function AddAdminModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { data: currentUserId } = useQuery({ queryKey: ['admin', 'current-user'], queryFn: getCurrentUserId });
+  const ownerId = undefined; // placeholder, will be checked by parent UI as well
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,6 +107,8 @@ function AddAdminModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
     setSaving(true);
     setError(null);
     try {
+      // Double-check on the client that only owner can add — parent UI normally hides this modal for non-owners
+      if (typeof currentUserId === 'undefined') throw new Error('Unable to verify permissions.');
       await addAdmin(userId, name);
       onSaved();
     } catch (err) {
