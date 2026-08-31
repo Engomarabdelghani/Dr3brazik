@@ -10,7 +10,7 @@ import { useSeo } from '../hooks/useSeo';
 
 export default function Cart() {
   useSeo({ title: 'Shopping Cart', path: '/cart', noindex: true });
-  const { items, updateQuantity, removeItem, subtotal, coupon, discount, applyCoupon, removeCoupon } = useCart();
+  const { items, updateQuantity, removeItem, subtotal, coupon, discount, applyCoupon, removeCoupon, appliedCoupon, couponResult } = useCart();
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
 
@@ -75,7 +75,34 @@ export default function Cart() {
                 </div>
                 <div className="flex items-center justify-between mt-4">
                   <QuantityStepper value={quantity} onChange={(q) => updateQuantity(product.id, q)} max={product.maxOrderQuantity ?? 99} />
-                  <p className="font-bold">{((product.effectivePrice ?? product.price) * quantity).toLocaleString()} {product.currency}</p>
+                  <p className="font-bold">
+                    {(() => {
+                      const unit = product.effectivePrice ?? product.price;
+                      // if no coupon applied or coupon invalid, show normal line total
+                      if (!couponResult?.ok || !appliedCoupon) return ((unit * quantity)).toLocaleString();
+
+                      // determine if this product is eligible
+                      const isEligible = appliedCoupon.targetType === 'all' || (appliedCoupon.productIds ?? []).includes(product.id);
+                      if (!isEligible) return ((unit * quantity)).toLocaleString();
+
+                      if (appliedCoupon.discountType === 'percent') {
+                        const discountedUnit = Math.round(unit * (1 - appliedCoupon.discountValue / 100));
+                        return (discountedUnit * quantity).toLocaleString();
+                      }
+
+                      // fixed discount: prorate across eligible items
+                      const eligibleSubtotal = items.reduce((sum, i) => {
+                        const p = i.product.effectivePrice ?? i.product.price;
+                        return sum + (appliedCoupon.targetType === 'all' || (appliedCoupon.productIds ?? []).includes(i.product.id) ? p * i.quantity : 0);
+                      }, 0);
+                      if (eligibleSubtotal <= 0) return ((unit * quantity)).toLocaleString();
+                      const totalDiscount = couponResult.discount ?? 0;
+                      const lineTotal = unit * quantity;
+                      const lineDiscount = Math.round((lineTotal / eligibleSubtotal) * totalDiscount);
+                      const finalLine = Math.max(0, Math.round(lineTotal - lineDiscount));
+                      return finalLine.toLocaleString();
+                    })()} {product.currency}
+                  </p>
                 </div>
               </div>
             </div>

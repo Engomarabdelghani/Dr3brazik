@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type { CartItem, Product } from '../types';
+import type { CartItem, Product, Coupon } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { fetchOffers, isOfferActive, getBogoLabel } from '../lib/api/offers';
 import { computeBogoDiscount, findActiveBogoOfferFor } from '../utils/bogo';
@@ -19,6 +19,8 @@ interface CartContextValue {
   itemCount: number;
   coupon: string | null;
   couponDiscount: number;
+  appliedCoupon?: Coupon | null;
+  couponResult?: CouponValidationResult;
   discount: number;
   bogoDiscount: number;
   bogoLabel: string | null;
@@ -86,6 +88,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [coupon, coupons, items, subtotal]);
 
   const couponDiscount = couponResult.ok ? (couponResult.discount ?? 0) : 0;
+  const appliedCoupon = useMemo(() => {
+    if (!coupon) return null;
+    return coupons.find((c) => c.code === coupon) ?? null;
+  }, [coupon, coupons]);
 
   const bogoDiscount = useMemo(() => computeBogoDiscount(items, offers), [items, offers]);
 

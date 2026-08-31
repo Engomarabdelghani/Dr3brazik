@@ -14,7 +14,7 @@ type PaymentMethod = 'cod' | 'card';
 
 export default function Checkout() {
   useSeo({ title: 'Checkout', path: '/checkout', noindex: true });
-  const { items, subtotal, discount, coupon, bogoLabel, clearCart, applyCoupon, removeCoupon } = useCart();
+  const { items, subtotal, discount, coupon, bogoLabel, clearCart, applyCoupon, removeCoupon, appliedCoupon, couponResult } = useCart();
   const [code, setCode] = useState('');
   const [applyError, setApplyError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -128,7 +128,28 @@ export default function Checkout() {
                 <p className="font-medium line-clamp-1">{product.name}</p>
                 <p style={{ color: 'var(--color-muted)' }}>Qty {quantity}</p>
               </div>
-              <p className="font-semibold">{((product.effectivePrice ?? product.price) * quantity).toLocaleString()}</p>
+              <p className="font-semibold">
+                {(() => {
+                  const unit = product.effectivePrice ?? product.price;
+                  if (!coupon || !couponResult?.ok || !appliedCoupon) return (unit * quantity).toLocaleString();
+                  const isEligible = appliedCoupon.targetType === 'all' || (appliedCoupon.productIds ?? []).includes(product.id);
+                  if (!isEligible) return (unit * quantity).toLocaleString();
+                  if (appliedCoupon.discountType === 'percent') {
+                    const discountedUnit = Math.round(unit * (1 - appliedCoupon.discountValue / 100));
+                    return (discountedUnit * quantity).toLocaleString();
+                  }
+                  const eligibleSubtotal = items.reduce((sum, i) => {
+                    const p = i.product.effectivePrice ?? i.product.price;
+                    return sum + (appliedCoupon.targetType === 'all' || (appliedCoupon.productIds ?? []).includes(i.product.id) ? p * i.quantity : 0);
+                  }, 0);
+                  if (eligibleSubtotal <= 0) return (unit * quantity).toLocaleString();
+                  const totalDiscount = couponResult.discount ?? 0;
+                  const lineTotal = unit * quantity;
+                  const lineDiscount = Math.round((lineTotal / eligibleSubtotal) * totalDiscount);
+                  const finalLine = Math.max(0, Math.round(lineTotal - lineDiscount));
+                  return finalLine.toLocaleString();
+                })()}
+              </p>
             </div>
           ))}
           <div className="h-px" style={{ backgroundColor: 'var(--color-border)' }} />
