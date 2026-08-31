@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { FiPlus, FiTrash2, FiX, FiUsers, FiInfo } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiX, FiUsers } from 'react-icons/fi';
 import { fetchAdmins, addAdmin, removeAdmin, getCurrentUserId } from '../../lib/api/admins';
 
 export default function AdminTeam() {
@@ -34,14 +34,6 @@ export default function AdminTeam() {
         <button onClick={() => setShowAdd(true)} className="btn-primary"><FiPlus /> Add Team Member</button>
       </div>
 
-      <div className="card-luxe p-4 mb-6 flex gap-3" style={{ backgroundColor: 'var(--color-cream)' }}>
-        <FiInfo size={16} className="shrink-0 mt-0.5" style={{ color: 'var(--color-gold)' }} />
-        <p className="text-xs" style={{ color: 'var(--color-muted)' }}>
-          Removing someone here revokes their dashboard access <strong>immediately</strong> — perfect for when someone
-          leaves. Adding a new member needs one extra step first (their login has to be created in Supabase) — see
-          the "Add Team Member" form for exact instructions.
-        </p>
-      </div>
 
       {isLoading ? (
         <div className="card-luxe p-8 text-center" style={{ color: 'var(--color-muted)' }}>Loading…</div>
@@ -116,13 +108,6 @@ function AddAdminModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
           <h3 className="font-bold flex items-center gap-2"><FiUsers /> Add Team Member</h3>
           <button onClick={onClose} aria-label="Close"><FiX size={18} /></button>
         </div>
-
-        <ol className="text-xs space-y-1.5 mb-5 pl-4 list-decimal" style={{ color: 'var(--color-muted)' }}>
-          <li>Go to your Supabase project → <strong>Authentication → Users → Add User</strong></li>
-          <li>Give them an email + password, then create the user</li>
-          <li>Click on the new user and copy their <strong>User UID</strong></li>
-          <li>Paste that UID below, along with a name so you recognize them</li>
-        </ol>
 
         <form onSubmit={onSubmit} className="space-y-3">
           <input required value={userId} onChange={(e) => setUserId(e.target.value)} placeholder="User UID (from Supabase)" className="input-luxe font-mono text-sm" />
