@@ -22,6 +22,9 @@ export default function AdminTeam() {
     invalidate();
   };
 
+  // Determine the owner: by default the earliest-added admin (first in the list)
+  const ownerId = admins.length ? admins[0].userId : undefined;
+
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
@@ -60,9 +63,18 @@ export default function AdminTeam() {
                   </td>
                   <td className="p-3" style={{ color: 'var(--color-muted)' }}>{new Date(a.createdAt).toLocaleDateString()}</td>
                   <td className="p-3 text-right">
-                    <button onClick={() => onRemove(a.userId, a.name)} aria-label="Remove" className="hover:text-red-500 transition-colors">
-                      <FiTrash2 size={15} />
-                    </button>
+                    {/* Only the owner can remove team members. Also prevent removing yourself here. */}
+                    {currentUserId === ownerId && a.userId !== currentUserId && (
+                      <button onClick={() => onRemove(a.userId, a.name)} aria-label="Remove" className="hover:text-red-500 transition-colors">
+                        <FiTrash2 size={15} />
+                      </button>
+                    )}
+                    {a.userId === currentUserId && (
+                      <span className="text-xs" style={{ color: 'var(--color-muted)' }}>You</span>
+                    )}
+                    {currentUserId !== ownerId && a.userId !== currentUserId && (
+                      <span className="text-xs" style={{ color: 'var(--color-muted)' }}>—</span>
+                    )}
                   </td>
                 </tr>
               ))}
