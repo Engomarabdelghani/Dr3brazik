@@ -42,7 +42,7 @@ export default function AdminDashboard() {
             >
               <card.icon size={18} style={{ color: card.tone === 'gold' ? 'var(--color-gold)' : 'var(--color-ink)' }} />
             </div>
-            <p className="text-2xl font-extrabold">{isLoading ? '—' : data?.[card.key]?.toLocaleString()}</p>
+            <p className="text-2xl font-extrabold">{isLoading ? '—' : data?.[card.key]?.toLocaleString('en-US')}</p>
             <p className="text-xs mt-1" style={{ color: 'var(--color-muted)' }}>{card.label}</p>
           </motion.div>
         ))}
@@ -88,7 +88,7 @@ export default function AdminDashboard() {
                   <p className="font-medium text-sm truncate">{p.name}</p>
                   <p className="text-xs" style={{ color: 'var(--color-muted)' }}>{p.brand}</p>
                 </div>
-                <p className="text-sm font-semibold shrink-0">{p.price.toLocaleString()} {p.currency}</p>
+                <p className="text-sm font-semibold shrink-0">{p.price.toLocaleString('en-US')} {p.currency}</p>
               </Link>
             ))}
           </div>

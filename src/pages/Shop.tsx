@@ -9,7 +9,9 @@ import { ProductCardSkeleton } from '../components/ui/Skeleton';
 import RefinePanel, { type Filters } from '../components/shop/RefinePanel';
 import ShopBanner from '../components/shop/ShopBanner';
 import ShopSubFilters, { type SubFilterState } from '../components/shop/ShopSubFilters';
+import Pagination from '../components/shop/Pagination';
 import EmptyState from '../components/ui/EmptyState';
+import { useSeo } from '../hooks/useSeo';
 import type { SortOption } from '../types';
 
 const PAGE_SIZE = 9;
@@ -25,6 +27,7 @@ const sortLabels: Record<SortOption, string> = {
 export default function Shop() {
   const { data: products = [], isLoading } = useProducts();
   const { data: categories = [] } = useCategories();
+  useSeo({ title: 'Shop All Products', description: 'Browse the full collection of luxury skincare, makeup, and fragrance.', path: '/shop' });
 
   const MAX_PRICE = useMemo(() => Math.max(0, ...products.map((p) => p.price)), [products]);
   const brands = useMemo(() => [...new Set(products.map((p) => p.brand).filter(Boolean))].sort(), [products]);
@@ -63,8 +66,8 @@ export default function Shop() {
     });
 
     switch (sort) {
-      case 'price-asc': list = [...list].sort((a, b) => a.price - b.price); break;
-      case 'price-desc': list = [...list].sort((a, b) => b.price - a.price); break;
+      case 'price-asc': list = [...list].sort((a, b) => (a.effectivePrice ?? a.price) - (b.effectivePrice ?? b.price)); break;
+      case 'price-desc': list = [...list].sort((a, b) => (b.effectivePrice ?? b.price) - (a.effectivePrice ?? a.price)); break;
       case 'newest': list = [...list].sort((a, b) => Number(b.isNew) - Number(a.isNew)); break;
       case 'rating': list = [...list].sort((a, b) => b.rating - a.rating); break;
       default: list = [...list].sort((a, b) => Number(b.isFeatured) - Number(a.isFeatured));
@@ -259,22 +262,11 @@ export default function Shop() {
         )}
 
         {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-14">
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setPage(i + 1)}
-                className="w-10 h-10 rounded-full text-sm font-semibold transition-colors"
-                style={{
-                  backgroundColor: page === i + 1 ? 'var(--color-ink)' : 'transparent',
-                  color: page === i + 1 ? '#fff' : 'var(--color-ink)',
-                  border: page === i + 1 ? 'none' : '1px solid var(--color-border)',
-                }}
-              >
-                {i + 1}
-              </button>
-            ))}
-          </div>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onChange={(p) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+          />
         )}
       </div>
 

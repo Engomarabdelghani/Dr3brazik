@@ -117,7 +117,7 @@ export default function PromoBanners() {
             className="absolute bottom-3 right-3 z-10 flex items-center gap-2 pl-3 pr-2.5 py-2 rounded-full font-bold text-sm shadow-lg pointer-events-none"
             style={{ backgroundColor: 'var(--color-gold)', color: '#fff' }}
           >
-            <span>{current.price!.toLocaleString()} EGP</span>
+            <span>{current.price!.toLocaleString('en-US')} EGP</span>
             <span className="w-6 h-6 rounded-full bg-white/25 flex items-center justify-center"><FiShoppingBag size={13} /></span>
           </div>
         )}

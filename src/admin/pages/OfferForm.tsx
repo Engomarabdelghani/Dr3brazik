@@ -323,8 +323,8 @@ export default function OfferForm() {
                     <p className="text-3xl font-extrabold" style={{ color: 'var(--color-gold-light)' }}>
                       {discountType === 'percent' ? `${discountValue || 0}% OFF` : `${discountValue || 0} EGP OFF`}
                     </p>
-                    <p className="text-xs text-white/50 mt-2 line-through">{(previewProduct?.price ?? 1000).toLocaleString()} EGP</p>
-                    <p className="text-sm text-white font-semibold">{previewPrice.toLocaleString()} EGP</p>
+                    <p className="text-xs text-white/50 mt-2 line-through">{(previewProduct?.price ?? 1000).toLocaleString('en-US')} EGP</p>
+                    <p className="text-sm text-white font-semibold">{previewPrice.toLocaleString('en-US')} EGP</p>
                   </>
                 )}
                 <p className="text-[10px] text-white/40 mt-3">

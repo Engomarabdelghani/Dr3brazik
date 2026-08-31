@@ -55,7 +55,7 @@ export default function RefinePanel({ filters, onChange, maxPriceLimit, brands }
           onChange={(e) => onChange({ ...filters, maxPrice: Number(e.target.value) })}
           className="w-full accent-[var(--color-gold)]"
         />
-        <p className="text-sm mt-2" style={{ color: 'var(--color-muted)' }}>Up to {filters.maxPrice.toLocaleString()} EGP</p>
+        <p className="text-sm mt-2" style={{ color: 'var(--color-muted)' }}>Up to {filters.maxPrice.toLocaleString('en-US')} EGP</p>
       </div>
 
       <div className="h-px" style={{ backgroundColor: 'var(--color-border)' }} />

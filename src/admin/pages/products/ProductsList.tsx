@@ -157,8 +157,8 @@ export default function ProductsList() {
                 <td className="p-3" style={{ color: 'var(--color-muted)' }}>{p.brand}</td>
                 <td className="p-3 capitalize">{categories.find((c) => c.id === p.categoryId)?.name ?? '—'}</td>
                 <td className="p-3">
-                  <p className="font-semibold">{p.price.toLocaleString()} {p.currency}</p>
-                  {p.oldPrice && <p className="text-xs line-through" style={{ color: 'var(--color-muted)' }}>{p.oldPrice.toLocaleString()}</p>}
+                  <p className="font-semibold">{p.price.toLocaleString('en-US')} {p.currency}</p>
+                  {p.oldPrice && <p className="text-xs line-through" style={{ color: 'var(--color-muted)' }}>{p.oldPrice.toLocaleString('en-US')}</p>}
                 </td>
                 <td className="p-3">
                   <span

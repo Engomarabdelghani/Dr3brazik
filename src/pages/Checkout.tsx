@@ -14,9 +14,7 @@ type PaymentMethod = 'cod' | 'card';
 
 export default function Checkout() {
   useSeo({ title: 'Checkout', path: '/checkout', noindex: true });
-  const { items, subtotal, discount, coupon, bogoLabel, clearCart, applyCoupon, removeCoupon, appliedCoupon, couponResult } = useCart();
-  const [code, setCode] = useState('');
-  const [applyError, setApplyError] = useState<string | null>(null);
+  const { items, subtotal, discount, coupon, bogoLabel, clearCart } = useCart();
   const navigate = useNavigate();
   const { data: shippingZones = [] } = useQuery({ queryKey: ['shipping-zones'], queryFn: fetchShippingZones });
   const [form, setForm] = useState({ name: '', phone: '', address: '', governorateId: '', notes: '' });
@@ -75,7 +73,7 @@ export default function Checkout() {
               <select required value={form.governorateId} onChange={onChange('governorateId')} className="input-luxe">
                 <option value="">Select Governorate</option>
                 {enabledZones.map((z) => (
-                  <option key={z.id} value={z.id}>{z.name} — {z.price.toLocaleString()} EGP</option>
+                  <option key={z.id} value={z.id}>{z.name} — {z.price.toLocaleString('en-US')} EGP</option>
                 ))}
               </select>
               <input required value={form.address} onChange={onChange('address')} placeholder="Detailed Address (street, building, floor…)" className="input-luxe" />
@@ -93,7 +91,7 @@ export default function Checkout() {
             <h2 className="font-bold mb-5 flex items-center gap-2"><FiTruck /> Delivery</h2>
             <p className="text-sm" style={{ color: 'var(--color-muted)' }}>
               {selectedZone
-                ? `Delivery to ${selectedZone.name}: ${selectedZone.price.toLocaleString()} EGP`
+                ? `Delivery to ${selectedZone.name}: ${selectedZone.price.toLocaleString('en-US')} EGP`
                 : 'Choose your governorate above to see the delivery price.'}
             </p>
           </div>
@@ -128,77 +126,27 @@ export default function Checkout() {
                 <p className="font-medium line-clamp-1">{product.name}</p>
                 <p style={{ color: 'var(--color-muted)' }}>Qty {quantity}</p>
               </div>
-              <p className="font-semibold">
-                {(() => {
-                  const unit = product.effectivePrice ?? product.price;
-                  if (!coupon || !couponResult?.ok || !appliedCoupon) return (unit * quantity).toLocaleString();
-                  const isEligible = appliedCoupon.targetType === 'all' || (appliedCoupon.productIds ?? []).includes(product.id);
-                  if (!isEligible) return (unit * quantity).toLocaleString();
-                  if (appliedCoupon.discountType === 'percent') {
-                    const discountedUnit = Math.round(unit * (1 - appliedCoupon.discountValue / 100));
-                    return (discountedUnit * quantity).toLocaleString();
-                  }
-                  const eligibleSubtotal = items.reduce((sum, i) => {
-                    const p = i.product.effectivePrice ?? i.product.price;
-                    return sum + (appliedCoupon.targetType === 'all' || (appliedCoupon.productIds ?? []).includes(i.product.id) ? p * i.quantity : 0);
-                  }, 0);
-                  if (eligibleSubtotal <= 0) return (unit * quantity).toLocaleString();
-                  const totalDiscount = couponResult.discount ?? 0;
-                  const lineTotal = unit * quantity;
-                  const lineDiscount = Math.round((lineTotal / eligibleSubtotal) * totalDiscount);
-                  const finalLine = Math.max(0, Math.round(lineTotal - lineDiscount));
-                  return finalLine.toLocaleString();
-                })()}
-              </p>
+              <p className="font-semibold">{((product.effectivePrice ?? product.price) * quantity).toLocaleString('en-US')}</p>
             </div>
           ))}
           <div className="h-px" style={{ backgroundColor: 'var(--color-border)' }} />
-
-          <div className="flex gap-2 mb-3">
-            <div className="relative flex-1">
-              <input
-                value={code}
-                onChange={(e) => { setCode(e.target.value); setApplyError(null); }}
-                placeholder="Coupon code"
-                className="input-luxe py-2.5 text-sm"
-                disabled={!!coupon}
-              />
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                const res = applyCoupon(code);
-                if (!res.ok) setApplyError(res.message ?? 'Invalid coupon code');
-                else { setApplyError(null); setCode(''); }
-              }}
-              disabled={!!coupon}
-              className="btn-secondary px-4 text-xs"
-            >Apply</button>
-          </div>
-          {applyError && <p className="text-xs text-red-500 -mt-2 mb-2">{applyError}</p>}
-          {coupon && (
-            <div className="flex items-center justify-between text-xs mb-4 px-3 py-2 rounded-lg" style={{ backgroundColor: 'rgba(201,162,39,0.1)' }}>
-              <span>Coupon <strong>{coupon}</strong> applied</span>
-              <button onClick={() => removeCoupon()} className="font-semibold">Remove</button>
-            </div>
-          )}
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between"><span style={{ color: 'var(--color-muted)' }}>Subtotal</span><span>{subtotal.toLocaleString()} EGP</span></div>
+            <div className="flex justify-between"><span style={{ color: 'var(--color-muted)' }}>Subtotal</span><span>{subtotal.toLocaleString('en-US')} EGP</span></div>
             {discount > 0 && (
               <div className="flex justify-between">
                 <span style={{ color: 'var(--color-muted)' }}>
                   {[bogoLabel, coupon ? `Coupon ${coupon}` : null].filter(Boolean).join(' + ') || 'Discount'}
                 </span>
-                <span>-{discount.toLocaleString()} EGP</span>
+                <span>-{discount.toLocaleString('en-US')} EGP</span>
               </div>
             )}
             <div className="flex justify-between">
               <span style={{ color: 'var(--color-muted)' }}>Shipping</span>
-              <span>{selectedZone ? `${shipping.toLocaleString()} EGP` : 'Select governorate'}</span>
+              <span>{selectedZone ? `${shipping.toLocaleString('en-US')} EGP` : 'Select governorate'}</span>
             </div>
           </div>
           <div className="h-px" style={{ backgroundColor: 'var(--color-border)' }} />
-          <div className="flex justify-between font-bold text-lg"><span>Total</span><span>{grandTotal.toLocaleString()} EGP</span></div>
+          <div className="flex justify-between font-bold text-lg"><span>Total</span><span>{grandTotal.toLocaleString('en-US')} EGP</span></div>
 
           {error && <p className="text-xs" style={{ color: '#dc2626' }}>{error}</p>}
 

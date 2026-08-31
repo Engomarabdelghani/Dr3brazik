@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { FiArrowLeft, FiSave } from 'react-icons/fi';
@@ -60,8 +60,15 @@ export default function ProductForm() {
 
   const relevantSubcategories = subcategories.filter((s) => s.category_id === form.categoryId);
 
+  // A synchronous guard, separate from the `saving` state — React state updates
+  // can lag by a frame, which is enough time for a fast double-click/double-tap
+  // to fire two submissions before the button visually disables. This ref blocks
+  // the second call instantly, no matter how fast the taps are.
+  const submittingRef = useRef(false);
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     setError(null);
 
     if (!form.name.trim() || !form.categoryId || !form.price) {
@@ -73,6 +80,7 @@ export default function ProductForm() {
       return;
     }
 
+    submittingRef.current = true;
     setSaving(true);
     try {
       const input: ProductInput = {
@@ -113,6 +121,7 @@ export default function ProductForm() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong while saving.');
     } finally {
+      submittingRef.current = false;
       setSaving(false);
     }
   };

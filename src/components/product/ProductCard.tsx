@@ -63,7 +63,7 @@ export default function ProductCard({ product, onQuickView }: { product: Product
           <FiHeart size={16} fill={wished ? 'var(--color-gold)' : 'none'} color={wished ? 'var(--color-gold)' : 'var(--color-ink)'} />
         </button>
 
-        <div className="absolute inset-x-3 bottom-3 flex gap-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+        <div className="absolute inset-x-3 bottom-3 flex gap-2 opacity-100 translate-y-0 md:opacity-0 md:translate-y-2 md:group-hover:opacity-100 md:group-hover:translate-y-0 transition-all duration-300">
           <button
             onClick={() => addItem(product)}
             className="flex-1 h-10 rounded-full bg-[var(--color-ink)] text-white text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-[var(--color-gold)] transition-colors"

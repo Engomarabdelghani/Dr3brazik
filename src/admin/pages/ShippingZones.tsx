@@ -58,7 +58,7 @@ export default function AdminShippingZones() {
               {zones.map((z) => (
                 <tr key={z.id} className="border-b last:border-0" style={{ borderColor: 'var(--color-border)' }}>
                   <td className="p-3 font-medium">{z.name}</td>
-                  <td className="p-3">{z.price.toLocaleString()} EGP</td>
+                  <td className="p-3">{z.price.toLocaleString('en-US')} EGP</td>
                   <td className="p-3">
                     <span
                       className="text-xs font-semibold px-2 py-1 rounded-full"

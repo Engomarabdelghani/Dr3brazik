@@ -68,7 +68,7 @@ export default function AdminCoupons() {
                     <td className="p-3 font-mono font-bold tracking-wide">{c.code}</td>
                     <td className="p-3" style={{ color: 'var(--color-gold)' }}>{discountLabel(c)}</td>
                     <td className="p-3">{c.targetType === 'all' ? 'Entire Store' : `${c.productIds?.length ?? 0} product(s)`}</td>
-                    <td className="p-3">{c.minOrderAmount ? `${c.minOrderAmount.toLocaleString()} EGP` : '—'}</td>
+                    <td className="p-3">{c.minOrderAmount ? `${c.minOrderAmount.toLocaleString('en-US')} EGP` : '—'}</td>
                     <td className="p-3">
                       <span
                         className="text-xs font-semibold px-2 py-1 rounded-full"
