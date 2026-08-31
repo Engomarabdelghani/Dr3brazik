@@ -12,7 +12,6 @@ export const ANNOUNCEMENT_BAR_HEIGHT = 36; // px — kept in sync with Navbar's 
 export default function AnnouncementBar({ coupon }: { coupon: Coupon }) {
   const [copied, setCopied] = useState(false);
 
-  const label = coupon.discountType === 'percent' ? `${coupon.discountValue}% OFF` : `${coupon.discountValue} EGP OFF`;
 
   const onCopy = async () => {
     try {
@@ -30,7 +29,7 @@ export default function AnnouncementBar({ coupon }: { coupon: Coupon }) {
       style={{ height: ANNOUNCEMENT_BAR_HEIGHT, backgroundColor: 'var(--color-ink)' }}
     >
       <span className="truncate">
-        {label} — use code <strong style={{ color: 'var(--color-gold-light)' }}>{coupon.code}</strong> at checkout
+        Use code <strong style={{ color: 'var(--color-gold-light)' }}>{coupon.code}</strong> at checkout
       </span>
       <button
         type="button"
