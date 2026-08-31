@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { FiPlus, FiTrash2, FiX, FiUsers } from 'react-icons/fi';
-import { fetchAdmins, addAdmin, removeAdmin, getCurrentUserId } from '../../lib/api/admins';
+import { fetchAdmins, addAdmin, removeAdmin } from '../../lib/api/admins';
+import { useAdminAuth } from '../../context/AdminAuthContext';
 
 export default function AdminTeam() {
   const queryClient = useQueryClient();
   const { data: admins = [], isLoading } = useQuery({ queryKey: ['admin', 'team'], queryFn: fetchAdmins });
-  const { data: currentUserId } = useQuery({ queryKey: ['admin', 'current-user'], queryFn: getCurrentUserId });
+  const { session } = useAdminAuth();
+  const currentUserId = session?.user?.id;
   const [showAdd, setShowAdd] = useState(false);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['admin', 'team'] });
@@ -98,7 +100,8 @@ function AddAdminModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { data: currentUserId } = useQuery({ queryKey: ['admin', 'current-user'], queryFn: getCurrentUserId });
+  const { session: modalSession } = useAdminAuth();
+  const currentUserIdModal = modalSession?.user?.id;
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,7 +110,7 @@ function AddAdminModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
     setError(null);
     try {
       // Double-check on the client that only owner can add — parent UI normally hides this modal for non-owners
-      if (typeof currentUserId === 'undefined') throw new Error('Unable to verify permissions.');
+      if (typeof currentUserIdModal === 'undefined') throw new Error('Unable to verify permissions.');
       await addAdmin(userId, name);
       onSaved();
     } catch (err) {
