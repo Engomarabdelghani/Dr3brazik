@@ -162,6 +162,10 @@ function toRow(input: ProductInput) {
     meta_description: input.metaDescription || null,
     images: input.images,
     max_order_quantity: input.maxOrderQuantity ?? null,
+    attributes: {
+      // keep any existing attributes shape; store max_order_quantity as a fallback
+      max_order_quantity: input.maxOrderQuantity ?? null,
+    },
   };
 }
 

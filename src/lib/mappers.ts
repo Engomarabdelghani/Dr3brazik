@@ -58,6 +58,11 @@ export function mapProduct(
     discountPercent: row.discount_percent != null ? Number(row.discount_percent) : undefined,
     tags: row.tags ?? [],
     attributes: Object.keys(row.attributes ?? {}).length ? row.attributes : undefined,
-    maxOrderQuantity: row.max_order_quantity != null ? Number(row.max_order_quantity) : undefined,
+    maxOrderQuantity:
+      row.max_order_quantity != null
+        ? Number(row.max_order_quantity)
+        : row.attributes && row.attributes.max_order_quantity != null
+        ? Number(row.attributes.max_order_quantity)
+        : undefined,
   };
 }
