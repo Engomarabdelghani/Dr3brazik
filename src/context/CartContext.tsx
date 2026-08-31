@@ -119,7 +119,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const value: CartContextValue = {
     items, addItem, removeItem, updateQuantity, clearCart,
     isOpen, openCart: () => setIsOpen(true), closeCart: () => setIsOpen(false),
-    subtotal, itemCount, coupon: couponResult.ok ? coupon : null, couponDiscount, discount, bogoDiscount, bogoLabel, applyCoupon, removeCoupon,
+    subtotal, itemCount, coupon: couponResult.ok ? coupon : null, couponDiscount, appliedCoupon, couponResult, discount, bogoDiscount, bogoLabel, applyCoupon, removeCoupon,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
