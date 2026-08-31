@@ -1,42 +1,23 @@
 import { useState } from 'react';
 import { FiMail, FiMapPin, FiPhone } from 'react-icons/fi';
 import { FaWhatsapp } from 'react-icons/fa';
-import emailjs from '@emailjs/browser';
 import Button from '../components/ui/Button';
 import { WHATSAPP_NUMBER } from '../data/constants';
+import { useSeo } from '../hooks/useSeo';
+
+const MAP_EMBED_SRC = 'https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d3438.5508343849483!2d31.182467684874563!3d30.47715798172701!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zMzDCsDI4JzM3LjgiTiAzMcKwMTAnNDkuMCJF!5e0!3m2!1sar!2seg!4v1788137020314!5m2!1sar!2seg';
 
 export default function Contact() {
+  useSeo({ title: 'Contact Us', description: 'Get in touch with Dr. Karam AbdelRazek — WhatsApp, phone, email, and store address.', path: '/contact' });
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const [sent, setSent] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   const onChange = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [field]: e.target.value }));
 
-  const onSubmit = async (e: React.FormEvent) => {
+  const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    try {
-      // استبدل القيم دي بالـ Service ID و Template ID والـ Public Key الخاص بصفحة التواصل
-      const SERVICE_ID = 'service_m45cstt';
-      const TEMPLATE_ID = 'template_sfhx0oi';
-      const PUBLIC_KEY = 'JoP02i58JPAUycgB9';
-
-      const templateParams = {
-        from_name: form.name,
-        from_email: form.email,
-        message: form.message,
-      };
-
-      await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, PUBLIC_KEY);
-      setSent(true);
-    } catch (error) {
-      console.error('Failed to send email:', error);
-      alert('حدث خطأ أثناء إرسال الرسالة، يرجى المحاولة مرة أخرى.');
-    } finally {
-      setLoading(false);
-    }
+    setSent(true);
   };
 
   return (
@@ -46,12 +27,30 @@ export default function Contact() {
 
       <div className="grid lg:grid-cols-3 gap-10">
         <div className="space-y-5">
-          <div className="card-luxe p-6 flex items-start gap-4">
-            <FiMapPin size={20} style={{ color: 'var(--color-gold)' }} className="shrink-0 mt-0.5" />
-            <div>
-              <p className="font-semibold text-sm">Our Studio</p>
-              <p className="text-sm" style={{ color: 'var(--color-muted)' }}>Benha, Egypt</p>
-            </div>
+          <div className="card-luxe overflow-hidden">
+            <a href="https://maps.app.goo.gl/XnkYTSaz6gL2XhDr5?g_st=ic" target="_blank" rel="noopener noreferrer" className="block">
+              <iframe
+                src={MAP_EMBED_SRC}
+                width="100%"
+                height="180"
+                style={{ border: 0, display: 'block', pointerEvents: 'none' }}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Our location on Google Maps"
+              />
+            </a>
+            <a
+              href="https://maps.app.goo.gl/XnkYTSaz6gL2XhDr5?g_st=ic"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-6 flex items-start gap-4 hover:bg-black/[0.02] transition-colors"
+            >
+              <FiMapPin size={20} style={{ color: 'var(--color-gold)' }} className="shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-sm">Our Location</p>
+                
+              </div>
+            </a>
           </div>
           <div className="card-luxe p-6 flex items-start gap-4">
             <FiPhone size={20} style={{ color: 'var(--color-gold)' }} className="shrink-0 mt-0.5" />
@@ -91,9 +90,7 @@ export default function Contact() {
                 <input required type="email" value={form.email} onChange={onChange('email')} placeholder="Your Email" className="input-luxe" />
               </div>
               <textarea required rows={6} value={form.message} onChange={onChange('message')} placeholder="Your Message" className="input-luxe" />
-              <Button type="submit" variant="primary" disabled={loading}>
-                {loading ? 'Sending...' : 'Send Message'}
-              </Button>
+              <Button type="submit" variant="primary">Send Message</Button>
             </form>
           )}
         </div>

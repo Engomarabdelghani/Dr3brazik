@@ -85,7 +85,7 @@ export default function ProductCard({ product, onQuickView }: { product: Product
       <div className="p-4">
         <p className="text-xs mb-1" style={{ color: 'var(--color-muted)' }}>{product.brand}</p>
         <Link to={`/product/${product.slug}`}>
-          <h3 className="font-semibold text-sm mb-1.5 line-clamp-1 hover:text-[var(--color-gold)] transition-colors">
+          <h3 className="font-semibold text-sm mb-1.5 line-clamp-2 leading-snug hover:text-[var(--color-gold)] transition-colors">
             {product.name}
           </h3>
         </Link>

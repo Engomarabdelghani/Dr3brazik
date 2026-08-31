@@ -29,6 +29,7 @@ import AdminShippingZones from './admin/pages/ShippingZones';
 import AdminSocialPosts from './admin/pages/SocialPosts';
 import AdminTestimonials from './admin/pages/Testimonials';
 import AdminCoupons from './admin/pages/Coupons';
+import AdminTeam from './admin/pages/Team';
 
 export default function App() {
   return (
@@ -75,6 +76,7 @@ export default function App() {
                   <Route path="social-posts" element={<AdminSocialPosts />} />
                   <Route path="testimonials" element={<AdminTestimonials />} />
                   <Route path="coupons" element={<AdminCoupons />} />
+                  <Route path="team" element={<AdminTeam />} />
                 </Route>
               </Routes>
             </BrowserRouter>

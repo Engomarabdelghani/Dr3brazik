@@ -609,3 +609,34 @@ create policy "public read coupon_products" on coupon_products for select using 
 drop policy if exists "admin full access coupon_products" on coupon_products;
 create policy "admin full access coupon_products" on coupon_products
   for all using (is_admin()) with check (is_admin());
+
+-- ============================================================================
+-- BLOCK: Admin team management (add/remove dashboard users from within the app)
+-- Lets the store owner give someone else access to the dashboard, and revoke
+-- it instantly later (e.g. when an employee leaves) — all from inside the app,
+-- no need to go into Supabase itself to remove access.
+--
+-- IMPORTANT — adding a new admin is still a 2-step process:
+--   1. In Supabase Dashboard → Authentication → Users → Add User, create their
+--      login (email + password), then copy their User UID.
+--   2. Paste that UID into Admin → Team in the dashboard, with a name label.
+-- This is unavoidable: only Supabase itself can create a login account: the
+-- app can only grant/revoke *dashboard access* to an account that already
+-- exists. Removing someone, on the other hand, is fully self-service in-app.
+-- Safe to re-run.
+-- ============================================================================
+alter table admins add column if not exists name text not null default '';
+
+drop policy if exists "admin insert admins" on admins;
+create policy "admin insert admins" on admins for insert with check (is_admin());
+
+drop policy if exists "admin delete admins" on admins;
+create policy "admin delete admins" on admins for delete using (is_admin());
+
+-- ============================================================================
+-- BLOCK: Per-product maximum order quantity
+-- Lets the admin cap how many units of a specific product a customer can buy
+-- in one order (e.g. "max 2 per customer"). Leave empty/null for no limit.
+-- Safe to re-run.
+-- ============================================================================
+alter table products add column if not exists max_order_quantity integer;

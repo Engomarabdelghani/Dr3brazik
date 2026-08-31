@@ -21,13 +21,15 @@ import Button from '../components/ui/Button';
 import ProductTabs from '../components/product/ProductTabs';
 import ProductCard from '../components/product/ProductCard';
 import SectionHeading from '../components/common/SectionHeading';
+import { useSeo } from '../hooks/useSeo';
+import { SITE_URL } from '../data/constants';
 
 export default function ProductDetails() {
   const { slug } = useParams();
   const { data: product, isLoading, isFetched } = useProduct(slug);
   const { data: allProducts = [] } = useProducts();
   const { data: categories = [] } = useCategories();
-  const { addItem } = useCart();
+  const { addItem, items } = useCart();
   const { toggle, isInWishlist } = useWishlist();
   const { items: recentlyViewed, addView } = useRecentlyViewed();
   const { data: offers = [] } = useOffers();
@@ -37,6 +39,13 @@ export default function ProductDetails() {
     if (product) addView(product);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product?.id]);
+
+  useSeo({
+    title: product?.metaTitle || product?.name,
+    description: product?.metaDescription || product?.shortDescription,
+    path: `/product/${slug ?? ''}`,
+    image: product?.images[0],
+  });
 
   if (isFetched && !product) return <Navigate to="/404" replace />;
   if (isLoading || !product) {
@@ -49,11 +58,39 @@ export default function ProductDetails() {
   const productCategory = categories.find((c) => c.id === product.category);
   const productSubcategory = productCategory?.subcategories.find((s: Subcategory) => s.id === product.subcategory);
   const bogoOffer = findActiveBogoOfferFor({ id: product.id, categoryId: product.categoryId }, offers);
+  const cartQtyForProduct = items.find((i) => i.product.id === product.id)?.quantity ?? 0;
+  const remainingAllowed = product.maxOrderQuantity != null
+    ? Math.max(product.maxOrderQuantity - cartQtyForProduct, 0)
+    : 99;
 
   const whatsappMessage = buildWhatsAppProductInquiryMessage({ name: product.name, quantity, price: product.price });
 
   return (
     <div className="container-luxe py-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Product',
+            name: product.name,
+            image: product.images,
+            description: product.shortDescription,
+            sku: product.sku || product.id,
+            brand: { '@type': 'Brand', name: product.brand || 'Dr. Karam AbdelRazek' },
+            offers: {
+              '@type': 'Offer',
+              url: `${SITE_URL}/product/${product.slug}`,
+              priceCurrency: product.currency,
+              price: product.effectivePrice ?? product.price,
+              availability: product.inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+            },
+            ...(product.reviewCount > 0
+              ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: product.rating, reviewCount: product.reviewCount } }
+              : {}),
+          }),
+        }}
+      />
       <p className="text-sm mb-8" style={{ color: 'var(--color-muted)' }}>
         <Link to="/">Home</Link> / <Link to="/shop">Shop</Link>
         {productCategory && (
@@ -89,11 +126,21 @@ export default function ProductDetails() {
             {product.inStock ? <Badge tone="success">In Stock</Badge> : <Badge tone="muted">Out of Stock</Badge>}
             {bogoOffer && <Badge tone="success">{getBogoLabel(bogoOffer)}</Badge>}
           </div>
+          {product.maxOrderQuantity != null && (
+            <p className="text-xs mt-2" style={{ color: 'var(--color-muted)' }}>
+              Limited to {product.maxOrderQuantity} per order
+              {cartQtyForProduct > 0 && ` — you already have ${cartQtyForProduct} in your cart`}
+            </p>
+          )}
 
           <div className="flex items-center gap-4 mt-8">
-            <QuantityStepper value={quantity} onChange={setQuantity} />
-            <Button variant="primary" className="flex-1" disabled={!product.inStock} onClick={() => addItem(product, quantity)}>
-              <FiShoppingBag /> Add to Cart
+            <QuantityStepper value={Math.min(quantity, Math.max(remainingAllowed, 1))} onChange={setQuantity} max={remainingAllowed || 1} />
+            <Button
+              variant="primary" className="flex-1"
+              disabled={!product.inStock || remainingAllowed === 0}
+              onClick={() => addItem(product, Math.min(quantity, remainingAllowed))}
+            >
+              <FiShoppingBag /> {remainingAllowed === 0 ? 'Limit Reached' : 'Add to Cart'}
             </Button>
             <button
               aria-label="Toggle wishlist"
@@ -105,15 +152,6 @@ export default function ProductDetails() {
             </button>
           </div>
 
-          <a
-            href={`https://wa.me/${WHATSAPP_NUMBER}?text=${whatsappMessage}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 flex items-center justify-center gap-2 w-full rounded-full py-3 text-sm font-semibold text-white"
-            style={{ backgroundColor: '#25D366' }}
-          >
-            <FaWhatsapp size={18} /> Order via WhatsApp
-          </a>
 
           <div className="grid grid-cols-3 gap-4 mt-10 pt-8 border-t" style={{ borderColor: 'var(--color-border)' }}>
             <div className="text-center">

@@ -14,7 +14,7 @@ const textToList = (s: string) => s.split(',').map((v) => v.trim()).filter(Boole
 const emptyForm = {
   name: '', nameAr: '', slug: '', brand: '', categoryId: '', subcategoryId: '',
   description: '', shortDescription: '', ingredients: '', howToUse: '', warnings: '', benefits: '', tags: '',
-  price: '', oldPrice: '', currency: 'EGP', discountPercent: '', stock: '0', sku: '', barcode: '',
+  price: '', oldPrice: '', currency: 'EGP', discountPercent: '', stock: '0', sku: '', barcode: '', maxOrderQuantity: '',
   isFeatured: false, isBestSeller: false, isNew: false, isVisible: true,
   metaTitle: '', metaDescription: '',
 };
@@ -48,6 +48,7 @@ export default function ProductForm() {
       price: String(existing.price), oldPrice: existing.oldPrice ? String(existing.oldPrice) : '',
       currency: existing.currency, discountPercent: existing.discountPercent ? String(existing.discountPercent) : '',
       stock: String(existing.stock ?? 0), sku: existing.sku ?? '', barcode: existing.barcode ?? '',
+      maxOrderQuantity: existing.maxOrderQuantity != null ? String(existing.maxOrderQuantity) : '',
       isFeatured: existing.isFeatured ?? false, isBestSeller: existing.isBestSeller ?? false,
       isNew: existing.isNew ?? false, isVisible: existing.isVisible ?? true,
       metaTitle: existing.metaTitle ?? '', metaDescription: existing.metaDescription ?? '',
@@ -95,6 +96,7 @@ export default function ProductForm() {
         stock: Number(form.stock) || 0,
         sku: form.sku || undefined,
         barcode: form.barcode || undefined,
+        maxOrderQuantity: form.maxOrderQuantity ? Number(form.maxOrderQuantity) : undefined,
         isFeatured: form.isFeatured,
         isBestSeller: form.isBestSeller,
         isNew: form.isNew,
@@ -183,6 +185,15 @@ export default function ProductForm() {
             <input type="number" min="0" value={form.stock} onChange={(e) => set('stock', e.target.value)} placeholder="Stock quantity" className="input-luxe" />
             <input value={form.sku} onChange={(e) => set('sku', e.target.value)} placeholder="SKU" className="input-luxe" />
             <input value={form.barcode} onChange={(e) => set('barcode', e.target.value)} placeholder="Barcode" className="input-luxe" />
+            <div>
+              <label className="text-xs mb-1.5 block" style={{ color: 'var(--color-muted)' }}>
+                Max quantity per order — optional
+              </label>
+              <input
+                type="number" min="1" value={form.maxOrderQuantity} onChange={(e) => set('maxOrderQuantity', e.target.value)}
+                placeholder="e.g. 2 — leave empty for no limit" className="input-luxe"
+              />
+            </div>
           </div>
 
           <div className="card-luxe p-6 space-y-3">

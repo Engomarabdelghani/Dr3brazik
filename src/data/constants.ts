@@ -1,6 +1,6 @@
 export const SITE_NAME = 'Dr. Karam AbdelRazek';
 export const SITE_URL = 'https://dr3brazik.com';
-export const WHATSAPP_NUMBER = '2001063919780'; // TODO: replace with real business number
+export const WHATSAPP_NUMBER = '2001061959922'; // TODO: replace with real business number
 export const CURRENCY = 'EGP';
 
 export const NAV_LINKS = [

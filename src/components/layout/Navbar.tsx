@@ -8,7 +8,7 @@ import { NAV_LINKS, SITE_NAME } from '../../data/constants';
 import { useProducts } from '../../hooks/useCatalog';
 import { cld } from '../../utils/cloudinary';
 
-export default function Navbar() {
+export default function Navbar({ topOffset = 0 }: { topOffset?: number }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -40,8 +40,8 @@ export default function Navbar() {
   return (
     <>
       <header
-        style={{ top: 'var(--site-promo-offset, 0px)' }}
         className={`fixed inset-x-0 z-40 transition-all duration-500 ${scrolled ? 'glass shadow-sm py-3' : 'bg-transparent py-5'}`}
+        style={{ top: topOffset }}
       >
         <div className="container-luxe flex items-center justify-between">
           <Link to="/" className="flex items-center">

@@ -129,6 +129,7 @@ export interface ProductInput {
   metaTitle?: string;
   metaDescription?: string;
   images: ProductImage[];
+  maxOrderQuantity?: number;
 }
 
 function toRow(input: ProductInput) {
@@ -160,6 +161,7 @@ function toRow(input: ProductInput) {
     meta_title: input.metaTitle || null,
     meta_description: input.metaDescription || null,
     images: input.images,
+    max_order_quantity: input.maxOrderQuantity ?? null,
   };
 }
 
@@ -212,6 +214,7 @@ export async function duplicateProduct(id: string): Promise<string> {
     metaTitle: original.metaTitle,
     metaDescription: original.metaDescription,
     images: original.imageObjects ?? [],
+    maxOrderQuantity: original.maxOrderQuantity,
   });
 }
 

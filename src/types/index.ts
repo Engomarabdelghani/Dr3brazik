@@ -43,6 +43,7 @@ export interface Product {
   tags: string[];
   attributes?: Record<string, string[]>;
   isDeal?: boolean; // true for synthetic "cart items" built from a shoppable promo banner — not a real catalog product
+  maxOrderQuantity?: number; // admin-set cap on how many units of this product a customer can order at once
 }
 
 export interface CartItem {

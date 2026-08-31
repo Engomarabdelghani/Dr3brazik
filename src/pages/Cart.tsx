@@ -74,7 +74,7 @@ export default function Cart() {
                   </button>
                 </div>
                 <div className="flex items-center justify-between mt-4">
-                  <QuantityStepper value={quantity} onChange={(q) => updateQuantity(product.id, q)} />
+                  <QuantityStepper value={quantity} onChange={(q) => updateQuantity(product.id, q)} max={product.maxOrderQuantity ?? 99} />
                   <p className="font-bold">{((product.effectivePrice ?? product.price) * quantity).toLocaleString()} {product.currency}</p>
                 </div>
               </div>

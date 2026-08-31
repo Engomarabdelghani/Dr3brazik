@@ -38,12 +38,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addItem = useCallback((product: Product, quantity = 1) => {
     setItems((prev) => {
       const existing = prev.find((i) => i.product.id === product.id);
+      const cap = product.maxOrderQuantity;
       if (existing) {
+        const nextQty = cap != null ? Math.min(existing.quantity + quantity, cap) : existing.quantity + quantity;
         return prev.map((i) =>
-          i.product.id === product.id ? { ...i, quantity: i.quantity + quantity } : i
+          i.product.id === product.id ? { ...i, quantity: nextQty } : i
         );
       }
-      return [...prev, { product, quantity }];
+      const nextQty = cap != null ? Math.min(quantity, cap) : quantity;
+      return [...prev, { product, quantity: nextQty }];
     });
     setIsOpen(true);
   }, [setItems]);
@@ -56,7 +59,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems((prev) =>
       quantity <= 0
         ? prev.filter((i) => i.product.id !== productId)
-        : prev.map((i) => (i.product.id === productId ? { ...i, quantity } : i))
+        : prev.map((i) => {
+            if (i.product.id !== productId) return i;
+            const cap = i.product.maxOrderQuantity;
+            return { ...i, quantity: cap != null ? Math.min(quantity, cap) : quantity };
+          })
     );
   }, [setItems]);
 

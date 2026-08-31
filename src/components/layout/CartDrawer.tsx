@@ -49,7 +49,7 @@ export default function CartDrawer() {
                           <p className="text-sm font-medium mt-1">{product.price.toLocaleString()} {product.currency}</p>
                         </div>
                         <div className="flex items-center justify-between mt-2">
-                          <QuantityStepper value={quantity} onChange={(q) => updateQuantity(product.id, q)} />
+                          <QuantityStepper value={quantity} onChange={(q) => updateQuantity(product.id, q)} max={product.maxOrderQuantity ?? 99} />
                           <button aria-label="Remove item" onClick={() => removeItem(product.id)} className="text-gray-400 hover:text-red-500 transition-colors">
                             <FiTrash2 size={16} />
                           </button>
