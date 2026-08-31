@@ -8,7 +8,7 @@ import Button from '../ui/Button';
 import EmptyState from '../ui/EmptyState';
 
 export default function CartDrawer() {
-  const { items, isOpen, closeCart, updateQuantity, removeItem, subtotal, discount } = useCart();
+  const { items, isOpen, closeCart, updateQuantity, removeItem, subtotal, discount, appliedCoupon, couponResult } = useCart();
 
   return (
     <AnimatePresence>
@@ -46,7 +46,42 @@ export default function CartDrawer() {
                         <div>
                           <p className="text-xs" style={{ color: 'var(--color-muted)' }}>{product.isDeal ? 'Special Offer' : product.brand}</p>
                           <p className="font-semibold text-sm">{product.name}</p>
-                          <p className="text-sm font-medium mt-1">{product.price.toLocaleString()} {product.currency}</p>
+                          <p className="text-sm font-medium mt-1">
+                            {(() => {
+                              const unit = product.effectivePrice ?? product.price;
+                              if (!couponResult?.ok || !appliedCoupon) return `${unit.toLocaleString()} ${product.currency}`;
+                              const isEligible = appliedCoupon.targetType === 'all' || (appliedCoupon.productIds ?? []).includes(product.id);
+                              if (!isEligible) return `${unit.toLocaleString()} ${product.currency}`;
+
+                              if (appliedCoupon.discountType === 'percent') {
+                                const discountedUnit = Math.round(unit * (1 - appliedCoupon.discountValue / 100));
+                                return (
+                                  <>
+                                    <span className="line-through mr-2" style={{ color: 'var(--color-muted)' }}>{unit.toLocaleString()}</span>
+                                    <strong>{discountedUnit.toLocaleString()} {product.currency}</strong>
+                                  </>
+                                );
+                              }
+
+                              // fixed discount: prorate across eligible items to compute approximate unit price
+                              const eligibleSubtotal = items.reduce((sum, i) => {
+                                const p = i.product.effectivePrice ?? i.product.price;
+                                return sum + (appliedCoupon.targetType === 'all' || (appliedCoupon.productIds ?? []).includes(i.product.id) ? p * i.quantity : 0);
+                              }, 0);
+                              if (eligibleSubtotal <= 0) return `${unit.toLocaleString()} ${product.currency}`;
+                              const totalDiscount = couponResult.discount ?? 0;
+                              const lineTotal = unit * quantity;
+                              const lineDiscount = Math.round((lineTotal / eligibleSubtotal) * totalDiscount);
+                              const finalLine = Math.max(0, Math.round(lineTotal - lineDiscount));
+                              const perUnit = Math.max(0, Math.round(finalLine / quantity));
+                              return (
+                                <>
+                                  <span className="line-through mr-2" style={{ color: 'var(--color-muted)' }}>{unit.toLocaleString()}</span>
+                                  <strong>{perUnit.toLocaleString()} {product.currency}</strong>
+                                </>
+                              );
+                            })()}
+                          </p>
                         </div>
                         <div className="flex items-center justify-between mt-2">
                           <QuantityStepper value={quantity} onChange={(q) => updateQuantity(product.id, q)} max={product.maxOrderQuantity ?? 99} />
