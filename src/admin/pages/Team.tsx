@@ -24,10 +24,12 @@ export default function AdminTeam() {
     invalidate();
   };
 
-  // Determine the owner: the earliest-added admin (smallest createdAt)
-  const ownerId = admins.length
-    ? admins.reduce((min, a) => (new Date(a.createdAt).getTime() < new Date(min.createdAt).getTime() ? a : min), admins[0]).userId
-    : undefined;
+  // Determine whether the current user is the owner: earliest-added admin (smallest createdAt)
+  const isOwner = Boolean(
+    admins.length &&
+      currentUserId &&
+      admins.reduce((min, a) => (new Date(a.createdAt).getTime() < new Date(min.createdAt).getTime() ? a : min), admins[0]).userId === currentUserId
+  );
 
   return (
     <div>
@@ -39,7 +41,7 @@ export default function AdminTeam() {
           </p>
         </div>
         {/* Only the owner can add team members */}
-        {currentUserId === ownerId && (
+        {isOwner && (
           <button onClick={() => setShowAdd(true)} className="btn-primary"><FiPlus /> Add Team Member</button>
         )}
       </div>
@@ -71,7 +73,7 @@ export default function AdminTeam() {
                   <td className="p-3" style={{ color: 'var(--color-muted)' }}>{new Date(a.createdAt).toLocaleDateString()}</td>
                   <td className="p-3 text-right">
                     {/* Only the owner can remove team members. Also prevent removing yourself here. */}
-                    {currentUserId === ownerId && a.userId !== currentUserId && (
+                    {isOwner && a.userId !== currentUserId && (
                       <button onClick={() => onRemove(a.userId, a.name)} aria-label="Remove" className="hover:text-red-500 transition-colors">
                         <FiTrash2 size={15} />
                       </button>
@@ -79,7 +81,7 @@ export default function AdminTeam() {
                     {a.userId === currentUserId && (
                       <span className="text-xs" style={{ color: 'var(--color-muted)' }}>You</span>
                     )}
-                    {currentUserId !== ownerId && a.userId !== currentUserId && (
+                    {!isOwner && a.userId !== currentUserId && (
                       <span className="text-xs" style={{ color: 'var(--color-muted)' }}>—</span>
                     )}
                   </td>
