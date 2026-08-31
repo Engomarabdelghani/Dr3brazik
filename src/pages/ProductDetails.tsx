@@ -2,14 +2,13 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiHeart, FiShoppingBag, FiTruck, FiShield, FiRotateCcw } from 'react-icons/fi';
-import { FaWhatsapp } from 'react-icons/fa';
+
 import { useProduct, useProducts, getRelated, useOffers } from '../hooks/useCatalog';
 import { useCategories } from '../hooks/useCatalog';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useRecentlyViewed } from '../context/RecentlyViewedContext';
 import type { Subcategory } from '../data/taxonomy';
-import { WHATSAPP_NUMBER, buildWhatsAppProductInquiryMessage } from '../data/constants';
 import { getBogoLabel } from '../lib/api/offers';
 import { findActiveBogoOfferFor } from '../utils/bogo';
 import Gallery from '../components/product/Gallery';
@@ -44,7 +43,6 @@ export default function ProductDetails() {
     title: product?.metaTitle || product?.name,
     description: product?.metaDescription || product?.shortDescription,
     path: `/product/${slug ?? ''}`,
-    image: product?.images[0],
   });
 
   if (isFetched && !product) return <Navigate to="/404" replace />;
@@ -63,7 +61,7 @@ export default function ProductDetails() {
     ? Math.max(product.maxOrderQuantity - cartQtyForProduct, 0)
     : 99;
 
-  const whatsappMessage = buildWhatsAppProductInquiryMessage({ name: product.name, quantity, price: product.price });
+  
 
   return (
     <div className="container-luxe py-12">
