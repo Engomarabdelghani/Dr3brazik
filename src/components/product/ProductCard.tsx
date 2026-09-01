@@ -63,23 +63,24 @@ export default function ProductCard({ product, onQuickView }: { product: Product
           <FiHeart size={16} fill={wished ? 'var(--color-gold)' : 'none'} color={wished ? 'var(--color-gold)' : 'var(--color-ink)'} />
         </button>
 
-        <div className="absolute inset-x-3 bottom-3 flex gap-2 opacity-100 translate-y-0 md:opacity-0 md:translate-y-2 md:group-hover:opacity-100 md:group-hover:translate-y-0 transition-all duration-300">
+        {onQuickView && (
           <button
-            onClick={() => addItem(product)}
-            className="flex-1 h-10 rounded-full bg-[var(--color-ink)] text-white text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-[var(--color-gold)] transition-colors"
+            onClick={() => onQuickView(product)}
+            aria-label="Quick view"
+            className="absolute bottom-3 right-3 w-9 h-9 rounded-full glass shadow-sm items-center justify-center hidden md:flex opacity-0 group-hover:opacity-100 transition-opacity"
           >
-            <FiShoppingBag size={14} /> Add to Cart
+            <FiEye size={16} />
           </button>
-          {onQuickView && (
-            <button
-              onClick={() => onQuickView(product)}
-              aria-label="Quick view"
-              className="w-10 h-10 rounded-full glass flex items-center justify-center"
-            >
-              <FiEye size={16} />
-            </button>
-          )}
-        </div>
+        )}
+      </div>
+
+      <div className="px-4 pt-3">
+        <button
+          onClick={() => addItem(product)}
+          className="w-full h-11 rounded-full bg-[var(--color-ink)] text-white text-sm font-semibold flex items-center justify-center gap-2 hover:bg-[var(--color-gold)] transition-colors"
+        >
+          <FiShoppingBag size={15} /> Add to Cart
+        </button>
       </div>
 
       <div className="p-4">

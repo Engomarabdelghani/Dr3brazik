@@ -16,32 +16,6 @@ import type { SortOption } from '../types';
 
 const PAGE_SIZE = 9;
 
-const normalizeSearchText = (value?: string | null) =>
-  (value ?? '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-const matchesProductSearch = (product: { name: string; nameAr?: string; brand?: string; category?: string; subcategory?: string; tags?: string[]; sku?: string }, query: string) => {
-  const normalizedQuery = normalizeSearchText(query);
-  if (!normalizedQuery) return true;
-
-  const haystacks = [
-    product.name,
-    product.nameAr,
-    product.brand,
-    product.category,
-    product.subcategory,
-    product.sku,
-    ...(product.tags ?? []),
-  ];
-
-  return haystacks.some((value) => normalizeSearchText(value).includes(normalizedQuery));
-};
-
 const sortLabels: Record<SortOption, string> = {
   featured: 'Featured',
   'price-asc': 'Price: Low to High',
@@ -82,7 +56,7 @@ export default function Shop() {
       if (filters.brand && p.brand !== filters.brand) return false;
       if (p.price > effectiveMaxPrice) return false;
       if (filters.inStockOnly && !p.inStock) return false;
-      if (query && !matchesProductSearch(p, query)) return false;
+      if (query && !p.name.toLowerCase().includes(query.toLowerCase())) return false;
       for (const [groupKey, selectedOptions] of Object.entries(subFilters)) {
         if (selectedOptions.length === 0) continue;
         const productValues = p.attributes?.[groupKey] ?? [];
@@ -141,7 +115,7 @@ export default function Shop() {
     (filters.brand ? 1 : 0) + (filters.maxPrice < MAX_PRICE ? 1 : 0) + (filters.inStockOnly ? 1 : 0);
 
   return (
-    <div>
+    <div style={{ backgroundColor: 'var(--color-surface)' }}>
       <ShopBanner eyebrow="Full Collection" title="Shop All Products" />
 
       <div className="container-luxe py-12">
