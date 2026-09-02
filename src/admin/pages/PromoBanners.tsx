@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { FiPlus, FiEdit2, FiTrash2, FiX, FiImage, FiShoppingBag } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiX, FiImage, FiShoppingBag, FiSearch, FiPackage } from 'react-icons/fi';
 import {
   fetchPromoBanners, createPromoBanner, updatePromoBanner, deletePromoBanner, type PromoBannerInput,
 } from '../../lib/api/promoBanners';
 import { fetchOffers, isOfferActive, getBogoLabel } from '../../lib/api/offers';
-import type { PromoBanner } from '../../types';
+import { fetchAdminProducts, fetchProductsByIds } from '../../lib/api/products';
+import { cld } from '../../utils/cloudinary';
+import type { PromoBanner, PromoBannerAction } from '../../types';
 import SingleImageUploader from '../components/SingleImageUploader';
 
 export default function AdminPromoBanners() {
@@ -25,14 +27,20 @@ export default function AdminPromoBanners() {
     invalidate();
   };
 
+  const actionLabel = (b: PromoBanner) => {
+    if (b.actionType === 'deal') return `${(b.price ?? 0).toLocaleString('en-US')} EGP — quick-buy`;
+    if (b.actionType === 'bundle') return `${b.productIds?.length ?? 0} product(s) — bundle add-to-cart`;
+    return b.link || 'Plain banner (no action)';
+  };
+
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold">Promo Banners</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--color-muted)' }}>
-            Full-width slider shown at the top of the Home page (e.g. "1+1", "30% Off" campaign banners).
-            Add a price to make a banner tappable straight into the cart. {banners.length} banners.
+            Full-width slider at the top of the Home page. Each banner can link somewhere, sell a single flat-price
+            deal, or add a bundle of real products (at their own real prices) to the cart in one tap. {banners.length} banners.
           </p>
         </div>
         <button onClick={() => setEditing('new')} className="btn-primary"><FiPlus /> Add Banner</button>
@@ -55,13 +63,11 @@ export default function AdminPromoBanners() {
               </div>
               <div className="p-4">
                 <p className="font-semibold text-sm line-clamp-1">{b.title}</p>
-                {b.price != null ? (
-                  <p className="text-xs font-bold mt-0.5 flex items-center gap-1" style={{ color: 'var(--color-gold)' }}>
-                    <FiShoppingBag size={11} /> {b.price.toLocaleString('en-US')} EGP — quick-buy
-                  </p>
-                ) : b.link ? (
-                  <p className="text-xs truncate mt-0.5" style={{ color: 'var(--color-muted)' }}>{b.link}</p>
-                ) : null}
+                <p className="text-xs font-bold mt-0.5 flex items-center gap-1" style={{ color: 'var(--color-gold)' }}>
+                  {b.actionType === 'deal' && <FiShoppingBag size={11} />}
+                  {b.actionType === 'bundle' && <FiPackage size={11} />}
+                  {actionLabel(b)}
+                </p>
                 <div className="flex items-center justify-between mt-3">
                   <p className="text-[10px] font-bold" style={{ color: b.isEnabled ? '#16a34a' : 'var(--color-muted)' }}>
                     {b.isEnabled ? 'ENABLED' : 'DISABLED'} · Order #{b.sortOrder}
@@ -103,30 +109,58 @@ function BannerModal({ banner, nextSortOrder, onClose, onSaved }: {
   const [image, setImage] = useState(banner?.image ?? '');
   const [link, setLink] = useState(banner?.link ?? '');
   const [price, setPrice] = useState(banner?.price != null ? String(banner.price) : '');
+  const [actionType, setActionType] = useState<PromoBannerAction>(banner?.actionType ?? 'link');
   const [sortOrder, setSortOrder] = useState(String(banner?.sortOrder ?? nextSortOrder));
   const [isEnabled, setIsEnabled] = useState(banner?.isEnabled ?? true);
+  const [selectedProducts, setSelectedProducts] = useState<{ id: string; name: string; price: number; currency: string; image?: string }[]>([]);
+  const [productSearch, setProductSearch] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Pre-select the matching offer in the dropdown when editing a banner that already links to one.
+  useEffect(() => {
+    if (banner?.productIds?.length) {
+      fetchProductsByIds(banner.productIds).then((products) => {
+        setSelectedProducts(products.map((p) => ({ id: p.id, name: p.name, price: p.price, currency: p.currency, image: p.images[0] })));
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Pre-select the matching offer in the dropdown when editing a link banner that already links to one.
   const linkedOfferId = link.startsWith('/offer/') ? link.replace('/offer/', '') : '';
 
   const offerLabel = (offer: (typeof offers)[number]) =>
     offer.discountType === 'bogo' ? getBogoLabel(offer)
       : offer.discountType === 'percent' ? `${offer.discountValue}% Off` : `${offer.discountValue} EGP Off`;
 
+  const { data: searchResults } = useQuery({
+    queryKey: ['admin', 'banner-product-search', productSearch],
+    queryFn: () => fetchAdminProducts({ search: productSearch, page: 1, pageSize: 8 }),
+    enabled: actionType === 'bundle' && productSearch.trim().length > 1,
+  });
+
+  const addProduct = (p: { id: string; name: string; price: number; currency: string; images: string[] }) => {
+    if (selectedProducts.some((sp) => sp.id === p.id)) return;
+    setSelectedProducts([...selectedProducts, { id: p.id, name: p.name, price: p.price, currency: p.currency, image: p.images[0] }]);
+    setProductSearch('');
+  };
+
+  const removeProduct = (id: string) => setSelectedProducts(selectedProducts.filter((p) => p.id !== id));
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!image) {
-      setError('Please upload an image.');
-      return;
-    }
+    if (!image) { setError('Please upload an image.'); return; }
+    if (actionType === 'bundle' && selectedProducts.length === 0) { setError('Choose at least one product for the bundle.'); return; }
+
     setSaving(true);
     setError(null);
     try {
       const input: PromoBannerInput = {
-        title, image, link: link || undefined,
-        price: price ? Number(price) : undefined,
+        title, image,
+        link: actionType === 'link' ? (link || undefined) : undefined,
+        price: actionType === 'deal' ? (price ? Number(price) : undefined) : undefined,
+        actionType,
+        productIds: actionType === 'bundle' ? selectedProducts.map((p) => p.id) : undefined,
         sortOrder: Number(sortOrder) || 0, isEnabled,
       };
       if (banner) await updatePromoBanner(banner.id, input);
@@ -140,7 +174,7 @@ function BannerModal({ banner, nextSortOrder, onClose, onSaved }: {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-6 py-8">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/40" onClick={onClose} />
       <motion.div
         initial={{ opacity: 0, y: 16, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -159,50 +193,108 @@ function BannerModal({ banner, nextSortOrder, onClose, onSaved }: {
           </div>
           <input required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title (e.g. 1+1 on Nebula Sun Care)" className="input-luxe" />
 
-          <div className="p-3 rounded-xl" style={{ backgroundColor: 'var(--color-cream)' }}>
-            <label className="text-xs mb-1.5 block font-semibold">Price (EGP) — optional</label>
-            <input
-              type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)}
-              placeholder="e.g. 450" className="input-luxe"
-            />
-            <p className="text-[11px] mt-1.5" style={{ color: 'var(--color-muted)' }}>
-              {price
-                ? 'Tapping this banner will add it straight to the cart at this price — the Link field below is ignored.'
-                : 'Leave empty to make this a plain link banner instead (uses the Link field below).'}
-            </p>
-          </div>
-
           <div>
-            <label className="text-xs mb-1.5 block font-semibold" style={{ color: 'var(--color-heading)' }}>
-              Link to an offer — easiest way
-            </label>
-            <select
-              value={linkedOfferId}
-              disabled={Boolean(price)}
-              onChange={(e) => setLink(e.target.value ? `/offer/${e.target.value}` : '')}
-              className="input-luxe"
-            >
-              <option value="">— Choose an active offer (optional) —</option>
-              {activeOffers.map((o) => (
-                <option key={o.id} value={o.id}>{o.title} — {offerLabel(o)}</option>
-              ))}
-            </select>
-            <p className="text-[11px] mt-1.5" style={{ color: 'var(--color-muted)' }}>
-              Tapping the banner will open a page showing only that offer's products with the discount already applied.
-            </p>
+            <label className="text-xs mb-1.5 block font-semibold" style={{ color: 'var(--color-heading)' }}>What happens when tapped?</label>
+            <div className="grid grid-cols-3 gap-2">
+              <button type="button" onClick={() => setActionType('link')} className="btn-secondary text-xs" style={actionType === 'link' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
+                Go to a link
+              </button>
+              <button type="button" onClick={() => setActionType('deal')} className="btn-secondary text-xs" style={actionType === 'deal' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
+                Single deal price
+              </button>
+              <button type="button" onClick={() => setActionType('bundle')} className="btn-secondary text-xs" style={actionType === 'bundle' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
+                Add product bundle
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border)' }} />
-            <span className="text-[11px]" style={{ color: 'var(--color-muted)' }}>or a custom link</span>
-            <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border)' }} />
-          </div>
+          {actionType === 'deal' && (
+            <div className="p-3 rounded-xl" style={{ backgroundColor: 'var(--color-cream)' }}>
+              <label className="text-xs mb-1.5 block font-semibold">Price (EGP)</label>
+              <input
+                type="number" min="0" step="0.01" required value={price} onChange={(e) => setPrice(e.target.value)}
+                placeholder="e.g. 450" className="input-luxe"
+              />
+              <p className="text-[11px] mt-1.5" style={{ color: 'var(--color-muted)' }}>
+                Tapping this banner adds ONE item straight to the cart at exactly this price — good for a single
+                bundled/discounted deal that isn't a real catalog product.
+              </p>
+            </div>
+          )}
 
-          <input
-            value={link} onChange={(e) => setLink(e.target.value)}
-            placeholder="Link (e.g. /shop — ignored if a price is set)"
-            className="input-luxe" disabled={Boolean(price)}
-          />
+          {actionType === 'bundle' && (
+            <div className="p-3 rounded-xl space-y-3" style={{ backgroundColor: 'var(--color-cream)' }}>
+              <p className="text-[11px]" style={{ color: 'var(--color-muted)' }}>
+                Pick real products from your catalog. Tapping the banner adds ALL of them to the cart in one go —
+                each keeps its own real price (and any of its own active discounts). No prices are changed here.
+              </p>
+              <div className="relative">
+                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2" size={14} style={{ color: 'var(--color-muted)' }} />
+                <input value={productSearch} onChange={(e) => setProductSearch(e.target.value)} placeholder="Search products to add…" className="input-luxe pl-10" />
+              </div>
+              {searchResults && searchResults.products.length > 0 && (
+                <div className="space-y-1 max-h-40 overflow-y-auto rounded-xl border bg-white" style={{ borderColor: 'var(--color-border)' }}>
+                  {searchResults.products.map((p) => (
+                    <button
+                      type="button" key={p.id} onClick={() => addProduct(p)}
+                      disabled={selectedProducts.some((sp) => sp.id === p.id)}
+                      className="w-full text-left px-3 py-2 hover:bg-black/5 flex items-center gap-3 disabled:opacity-40"
+                    >
+                      <img src={p.images[0] ? cld(p.images[0], 60) : 'https://picsum.photos/seed/placeholder/60/60'} alt={p.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
+                      <span className="flex-1 text-sm truncate">{p.name}</span>
+                      <span className="text-xs shrink-0" style={{ color: 'var(--color-muted)' }}>{p.price} {p.currency}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div className="space-y-2">
+                {selectedProducts.map((p) => (
+                  <div key={p.id} className="flex items-center gap-2 p-2 rounded-xl bg-white">
+                    <img src={p.image ? cld(p.image, 60) : 'https://picsum.photos/seed/placeholder/60/60'} alt={p.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
+                    <span className="flex-1 text-sm truncate">{p.name}</span>
+                    <span className="text-xs shrink-0" style={{ color: 'var(--color-muted)' }}>{p.price} {p.currency}</span>
+                    <button type="button" onClick={() => removeProduct(p.id)} aria-label={`Remove ${p.name}`} className="shrink-0 hover:text-red-500 transition-colors">
+                      <FiX size={14} />
+                    </button>
+                  </div>
+                ))}
+                {selectedProducts.length === 0 && <p className="text-xs py-1" style={{ color: 'var(--color-muted)' }}>No products selected yet.</p>}
+              </div>
+            </div>
+          )}
+
+          {actionType === 'link' && (
+            <>
+              <div>
+                <label className="text-xs mb-1.5 block font-semibold" style={{ color: 'var(--color-heading)' }}>
+                  Link to an offer — easiest way
+                </label>
+                <select
+                  value={linkedOfferId}
+                  onChange={(e) => setLink(e.target.value ? `/offer/${e.target.value}` : '')}
+                  className="input-luxe"
+                >
+                  <option value="">— Choose an active offer (optional) —</option>
+                  {activeOffers.map((o) => (
+                    <option key={o.id} value={o.id}>{o.title} — {offerLabel(o)}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border)' }} />
+                <span className="text-[11px]" style={{ color: 'var(--color-muted)' }}>or a custom link</span>
+                <div className="flex-1 h-px" style={{ backgroundColor: 'var(--color-border)' }} />
+              </div>
+
+              <input
+                value={link} onChange={(e) => setLink(e.target.value)}
+                placeholder="Link (e.g. /shop)"
+                className="input-luxe"
+              />
+            </>
+          )}
+
           <div>
             <label className="text-xs mb-1.5 block" style={{ color: 'var(--color-muted)' }}>Sort Order</label>
             <input type="number" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="input-luxe" />

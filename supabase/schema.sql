@@ -640,3 +640,44 @@ create policy "admin delete admins" on admins for delete using (is_admin());
 -- Safe to re-run.
 -- ============================================================================
 alter table products add column if not exists max_order_quantity integer;
+
+-- ============================================================================
+-- BLOCK: Coupon visibility + bundle-style promo banners
+--
+-- 1) Coupons get an `is_public` flag — separate from `is_enabled`. A coupon
+--    can be fully active/usable (works when typed at checkout) while staying
+--    OFF the site-wide announcement bar, for codes meant to be shared
+--    privately (DMs, influencers) rather than advertised to every visitor.
+--
+-- 2) Promo banners get an `action_type` ('link' | 'deal' | 'bundle') plus a
+--    `promo_banner_products` join table. 'bundle' banners add a hand-picked
+--    set of REAL products to the cart in one tap — each keeping its own real
+--    price (and any of its own active discounts) — instead of the existing
+--    'deal' mode which adds one synthetic item at a single flat price.
+--
+-- Self-healing: builds column-by-column / table-by-table so this works even
+-- if something here already exists in a different shape. Safe to re-run.
+-- ============================================================================
+alter table coupons add column if not exists is_public boolean not null default true;
+
+alter table promo_banners add column if not exists action_type text not null default 'link';
+alter table promo_banners drop constraint if exists promo_banners_action_type_check;
+alter table promo_banners add constraint promo_banners_action_type_check
+  check (action_type in ('link', 'deal', 'bundle'));
+
+create table if not exists promo_banner_products (
+  id uuid primary key default gen_random_uuid()
+);
+alter table promo_banner_products add column if not exists banner_id uuid references promo_banners(id) on delete cascade;
+alter table promo_banner_products add column if not exists product_id uuid references products(id) on delete cascade;
+
+create index if not exists idx_promo_banner_products_banner on promo_banner_products(banner_id);
+
+alter table promo_banner_products enable row level security;
+
+drop policy if exists "public read promo_banner_products" on promo_banner_products;
+create policy "public read promo_banner_products" on promo_banner_products for select using (true);
+
+drop policy if exists "admin full access promo_banner_products" on promo_banner_products;
+create policy "admin full access promo_banner_products" on promo_banner_products
+  for all using (is_admin()) with check (is_admin());

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { FaWhatsapp } from 'react-icons/fa';
-import { FiCreditCard, FiTruck } from 'react-icons/fi';
+import { FiCreditCard, FiTruck, FiTag } from 'react-icons/fi';
 import { useCart } from '../context/CartContext';
 import { WHATSAPP_NUMBER, buildWhatsAppOrderMessage } from '../data/constants';
 import { fetchShippingZones } from '../lib/api/shippingZones';
@@ -14,12 +14,14 @@ type PaymentMethod = 'cod' | 'card';
 
 export default function Checkout() {
   useSeo({ title: 'Checkout', path: '/checkout', noindex: true });
-  const { items, subtotal, discount, coupon, bogoLabel, clearCart } = useCart();
+  const { items, subtotal, discount, coupon, applyCoupon, removeCoupon, bogoLabel, clearCart } = useCart();
   const navigate = useNavigate();
   const { data: shippingZones = [] } = useQuery({ queryKey: ['shipping-zones'], queryFn: fetchShippingZones });
   const [form, setForm] = useState({ name: '', phone: '', address: '', governorateId: '', notes: '' });
   const [payment, setPayment] = useState<PaymentMethod>('cod');
   const [error, setError] = useState<string | null>(null);
+  const [couponCode, setCouponCode] = useState('');
+  const [couponError, setCouponError] = useState('');
 
   if (items.length === 0) return <Navigate to="/cart" replace />;
 
@@ -32,6 +34,16 @@ export default function Checkout() {
 
   const onChange = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [field]: e.target.value }));
+
+  const onApplyCoupon = () => {
+    const result = applyCoupon(couponCode);
+    if (!result.ok) {
+      setCouponError(result.message ?? 'Invalid coupon code');
+    } else {
+      setCouponError('');
+      setCouponCode('');
+    }
+  };
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,6 +141,31 @@ export default function Checkout() {
               <p className="font-semibold">{((product.effectivePrice ?? product.price) * quantity).toLocaleString('en-US')}</p>
             </div>
           ))}
+          <div className="h-px" style={{ backgroundColor: 'var(--color-border)' }} />
+
+          {coupon ? (
+            <div className="flex items-center justify-between text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: 'rgba(201,162,39,0.1)' }}>
+              <span>Coupon <strong>{coupon}</strong> applied</span>
+              <button type="button" onClick={removeCoupon} className="font-semibold">Remove</button>
+            </div>
+          ) : (
+            <div>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <FiTag className="absolute left-3.5 top-1/2 -translate-y-1/2" size={14} style={{ color: 'var(--color-muted)' }} />
+                  <input
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    placeholder="Coupon code"
+                    className="input-luxe pl-9 py-2.5 text-sm"
+                  />
+                </div>
+                <button type="button" onClick={onApplyCoupon} className="btn-secondary px-4 text-xs">Apply</button>
+              </div>
+              {couponError && <p className="text-xs mt-2" style={{ color: '#dc2626' }}>{couponError}</p>}
+            </div>
+          )}
+
           <div className="h-px" style={{ backgroundColor: 'var(--color-border)' }} />
           <div className="space-y-2 text-sm">
             <div className="flex justify-between"><span style={{ color: 'var(--color-muted)' }}>Subtotal</span><span>{subtotal.toLocaleString('en-US')} EGP</span></div>

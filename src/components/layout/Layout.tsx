@@ -13,7 +13,7 @@ const NAVBAR_HEIGHT = 80; // px — matches the existing pt-20 the page content 
 export default function Layout() {
   const { pathname } = useLocation();
   const { data: coupons = [] } = useQuery({ queryKey: ['coupons'], queryFn: fetchCoupons, staleTime: 60_000 });
-  const announcementCoupon = coupons.find((c) => c.targetType === 'all' && isCouponActive(c));
+  const announcementCoupon = coupons.find((c) => c.targetType === 'all' && c.isPublic && isCouponActive(c));
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });

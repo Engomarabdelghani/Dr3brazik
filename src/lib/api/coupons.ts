@@ -11,6 +11,7 @@ interface CouponRow {
   start_date: string | null;
   end_date: string | null;
   is_enabled: boolean;
+  is_public: boolean;
   coupon_products?: { product_id: string }[];
 }
 
@@ -26,6 +27,7 @@ function mapCoupon(row: CouponRow): Coupon {
     startDate: row.start_date ?? undefined,
     endDate: row.end_date ?? undefined,
     isEnabled: row.is_enabled,
+    isPublic: row.is_public,
   };
 }
 
@@ -48,6 +50,7 @@ export interface CouponInput {
   startDate?: string;
   endDate?: string;
   isEnabled: boolean;
+  isPublic: boolean;
 }
 
 function toRow(input: CouponInput) {
@@ -60,6 +63,7 @@ function toRow(input: CouponInput) {
     start_date: input.startDate ?? null,
     end_date: input.endDate ?? null,
     is_enabled: input.isEnabled,
+    is_public: input.isPublic,
   };
 }
 

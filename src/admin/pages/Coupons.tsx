@@ -125,6 +125,7 @@ function CouponModal({ coupon, onClose, onSaved }: { coupon: Coupon | null; onCl
   const [startDate, setStartDate] = useState(toLocalInput(coupon?.startDate));
   const [endDate, setEndDate] = useState(toLocalInput(coupon?.endDate));
   const [isEnabled, setIsEnabled] = useState(coupon?.isEnabled ?? true);
+  const [isPublic, setIsPublic] = useState(coupon?.isPublic ?? true);
   const [selectedProducts, setSelectedProducts] = useState<{ id: string; name: string; price: number; currency: string; image?: string }[]>([]);
   const [productSearch, setProductSearch] = useState('');
   const [saving, setSaving] = useState(false);
@@ -171,6 +172,7 @@ function CouponModal({ coupon, onClose, onSaved }: { coupon: Coupon | null; onCl
         startDate: startDate ? new Date(startDate).toISOString() : undefined,
         endDate: endDate ? new Date(endDate).toISOString() : undefined,
         isEnabled,
+        isPublic,
       };
       if (coupon) await updateCoupon(coupon.id, input);
       else await createCoupon(input);
@@ -279,6 +281,15 @@ function CouponModal({ coupon, onClose, onSaved }: { coupon: Coupon | null; onCl
             <input type="checkbox" checked={isEnabled} onChange={(e) => setIsEnabled(e.target.checked)} className="w-4 h-4 accent-[var(--color-gold)]" />
             <span className="text-sm font-medium">Enabled</span>
           </label>
+          <div>
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} className="w-4 h-4 accent-[var(--color-gold)]" />
+              <span className="text-sm font-medium">Show in site-wide banner</span>
+            </label>
+            <p className="text-[11px] mt-1 pl-6" style={{ color: 'var(--color-muted)' }}>
+              Off = the code still works when a customer types it at checkout, it just won't be advertised on the site.
+            </p>
+          </div>
 
           {error && <p className="text-xs" style={{ color: '#dc2626' }}>{error}</p>}
           <button type="submit" disabled={saving} className="btn-primary w-full">{saving ? 'Saving…' : coupon ? 'Save Changes' : 'Create Coupon'}</button>

@@ -88,12 +88,16 @@ export interface Offer {
   bogoGetDiscountPercent: number;
 }
 
+export type PromoBannerAction = 'link' | 'deal' | 'bundle';
+
 export interface PromoBanner {
   id: string;
   title: string;
   image: string;
   link?: string;
-  price?: number; // when set, tapping the banner on the storefront adds it straight to cart instead of navigating to `link`
+  price?: number; // when actionType === 'deal', tapping the banner adds a single synthetic item at this flat price
+  actionType: PromoBannerAction;
+  productIds?: string[]; // when actionType === 'bundle' — the real products added to cart, each at its own real price
   sortOrder: number;
   isEnabled: boolean;
 }
@@ -160,6 +164,7 @@ export interface Coupon {
   startDate?: string;
   endDate?: string;
   isEnabled: boolean;
+  isPublic: boolean; // when false, the coupon still works when typed manually, but never appears in the site-wide announcement bar
 }
 
 export interface SiteSettings {
