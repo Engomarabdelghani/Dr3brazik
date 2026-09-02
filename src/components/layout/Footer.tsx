@@ -1,18 +1,9 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiInstagram, FiFacebook } from 'react-icons/fi';
 import { FaTiktok } from 'react-icons/fa';
 import { NAV_LINKS, SITE_NAME } from '../../data/constants';
 
 export default function Footer() {
-  const [email, setEmail] = useState('');
-  const [subscribed, setSubscribed] = useState(false);
-
-  const onSubscribe = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email.trim()) setSubscribed(true);
-  };
-
   return (
     <footer className="mt-32 border-t" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-ink)' }}>
       <div className="container-luxe py-16">
@@ -22,22 +13,6 @@ export default function Footer() {
             <p className="text-sm text-gray-400 max-w-sm mb-6">
               Luxury cosmetics crafted with precision and care — bringing high-end skincare, makeup and fragrance to your everyday ritual.
             </p>
-
-            <form onSubmit={onSubscribe} className="max-w-md">
-              <label className="block text-xs uppercase tracking-[0.2em] text-gray-400 mb-3">Newsletter</label>
-              <div className="flex gap-3">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Your email"
-                  className="w-full rounded-full border border-white/15 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-gray-500 outline-none focus:border-[var(--color-gold)]"
-                />
-                <button type="submit" className="rounded-full px-5 py-3 text-sm font-semibold text-white transition-colors" style={{ backgroundColor: 'var(--color-gold)' }}>
-                  {subscribed ? 'Joined' : 'Join'}
-                </button>
-              </div>
-            </form>
           </div>
 
           <div>
