@@ -52,7 +52,7 @@ export default function ProductCard({ product, onQuickView }: { product: Product
         <div className="absolute top-3 left-3 flex flex-col gap-2">
           {product.isNew && <Badge tone="ink">New</Badge>}
           {discount ? <Badge tone="gold">-{discount}%</Badge> : null}
-          {bogoOffer && <Badge tone="success">{getBogoLabel(bogoOffer)}</Badge>}
+          {bogoOffer && <Badge tone="bogo">{getBogoLabel(bogoOffer)}</Badge>}
         </div>
 
         <button

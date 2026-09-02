@@ -8,32 +8,6 @@ import { NAV_LINKS, SITE_NAME } from '../../data/constants';
 import { useProducts } from '../../hooks/useCatalog';
 import { cld } from '../../utils/cloudinary';
 
-const normalizeSearchText = (value?: string | null) =>
-  (value ?? '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-const matchesProductSearch = (product: { name: string; nameAr?: string; brand?: string; category?: string; subcategory?: string; tags?: string[]; sku?: string }, query: string) => {
-  const normalizedQuery = normalizeSearchText(query);
-  if (!normalizedQuery) return true;
-
-  const haystacks = [
-    product.name,
-    product.nameAr,
-    product.brand,
-    product.category,
-    product.subcategory,
-    product.sku,
-    ...(product.tags ?? []),
-  ];
-
-  return haystacks.some((value) => normalizeSearchText(value).includes(normalizedQuery));
-};
-
 export default function Navbar({ topOffset = 0 }: { topOffset?: number }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -51,7 +25,10 @@ export default function Navbar({ topOffset = 0 }: { topOffset?: number }) {
   }, []);
 
   const results = query.trim()
-    ? products.filter((p) => matchesProductSearch(p, query)).slice(0, 6)
+    ? products.filter((p) => {
+        const q = query.toLowerCase();
+        return p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q);
+      }).slice(0, 6)
     : [];
 
   const submitSearch = (e: React.FormEvent) => {

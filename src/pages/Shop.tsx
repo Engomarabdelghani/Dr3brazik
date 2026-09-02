@@ -56,7 +56,11 @@ export default function Shop() {
       if (filters.brand && p.brand !== filters.brand) return false;
       if (p.price > effectiveMaxPrice) return false;
       if (filters.inStockOnly && !p.inStock) return false;
-      if (query && !p.name.toLowerCase().includes(query.toLowerCase())) return false;
+      if (query) {
+        const q = query.toLowerCase();
+        const matches = p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q);
+        if (!matches) return false;
+      }
       for (const [groupKey, selectedOptions] of Object.entries(subFilters)) {
         if (selectedOptions.length === 0) continue;
         const productValues = p.attributes?.[groupKey] ?? [];

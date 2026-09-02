@@ -10,6 +10,7 @@ import { ProductCardSkeleton } from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
 import OfferBanner from '../components/shop/OfferBanner';
 import SectionHeading from '../components/common/SectionHeading';
+import { useSeo } from '../hooks/useSeo';
 
 function discountPercentOf(p: Product) {
   if (p.oldPrice) return Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
@@ -18,6 +19,7 @@ function discountPercentOf(p: Product) {
 
 export default function Offers() {
   const { data: products = [], isLoading } = useProducts();
+  useSeo({ title: 'Offers & Promotions', description: 'Every active discount, bundle, and BOGO deal in one place.', path: '/offers' });
   const { data: offers = [] } = useOffers();
 
   const activeOffers = useMemo(() => offers.filter(isOfferActive), [offers]);
@@ -66,7 +68,7 @@ export default function Offers() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
                     <div className="absolute inset-0 p-6 flex flex-col justify-end">
                       {offer.discountType === 'bogo' && (
-                        <span className="badge-luxe self-start mb-2" style={{ backgroundColor: 'rgba(34,197,94,0.9)', color: '#fff' }}>
+                        <span className="badge-luxe self-start mb-2" style={{ backgroundColor: 'var(--color-gold)', color: '#fff' }}>
                           <FiTag size={11} className="inline mr-1" /> BOGO
                         </span>
                       )}

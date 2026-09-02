@@ -7,6 +7,7 @@ interface SeoOptions {
     robots?: string;
     path?: string;
     noindex?: boolean;
+    image?: string;
 }
 
 export function useSeo({
@@ -16,6 +17,7 @@ export function useSeo({
     robots,
     path,
     noindex,
+    image,
 }: SeoOptions) {
     const effectiveRobots = noindex ? 'noindex, nofollow' : robots ?? 'index, follow';
     const effectiveCanonical = canonical ?? (path && typeof window !== 'undefined' ? `${window.location.origin.replace(/\/$/, '')}${path}` : undefined);
@@ -65,5 +67,23 @@ export function useSeo({
 
             canonicalLink.href = effectiveCanonical;
         }
-    }, [title, description, canonical, robots, path, noindex]);
+
+        if (image) {
+            let ogImage = document.querySelector('meta[property="og:image"]') as HTMLMetaElement | null;
+            if (!ogImage) {
+                ogImage = document.createElement('meta');
+                ogImage.setAttribute('property', 'og:image');
+                document.head.appendChild(ogImage);
+            }
+            ogImage.content = image;
+
+            let twitterImage = document.querySelector('meta[name="twitter:image"]') as HTMLMetaElement | null;
+            if (!twitterImage) {
+                twitterImage = document.createElement('meta');
+                twitterImage.name = 'twitter:image';
+                document.head.appendChild(twitterImage);
+            }
+            twitterImage.content = image;
+        }
+    }, [title, description, canonical, robots, path, noindex, image]);
 }
