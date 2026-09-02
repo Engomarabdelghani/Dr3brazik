@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiInstagram, FiFacebook, FiSend } from 'react-icons/fi';
+import { FiInstagram, FiFacebook } from 'react-icons/fi';
 import { FaTiktok } from 'react-icons/fa';
 import { NAV_LINKS, SITE_NAME } from '../../data/constants';
 
@@ -22,25 +22,22 @@ export default function Footer() {
             <p className="text-sm text-gray-400 max-w-sm mb-6">
               Luxury cosmetics crafted with precision and care — bringing high-end skincare, makeup and fragrance to your everyday ritual.
             </p>
-            <form onSubmit={onSubscribe} className="flex max-w-sm">
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Your email address"
-                className="flex-1 rounded-l-full px-4 py-3 text-sm text-ink bg-white outline-none"
-              />
-              <button
-                type="submit"
-                aria-label="Subscribe"
-                className="rounded-r-full px-4 flex items-center justify-center"
-                style={{ backgroundColor: 'var(--color-gold)' }}
-              >
-                <FiSend color="#fff" />
-              </button>
+
+            <form onSubmit={onSubscribe} className="max-w-md">
+              <label className="block text-xs uppercase tracking-[0.2em] text-gray-400 mb-3">Newsletter</label>
+              <div className="flex gap-3">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Your email"
+                  className="w-full rounded-full border border-white/15 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-gray-500 outline-none focus:border-[var(--color-gold)]"
+                />
+                <button type="submit" className="rounded-full px-5 py-3 text-sm font-semibold text-white transition-colors" style={{ backgroundColor: 'var(--color-gold)' }}>
+                  {subscribed ? 'Joined' : 'Join'}
+                </button>
+              </div>
             </form>
-            {subscribed && <p className="text-xs mt-2" style={{ color: 'var(--color-gold-light)' }}>Thank you for subscribing!</p>}
           </div>
 
           <div>
@@ -58,41 +55,35 @@ export default function Footer() {
 
           <div>
             <h4 className="text-white font-semibold mb-4 text-sm tracking-wide">Follow Us</h4>
-            <div>
-              <h4 className="text-white font-semibold mb-4 text-sm tracking-wide">
-                Follow Us
-              </h4>
-
-              <div className="flex gap-3 mb-6">
-                {[
-                  {
-                    icon: FiInstagram,
-                    href: "https://www.instagram.com/dr_3brazik/",
-                    label: "Instagram",
-                  },
-                  {
-                    icon: FiFacebook,
-                    href: "https://www.facebook.com/profile.php?id=61589185443012",
-                    label: "Facebook",
-                  },
-                  {
-                    icon: FaTiktok,
-                    href: "https://www.tiktok.com/@dr_3brazik?is_from_webapp=1&sender_device=pc",
-                    label: "TikTok",
-                  },
-                ].map(({ icon: Icon, href, label }) => (
-                  <a
-                    key={label}
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={label}
-                    className="w-10 h-10 rounded-full flex items-center justify-center border border-white/15 text-white hover:bg-[var(--color-gold)] hover:border-[var(--color-gold)] transition-colors"
-                  >
-                    <Icon size={16} />
-                  </a>
-                ))}
-              </div>
+            <div className="flex gap-3 mb-6">
+              {[
+                {
+                  icon: FiInstagram,
+                  href: 'https://www.instagram.com/dr_3brazik/',
+                  label: 'Instagram',
+                },
+                {
+                  icon: FiFacebook,
+                  href: 'https://www.facebook.com/profile.php?id=61589185443012',
+                  label: 'Facebook',
+                },
+                {
+                  icon: FaTiktok,
+                  href: 'https://www.tiktok.com/@dr_3brazik?is_from_webapp=1&sender_device=pc',
+                  label: 'TikTok',
+                },
+              ].map(({ icon: Icon, href, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  className="w-10 h-10 rounded-full flex items-center justify-center border border-white/15 text-white hover:bg-[var(--color-gold)] hover:border-[var(--color-gold)] transition-colors"
+                >
+                  <Icon size={16} />
+                </a>
+              ))}
             </div>
             <p className="text-xs text-gray-500">We accept instapay, vodafone cash &amp; Cash on Delivery</p>
           </div>
@@ -130,3 +121,4 @@ export default function Footer() {
     </footer>
   );
 }
+
