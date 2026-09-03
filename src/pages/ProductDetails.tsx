@@ -8,7 +8,6 @@ import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useRecentlyViewed } from '../context/RecentlyViewedContext';
 import type { Subcategory } from '../data/taxonomy';
-import { WHATSAPP_NUMBER, buildWhatsAppProductInquiryMessage } from '../data/constants';
 import { getBogoLabel } from '../lib/api/offers';
 import { findActiveBogoOfferFor } from '../utils/bogo';
 import Gallery from '../components/product/Gallery';
@@ -62,7 +61,6 @@ export default function ProductDetails() {
     ? Math.max(product.maxOrderQuantity - cartQtyForProduct, 0)
     : 99;
 
-  const whatsappMessage = buildWhatsAppProductInquiryMessage({ name: product.name, quantity, price: product.price });
 
   return (
     <div className="container-luxe py-12">
@@ -151,14 +149,6 @@ export default function ProductDetails() {
             </button>
           </div>
 
-          <a
-            href={`https://wa.me/${WHATSAPP_NUMBER}?text=${whatsappMessage}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 flex items-center justify-center gap-2 w-full rounded-full py-3 text-sm font-semibold text-white"
-            style={{ backgroundColor: '#25D366' }}
-          >
-                      </a>
 
           <div className="grid grid-cols-3 gap-4 mt-10 pt-8 border-t" style={{ borderColor: 'var(--color-border)' }}>
             <div className="text-center">
