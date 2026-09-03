@@ -75,7 +75,14 @@ export default function Footer() {
             © {new Date().getFullYear()} {SITE_NAME}. All rights reserved.
           </p>
 
-          <div className="flex items-center gap-2 text-[14px] text-[#f2e8e2]" style={{ opacity: 0.9 }}>
+          <div className="flex items-center gap-2 text-[14px] text-[#f2e8e2] flex-wrap justify-center" style={{ opacity: 0.9 }}>
+            <Link
+              to="/admin/login"
+              className="font-semibold tracking-wide text-[#f3d7af] hover:text-white transition-all duration-300"
+            >
+              Admin
+            </Link>
+            <span>•</span>
             <span>Crafted with ❤️ by</span>
 
             <a
