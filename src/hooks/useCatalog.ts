@@ -29,7 +29,13 @@ export function useOffers() {
 }
 
 export function usePromoBanners() {
-  return useQuery({ queryKey: ['promo-banners'], queryFn: fetchPromoBanners, staleTime: 5 * 60_000 });
+  return useQuery({
+    queryKey: ['promo-banners'],
+    queryFn: fetchPromoBanners,
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+  });
 }
 
 export function useShippingZones() {

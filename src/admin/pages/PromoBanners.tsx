@@ -112,10 +112,20 @@ function BannerModal({ banner, nextSortOrder, onClose, onSaved }: {
   const [actionType, setActionType] = useState<PromoBannerAction>(banner?.actionType ?? 'link');
   const [sortOrder, setSortOrder] = useState(String(banner?.sortOrder ?? nextSortOrder));
   const [isEnabled, setIsEnabled] = useState(banner?.isEnabled ?? true);
+  const [startDate, setStartDate] = useState(() => banner?.startDate ? toLocalInput(banner.startDate) : '');
+  const [endDate, setEndDate] = useState(() => banner?.endDate ? toLocalInput(banner.endDate) : '');
   const [selectedProducts, setSelectedProducts] = useState<{ id: string; name: string; price: number; currency: string; image?: string }[]>([]);
   const [productSearch, setProductSearch] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const toLocalInput = (iso?: string) => {
+    if (!iso) return '';
+    const value = new Date(iso);
+    if (Number.isNaN(value.getTime())) return '';
+    const tzOffset = value.getTimezoneOffset() * 60000;
+    return new Date(value.getTime() - tzOffset).toISOString().slice(0, 16);
+  };
 
   useEffect(() => {
     if (banner?.productIds?.length) {
@@ -161,7 +171,10 @@ function BannerModal({ banner, nextSortOrder, onClose, onSaved }: {
         price: actionType === 'deal' ? (price ? Number(price) : undefined) : undefined,
         actionType,
         productIds: actionType === 'bundle' ? selectedProducts.map((p) => p.id) : undefined,
-        sortOrder: Number(sortOrder) || 0, isEnabled,
+        sortOrder: Number(sortOrder) || 0,
+        isEnabled,
+        startDate: startDate ? new Date(startDate).toISOString() : undefined,
+        endDate: endDate ? new Date(endDate).toISOString() : undefined,
       };
       if (banner) await updatePromoBanner(banner.id, input);
       else await createPromoBanner(input);
@@ -205,6 +218,17 @@ function BannerModal({ banner, nextSortOrder, onClose, onSaved }: {
               <button type="button" onClick={() => setActionType('bundle')} className="btn-secondary text-xs" style={actionType === 'bundle' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}>
                 Show a collection page
               </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs mb-1.5 block" style={{ color: 'var(--color-muted)' }}>Start date (optional)</label>
+              <input type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="input-luxe" />
+            </div>
+            <div>
+              <label className="text-xs mb-1.5 block" style={{ color: 'var(--color-muted)' }}>End date (optional)</label>
+              <input type="datetime-local" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="input-luxe" />
             </div>
           </div>
 

@@ -1,6 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 
+const isBannerTimeActive = (banner: any) => {
+    if (banner.is_active === false || banner.isEnabled === false) return false;
+
+    const now = Date.now();
+    const start = banner.start_date ?? banner.startDate;
+    const end = banner.end_date ?? banner.endDate;
+
+    if (start && new Date(start).getTime() > now) return false;
+    if (end && new Date(end).getTime() < now) return false;
+
+    return true;
+};
+
 export const BannersManager = () => {
     const [banners, setBanners] = useState<any[]>([]);
     const [title, setTitle] = useState('');
@@ -17,7 +30,7 @@ export const BannersManager = () => {
 
     const fetchBanners = async () => {
         const { data } = await supabase.from('promo_banners').select('*').order('display_order');
-        if (data) setBanners(data);
+        if (data) setBanners(data.filter((banner) => isBannerTimeActive(banner)));
     };
 
     const handleAddBanner = async (e: React.FormEvent) => {

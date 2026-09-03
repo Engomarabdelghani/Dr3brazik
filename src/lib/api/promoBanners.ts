@@ -10,6 +10,8 @@ interface PromoBannerRow {
   action_type: PromoBannerAction;
   sort_order: number;
   is_enabled: boolean;
+  start_date: string | null;
+  end_date: string | null;
   promo_banner_products?: { product_id: string }[];
 }
 
@@ -24,6 +26,8 @@ function mapBanner(row: PromoBannerRow): PromoBanner {
     productIds: row.promo_banner_products?.map((p) => p.product_id),
     sortOrder: row.sort_order,
     isEnabled: row.is_enabled,
+    startDate: row.start_date ?? undefined,
+    endDate: row.end_date ?? undefined,
   };
 }
 
@@ -33,7 +37,10 @@ export async function fetchPromoBanners(): Promise<PromoBanner[]> {
     .select('*, promo_banner_products(product_id)')
     .order('sort_order');
   if (error) throw error;
-  return (data ?? []).map(mapBanner);
+
+  return (data ?? [])
+    .map(mapBanner)
+    .filter((banner) => isPromoBannerActive(banner));
 }
 
 export interface PromoBannerInput {
@@ -45,6 +52,8 @@ export interface PromoBannerInput {
   productIds?: string[];
   sortOrder: number;
   isEnabled: boolean;
+  startDate?: string;
+  endDate?: string;
 }
 
 function toRow(input: PromoBannerInput) {
@@ -56,6 +65,8 @@ function toRow(input: PromoBannerInput) {
     action_type: input.actionType,
     sort_order: input.sortOrder,
     is_enabled: input.isEnabled,
+    start_date: input.startDate ?? null,
+    end_date: input.endDate ?? null,
   };
 }
 
@@ -79,6 +90,16 @@ export async function updatePromoBanner(id: string, input: PromoBannerInput): Pr
 export async function deletePromoBanner(id: string): Promise<void> {
   const { error } = await supabase.from('promo_banners').delete().eq('id', id);
   if (error) throw error;
+}
+
+export function isPromoBannerActive(banner: PromoBanner): boolean {
+  if (!banner.isEnabled) return false;
+
+  const now = Date.now();
+  if (banner.startDate && new Date(banner.startDate).getTime() > now) return false;
+  if (banner.endDate && new Date(banner.endDate).getTime() < now) return false;
+
+  return true;
 }
 
 /**

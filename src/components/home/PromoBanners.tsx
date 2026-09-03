@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { FiShoppingBag, FiPackage } from 'react-icons/fi';
 import { usePromoBanners } from '../../hooks/useCatalog';
-import { bannerToDealProduct } from '../../lib/api/promoBanners';
+import { bannerToDealProduct, isPromoBannerActive } from '../../lib/api/promoBanners';
 import { useCart } from '../../context/CartContext';
 
 const AUTOPLAY_MS = 5000;
@@ -22,7 +22,7 @@ const DRAG_THRESHOLD = 60; // px of horizontal drag before it counts as a swipe 
  */
 export default function PromoBanners() {
   const { data: banners = [], isLoading } = usePromoBanners();
-  const active = banners.filter((b) => b.isEnabled);
+  const active = banners.filter(isPromoBannerActive);
   const navigate = useNavigate();
   const { addItem } = useCart();
   const [index, setIndex] = useState(0);

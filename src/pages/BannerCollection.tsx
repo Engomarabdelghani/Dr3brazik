@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { FiArrowLeft, FiPackage } from 'react-icons/fi';
 import { usePromoBanners, useProducts } from '../hooks/useCatalog';
+import { isPromoBannerActive } from '../lib/api/promoBanners';
 import ProductCard from '../components/product/ProductCard';
 import { ProductCardSkeleton } from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
@@ -17,7 +18,7 @@ export default function BannerCollection() {
   const { data: banners = [], isLoading: bannersLoading } = usePromoBanners();
   const { data: products = [], isLoading: productsLoading } = useProducts();
 
-  const banner = banners.find((b) => b.id === id);
+  const banner = banners.find((b) => b.id === id && isPromoBannerActive(b));
 
   useSeo({ title: banner?.title, description: banner ? `${banner.title} — shop the collection.` : undefined, path: `/collection/${id ?? ''}` });
 

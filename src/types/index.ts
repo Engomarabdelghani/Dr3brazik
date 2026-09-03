@@ -100,6 +100,8 @@ export interface PromoBanner {
   productIds?: string[]; // when actionType === 'bundle' — the real products added to cart, each at its own real price
   sortOrder: number;
   isEnabled: boolean;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface ShippingZone {

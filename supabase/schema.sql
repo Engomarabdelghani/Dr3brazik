@@ -340,15 +340,22 @@ alter table promo_banners add column if not exists image text not null default '
 alter table promo_banners add column if not exists link text;
 alter table promo_banners add column if not exists sort_order integer not null default 0;
 alter table promo_banners add column if not exists is_enabled boolean not null default true;
+alter table promo_banners add column if not exists start_date timestamptz;
+alter table promo_banners add column if not exists end_date timestamptz;
 alter table promo_banners add column if not exists created_at timestamptz not null default now();
 
 create index if not exists idx_promo_banners_sort on promo_banners(sort_order);
+create index if not exists idx_promo_banners_active_dates on promo_banners(is_enabled, start_date, end_date);
 
 alter table promo_banners enable row level security;
 
 drop policy if exists "public read enabled promo banners" on promo_banners;
 create policy "public read enabled promo banners" on promo_banners
-  for select using (is_enabled = true);
+  for select using (
+    is_enabled = true
+    and (start_date is null or start_date <= now())
+    and (end_date is null or end_date >= now())
+  );
 
 drop policy if exists "admin full access promo banners" on promo_banners;
 create policy "admin full access promo banners" on promo_banners
