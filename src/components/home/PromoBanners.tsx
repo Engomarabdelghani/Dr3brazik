@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { FiShoppingBag, FiPackage } from 'react-icons/fi';
-import { usePromoBanners, useProducts } from '../../hooks/useCatalog';
+import { usePromoBanners } from '../../hooks/useCatalog';
 import { bannerToDealProduct } from '../../lib/api/promoBanners';
 import { useCart } from '../../context/CartContext';
 
@@ -22,7 +22,6 @@ const DRAG_THRESHOLD = 60; // px of horizontal drag before it counts as a swipe 
  */
 export default function PromoBanners() {
   const { data: banners = [], isLoading } = usePromoBanners();
-  const { data: allProducts = [] } = useProducts();
   const active = banners.filter((b) => b.isEnabled);
   const navigate = useNavigate();
   const { addItem } = useCart();
@@ -58,7 +57,7 @@ export default function PromoBanners() {
   const current = active[index];
   const isDeal = current.actionType === 'deal' && Boolean(current.price && current.price > 0);
   const isBundle = current.actionType === 'bundle' && Boolean(current.productIds?.length);
-  const isShoppable = isDeal || isBundle;
+  const isShoppable = isDeal; // only a flat-price deal adds straight to cart; a bundle navigates to a collection page
 
   const onTap = () => {
     if (draggedRef.current) return; // it was a swipe, not a tap — don't act
@@ -67,9 +66,7 @@ export default function PromoBanners() {
       return;
     }
     if (isBundle) {
-      // Each product is added at its own real, current price (including any active discount) — nothing is overridden.
-      const bundleProducts = allProducts.filter((p) => current.productIds!.includes(p.id));
-      bundleProducts.forEach((p) => addItem(p, 1));
+      navigate(`/collection/${current.id}`);
       return;
     }
     if (!current.link) return;
@@ -101,7 +98,7 @@ export default function PromoBanners() {
               setTimeout(() => { draggedRef.current = false; }, 50);
             }}
             onClick={onTap}
-            className={`absolute inset-0 ${active.length > 1 ? 'cursor-grab active:cursor-grabbing' : (current.link || isShoppable) ? 'cursor-pointer' : ''}`}
+            className={`absolute inset-0 ${active.length > 1 ? 'cursor-grab active:cursor-grabbing' : (current.link || isShoppable || isBundle) ? 'cursor-pointer' : ''}`}
           >
             {/* Blurred, scaled backdrop — fills any leftover space so the image never has to be cropped */}
             <img
@@ -135,7 +132,7 @@ export default function PromoBanners() {
             className="absolute bottom-3 right-3 z-10 flex items-center gap-2 pl-3 pr-2.5 py-2 rounded-full font-bold text-sm shadow-lg pointer-events-none"
             style={{ backgroundColor: 'var(--color-gold)', color: '#fff' }}
           >
-            <span>Add {current.productIds!.length} to Cart</span>
+            <span>Shop {current.productIds!.length} Products</span>
             <span className="w-6 h-6 rounded-full bg-white/25 flex items-center justify-center"><FiPackage size={13} /></span>
           </div>
         )}

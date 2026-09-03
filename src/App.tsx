@@ -5,6 +5,7 @@ import Shop from './pages/Shop';
 import ProductDetails from './pages/ProductDetails';
 import Offers from './pages/Offers';
 import OfferCollection from './pages/OfferCollection';
+import BannerCollection from './pages/BannerCollection';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import Cart from './pages/Cart';
@@ -45,6 +46,7 @@ export default function App() {
                   <Route path="/product/:slug" element={<ProductDetails />} />
                   <Route path="/offers" element={<Offers />} />
                   <Route path="/offer/:id" element={<OfferCollection />} />
+                  <Route path="/collection/:id" element={<BannerCollection />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/cart" element={<Cart />} />

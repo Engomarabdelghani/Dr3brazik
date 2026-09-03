@@ -29,7 +29,7 @@ export default function AdminPromoBanners() {
 
   const actionLabel = (b: PromoBanner) => {
     if (b.actionType === 'deal') return `${(b.price ?? 0).toLocaleString('en-US')} EGP — quick-buy`;
-    if (b.actionType === 'bundle') return `${b.productIds?.length ?? 0} product(s) — bundle add-to-cart`;
+    if (b.actionType === 'bundle') return `${b.productIds?.length ?? 0} product(s) — opens a collection page`;
     return b.link || 'Plain banner (no action)';
   };
 
@@ -203,7 +203,7 @@ function BannerModal({ banner, nextSortOrder, onClose, onSaved }: {
                 Single deal price
               </button>
               <button type="button" onClick={() => setActionType('bundle')} className="btn-secondary text-xs" style={actionType === 'bundle' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
-                Add product bundle
+                Show a collection page
               </button>
             </div>
           </div>
@@ -225,8 +225,9 @@ function BannerModal({ banner, nextSortOrder, onClose, onSaved }: {
           {actionType === 'bundle' && (
             <div className="p-3 rounded-xl space-y-3" style={{ backgroundColor: 'var(--color-cream)' }}>
               <p className="text-[11px]" style={{ color: 'var(--color-muted)' }}>
-                Pick real products from your catalog. Tapping the banner adds ALL of them to the cart in one go —
-                each keeps its own real price (and any of its own active discounts). No prices are changed here.
+                Pick real products from your catalog. Tapping the banner opens a page showing just these products —
+                the customer browses and adds whichever they want themselves (nothing is added automatically, and no
+                prices are changed).
               </p>
               <div className="relative">
                 <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2" size={14} style={{ color: 'var(--color-muted)' }} />
