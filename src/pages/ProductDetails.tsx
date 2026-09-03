@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiHeart, FiShoppingBag, FiTruck, FiShield, FiRotateCcw } from 'react-icons/fi';
-import { FaWhatsapp } from 'react-icons/fa';
 import { useProduct, useProducts, getRelated, useOffers } from '../hooks/useCatalog';
 import { useCategories } from '../hooks/useCatalog';
 import { useCart } from '../context/CartContext';
@@ -159,8 +158,7 @@ export default function ProductDetails() {
             className="mt-3 flex items-center justify-center gap-2 w-full rounded-full py-3 text-sm font-semibold text-white"
             style={{ backgroundColor: '#25D366' }}
           >
-            <FaWhatsapp size={18} />  WhatsApp
-          </a>
+                      </a>
 
           <div className="grid grid-cols-3 gap-4 mt-10 pt-8 border-t" style={{ borderColor: 'var(--color-border)' }}>
             <div className="text-center">
