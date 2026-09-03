@@ -26,7 +26,7 @@ function CouponCard({ code, desc }: { code: string; desc: string }) {
       style={{ borderColor: 'var(--color-gold)', backgroundColor: 'rgba(201,162,39,0.06)' }}
     >
       <div className="text-left">
-        <p className="font-extrabold tracking-widest text-sm" style={{ color: 'var(--color-ink)' }}>{code}</p>
+        <p className="font-extrabold tracking-widest text-sm" style={{ color: 'var(--color-coffee)' }}>{code}</p>
         <p className="text-xs mt-0.5" style={{ color: 'var(--color-muted)' }}>{desc}</p>
       </div>
       <span className="shrink-0" style={{ color: 'var(--color-gold)' }}>

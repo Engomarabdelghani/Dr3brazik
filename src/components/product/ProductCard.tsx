@@ -17,9 +17,7 @@ export default function ProductCard({ product, onQuickView }: { product: Product
   const { toggle, isInWishlist } = useWishlist();
   const { data: offers = [] } = useOffers();
   const wished = isInWishlist(product.id);
-  // A live active Offer (effectivePrice) always wins over a static, manually-set
-  // "old price" on the product itself — the Offer is the current campaign, so it
-  // should be what customers see everywhere, not just on its dedicated page.
+
   const hasActiveOfferPrice = product.effectivePrice != null && product.effectivePrice < product.price;
   const discount = hasActiveOfferPrice
     ? Math.round(((product.price - product.effectivePrice!) / product.price) * 100)
@@ -49,9 +47,23 @@ export default function ProductCard({ product, onQuickView }: { product: Product
           />
         </Link>
 
-        <div className="absolute top-3 left-3 flex flex-col gap-2">
+        <div className="absolute top-3 left-5 flex flex-col gap-2">
           {product.isNew && <Badge tone="ink">New</Badge>}
-          {discount ? <Badge tone="gold">-{discount}%</Badge> : null}
+          {discount ? (
+            <span
+              className="text-[17px] font-black leading-none"
+              style={{
+                color: 'var(--color-coffee)',
+                writingMode: 'vertical-rl',
+                textOrientation: 'mixed',
+                letterSpacing: '0.12em',
+                
+                textShadow: '0 0 0 rgba(0,0,0,0)',
+              }}
+            >
+              SALE {discount}% OFF
+            </span>
+          ) : null}
           {bogoOffer && <Badge tone="bogo">{getBogoLabel(bogoOffer)}</Badge>}
         </div>
 
@@ -60,7 +72,7 @@ export default function ProductCard({ product, onQuickView }: { product: Product
           onClick={() => toggle(product)}
           className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center glass shadow-sm transition-transform hover:scale-110"
         >
-          <FiHeart size={16} fill={wished ? 'var(--color-gold)' : 'none'} color={wished ? 'var(--color-gold)' : 'var(--color-ink)'} />
+          <FiHeart size={16} fill={wished ? 'var(--color-gold)' : 'none'} color={wished ? 'var(--color-gold)' : 'var(--color-coffee)'} />
         </button>
 
         {onQuickView && (
@@ -77,7 +89,7 @@ export default function ProductCard({ product, onQuickView }: { product: Product
       <div className="px-4 pt-3">
         <button
           onClick={() => addItem(product)}
-          className="w-full h-11 rounded-full bg-[var(--color-ink)] text-white text-sm font-semibold flex items-center justify-center gap-2 hover:bg-[var(--color-gold)] transition-colors"
+          className="w-full h-11 rounded-full bg-[var(--color-coffee)] text-white text-sm font-semibold flex items-center justify-center gap-2 hover:bg-[var(--color-gold)] transition-colors"
         >
           <FiShoppingBag size={15} /> Add to Cart
         </button>

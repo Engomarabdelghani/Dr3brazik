@@ -20,8 +20,8 @@ export default function Pagination({ page, totalPages, onChange }: { page: numbe
   const pages = buildPageList(page, totalPages);
 
   const pillStyle = (active: boolean) => ({
-    backgroundColor: active ? 'var(--color-ink)' : 'transparent',
-    color: active ? '#fff' : 'var(--color-ink)',
+    backgroundColor: active ? 'var(--color-coffee)' : 'transparent',
+    color: active ? '#fff' : 'var(--color-coffee)',
     border: active ? 'none' : '1px solid var(--color-border)',
   });
 

@@ -202,10 +202,10 @@ function CouponModal({ coupon, onClose, onSaved }: { coupon: Coupon | null; onCl
           />
 
           <div className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => setDiscountType('percent')} className="btn-secondary" style={discountType === 'percent' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
+            <button type="button" onClick={() => setDiscountType('percent')} className="btn-secondary" style={discountType === 'percent' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}>
               Percent Off
             </button>
-            <button type="button" onClick={() => setDiscountType('fixed')} className="btn-secondary" style={discountType === 'fixed' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
+            <button type="button" onClick={() => setDiscountType('fixed')} className="btn-secondary" style={discountType === 'fixed' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}>
               Fixed Amount
             </button>
           </div>
@@ -233,10 +233,10 @@ function CouponModal({ coupon, onClose, onSaved }: { coupon: Coupon | null; onCl
           <div>
             <label className="text-xs mb-1.5 block font-semibold" style={{ color: 'var(--color-heading)' }}>Applies To</label>
             <div className="flex gap-2 mb-2">
-              <button type="button" onClick={() => setTargetType('all')} className="btn-secondary flex-1" style={targetType === 'all' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
+              <button type="button" onClick={() => setTargetType('all')} className="btn-secondary flex-1" style={targetType === 'all' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}>
                 Entire Store
               </button>
-              <button type="button" onClick={() => setTargetType('products')} className="btn-secondary flex-1" style={targetType === 'products' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
+              <button type="button" onClick={() => setTargetType('products')} className="btn-secondary flex-1" style={targetType === 'products' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}>
                 Specific Products
               </button>
             </div>

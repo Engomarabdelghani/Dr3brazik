@@ -163,13 +163,13 @@ export default function OfferForm() {
             <input required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Offer title (e.g. Summer Sale)" className="input-luxe" />
 
             <div className="grid grid-cols-3 gap-2">
-              <button type="button" onClick={() => setDiscountType('percent')} className="btn-secondary" style={discountType === 'percent' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
+              <button type="button" onClick={() => setDiscountType('percent')} className="btn-secondary" style={discountType === 'percent' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}>
                 Percent Off
               </button>
-              <button type="button" onClick={() => setDiscountType('fixed')} className="btn-secondary" style={discountType === 'fixed' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
+              <button type="button" onClick={() => setDiscountType('fixed')} className="btn-secondary" style={discountType === 'fixed' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}>
                 Fixed Amount
               </button>
-              <button type="button" onClick={() => setDiscountType('bogo')} className="btn-secondary" style={discountType === 'bogo' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
+              <button type="button" onClick={() => setDiscountType('bogo')} className="btn-secondary" style={discountType === 'bogo' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}>
                 BOGO
               </button>
             </div>
@@ -232,7 +232,7 @@ export default function OfferForm() {
                 type="button"
                 onClick={() => setTargetType('category')}
                 className="btn-secondary flex-1"
-                style={targetType === 'category' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}
+                style={targetType === 'category' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}
               >
                 Entire Category
               </button>
@@ -240,7 +240,7 @@ export default function OfferForm() {
                 type="button"
                 onClick={() => setTargetType('products')}
                 className="btn-secondary flex-1"
-                style={targetType === 'products' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}
+                style={targetType === 'products' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}
               >
                 Specific Products
               </button>
@@ -310,7 +310,7 @@ export default function OfferForm() {
         <div className="space-y-6">
           <div className="card-luxe p-6">
             <h2 className="font-semibold mb-4">Preview</h2>
-            <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--color-ink)' }}>
+            <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--color-coffee)' }}>
               {(bannerImage || previewProduct?.image) && (
                 <img src={cld(bannerImage || previewProduct!.image!, 300)} alt={previewProduct?.name ?? title} className="w-full h-32 object-cover" />
               )}

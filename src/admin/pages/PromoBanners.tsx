@@ -196,13 +196,13 @@ function BannerModal({ banner, nextSortOrder, onClose, onSaved }: {
           <div>
             <label className="text-xs mb-1.5 block font-semibold" style={{ color: 'var(--color-heading)' }}>What happens when tapped?</label>
             <div className="grid grid-cols-3 gap-2">
-              <button type="button" onClick={() => setActionType('link')} className="btn-secondary text-xs" style={actionType === 'link' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
+              <button type="button" onClick={() => setActionType('link')} className="btn-secondary text-xs" style={actionType === 'link' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}>
                 Go to a link
               </button>
-              <button type="button" onClick={() => setActionType('deal')} className="btn-secondary text-xs" style={actionType === 'deal' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
+              <button type="button" onClick={() => setActionType('deal')} className="btn-secondary text-xs" style={actionType === 'deal' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}>
                 Single deal price
               </button>
-              <button type="button" onClick={() => setActionType('bundle')} className="btn-secondary text-xs" style={actionType === 'bundle' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
+              <button type="button" onClick={() => setActionType('bundle')} className="btn-secondary text-xs" style={actionType === 'bundle' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}>
                 Show a collection page
               </button>
             </div>

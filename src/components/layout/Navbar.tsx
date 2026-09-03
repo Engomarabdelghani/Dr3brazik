@@ -43,8 +43,14 @@ export default function Navbar({ topOffset = 0 }: { topOffset?: number }) {
   return (
     <>
       <header
-        className={`fixed inset-x-0 z-40 transition-all duration-500 ${scrolled ? 'glass shadow-sm py-3' : 'bg-transparent py-5'}`}
-        style={{ top: topOffset }}
+        className={`fixed inset-x-0 z-40 transition-all duration-500 ${scrolled ? 'shadow-sm py-3' : 'py-5'}`}
+        style={{
+          top: topOffset,
+          background: scrolled ? 'rgba(247, 239, 232, 0.88)' : 'rgba(247, 239, 232, 0.74)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          borderBottom: scrolled ? '1px solid rgba(120, 90, 74, 0.12)' : '1px solid transparent',
+        }}
       >
         <div className="container-luxe flex items-center justify-between">
           <Link to="/" className="flex items-center">
@@ -59,7 +65,7 @@ export default function Navbar({ topOffset = 0 }: { topOffset?: number }) {
                 className={({ isActive }) =>
                   `text-sm font-medium tracking-wide transition-colors relative pb-1 ${isActive ? '' : 'hover:text-[var(--color-gold)]'}`
                 }
-                style={({ isActive }) => ({ color: isActive ? 'var(--color-gold)' : 'var(--color-ink)' })}
+                style={({ isActive }) => ({ color: isActive ? 'var(--color-gold)' : 'var(--color-coffee)' })}
               >
                 {link.label}
               </NavLink>
@@ -81,7 +87,7 @@ export default function Navbar({ topOffset = 0 }: { topOffset?: number }) {
             <button aria-label="Open cart" onClick={openCart} className="relative w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors">
               <FiShoppingBag size={18} />
               {itemCount > 0 && (
-                <span className="absolute top-1 right-1 w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center text-white" style={{ backgroundColor: 'var(--color-ink)' }}>
+                <span className="absolute top-1 right-1 w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center text-white" style={{ backgroundColor: 'var(--color-coffee)' }}>
                   {itemCount}
                 </span>
               )}
@@ -141,7 +147,7 @@ export default function Navbar({ topOffset = 0 }: { topOffset?: number }) {
               <FiX size={26} />
             </button>
             <form onSubmit={submitSearch} className="w-full max-w-xl">
-              <div className="flex items-center gap-3 border-b-2 pb-3" style={{ borderColor: 'var(--color-ink)' }}>
+              <div className="flex items-center gap-3 border-b-2 pb-3" style={{ borderColor: 'var(--color-coffee)' }}>
                 <FiSearch size={22} />
                 <input
                   autoFocus

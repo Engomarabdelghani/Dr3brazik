@@ -26,7 +26,7 @@ export default function AnnouncementBar({ coupon }: { coupon: Coupon }) {
   return (
     <div
       className="fixed top-0 inset-x-0 z-50 flex items-center justify-center gap-2 text-white text-xs md:text-sm font-medium px-4"
-      style={{ height: ANNOUNCEMENT_BAR_HEIGHT, backgroundColor: 'var(--color-ink)' }}
+      style={{ height: ANNOUNCEMENT_BAR_HEIGHT, backgroundColor: 'var(--color-coffee)' }}
     >
       <span className="truncate">
         Use code <strong style={{ color: 'var(--color-gold-light)' }}>{coupon.code}</strong> at checkout

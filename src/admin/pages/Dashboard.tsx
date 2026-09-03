@@ -40,7 +40,7 @@ export default function AdminDashboard() {
               className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
               style={{ backgroundColor: card.tone === 'gold' ? 'rgba(201,162,39,0.12)' : 'rgba(17,24,39,0.06)' }}
             >
-              <card.icon size={18} style={{ color: card.tone === 'gold' ? 'var(--color-gold)' : 'var(--color-ink)' }} />
+              <card.icon size={18} style={{ color: card.tone === 'gold' ? 'var(--color-gold)' : 'var(--color-coffee)' }} />
             </div>
             <p className="text-2xl font-extrabold">{isLoading ? '—' : data?.[card.key]?.toLocaleString('en-US')}</p>
             <p className="text-xs mt-1" style={{ color: 'var(--color-muted)' }}>{card.label}</p>
@@ -51,7 +51,7 @@ export default function AdminDashboard() {
       {!isLoading && data && data.outOfStockCount > 0 && (
         <div className="flex items-center gap-3 p-4 rounded-2xl mb-8" style={{ backgroundColor: 'rgba(220,38,38,0.06)' }}>
           <FiAlertTriangle style={{ color: '#dc2626' }} />
-          <p className="text-sm" style={{ color: 'var(--color-ink)' }}>
+          <p className="text-sm" style={{ color: 'var(--color-coffee)' }}>
             <strong>{data.outOfStockCount}</strong> product{data.outOfStockCount > 1 ? 's are' : ' is'} out of stock.
           </p>
           <Link to="/admin/products?status=out-of-stock" className="text-sm font-semibold ml-auto flex items-center gap-1" style={{ color: '#dc2626' }}>

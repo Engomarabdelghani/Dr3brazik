@@ -136,9 +136,9 @@ export default function Shop() {
               onClick={() => setCategory(null)}
               className="text-xs font-semibold px-4 py-2.5 rounded-full border transition-all duration-200"
               style={{
-                borderColor: !filters.category ? 'var(--color-ink)' : 'var(--color-border)',
-                backgroundColor: !filters.category ? 'var(--color-ink)' : 'transparent',
-                color: !filters.category ? '#fff' : 'var(--color-ink)',
+                borderColor: !filters.category ? 'var(--color-coffee)' : 'var(--color-border)',
+                backgroundColor: !filters.category ? 'var(--color-coffee)' : 'transparent',
+                color: !filters.category ? '#fff' : 'var(--color-coffee)',
               }}
             >
               All
@@ -149,9 +149,9 @@ export default function Shop() {
                 onClick={() => setCategory(c.id)}
                 className="text-xs font-semibold px-4 py-2.5 rounded-full border transition-all duration-200"
                 style={{
-                  borderColor: filters.category === c.id ? 'var(--color-ink)' : 'var(--color-border)',
-                  backgroundColor: filters.category === c.id ? 'var(--color-ink)' : 'transparent',
-                  color: filters.category === c.id ? '#fff' : 'var(--color-ink)',
+                  borderColor: filters.category === c.id ? 'var(--color-coffee)' : 'var(--color-border)',
+                  backgroundColor: filters.category === c.id ? 'var(--color-coffee)' : 'transparent',
+                  color: filters.category === c.id ? '#fff' : 'var(--color-coffee)',
                 }}
               >
                 {c.name}
@@ -162,7 +162,7 @@ export default function Shop() {
               className="text-xs font-semibold px-4 py-2.5 rounded-full border flex items-center gap-1.5 transition-all duration-200"
               style={{
                 borderColor: activeRefineCount > 0 ? 'var(--color-gold)' : 'var(--color-border)',
-                color: activeRefineCount > 0 ? 'var(--color-gold)' : 'var(--color-ink)',
+                color: activeRefineCount > 0 ? 'var(--color-gold)' : 'var(--color-coffee)',
               }}
             >
               <FiSliders size={12} /> Filters
@@ -195,7 +195,7 @@ export default function Shop() {
                         key={key}
                         onClick={() => { setSort(key); setSortOpen(false); }}
                         className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-black/5 transition-colors"
-                        style={{ color: sort === key ? 'var(--color-gold)' : 'var(--color-ink)', fontWeight: sort === key ? 600 : 400 }}
+                        style={{ color: sort === key ? 'var(--color-gold)' : 'var(--color-coffee)', fontWeight: sort === key ? 600 : 400 }}
                       >
                         {sortLabels[key]}
                       </button>

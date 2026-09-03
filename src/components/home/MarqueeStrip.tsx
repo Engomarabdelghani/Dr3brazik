@@ -10,7 +10,7 @@ const items = [
 export default function MarqueeStrip() {
   const loop = [...items, ...items];
   return (
-    <div className="overflow-hidden py-3" style={{ backgroundColor: 'var(--color-ink)' }}>
+    <div className="overflow-hidden py-3" style={{ backgroundColor: 'var(--color-coffee)' }}>
       <div className="marquee-track">
         {loop.map((item, i) => (
           <div key={i} className="flex items-center gap-3 px-6 shrink-0">

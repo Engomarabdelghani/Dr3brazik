@@ -40,7 +40,7 @@ export default function BannerCollection() {
     <div>
       <div
         className="relative overflow-hidden py-14 md:py-20"
-        style={{ background: banner?.image ? undefined : 'linear-gradient(135deg, var(--color-ink), #2a1c1e)' }}
+        style={{ background: banner?.image ? undefined : 'linear-gradient(135deg, var(--color-coffee), #2a1c1e)' }}
       >
         {banner?.image && (
           <>

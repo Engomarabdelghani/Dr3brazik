@@ -49,7 +49,7 @@ export default function OfferCollection() {
     <div>
       <div
         className="relative overflow-hidden py-14 md:py-20"
-        style={{ background: offer?.bannerImage ? undefined : 'linear-gradient(135deg, var(--color-ink), #2a1c1e)' }}
+        style={{ background: offer?.bannerImage ? undefined : 'linear-gradient(135deg, var(--color-coffee), #2a1c1e)' }}
       >
         {offer?.bannerImage && (
           <>

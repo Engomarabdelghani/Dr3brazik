@@ -19,7 +19,7 @@ export default function NewsletterBanner() {
         viewport={{ once: true }}
         transition={{ duration: 0.6 }}
         className="rounded-[32px] px-8 py-14 md:py-20 text-center relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, var(--color-ink), #2A1C1F)' }}
+        style={{ background: 'linear-gradient(135deg, var(--color-coffee), #2A1C1F)' }}
       >
         <span className="eyebrow">Join the Circle</span>
         <h2 className="section-title mt-3" style={{ color: '#fff' }}>Get 10% Off Your First Order</h2>

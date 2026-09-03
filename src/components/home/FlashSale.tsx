@@ -35,7 +35,7 @@ export default function FlashSale({ items }: { items: Product[] }) {
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
             <span
               className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full mb-4"
-              style={{ backgroundColor: 'var(--color-gold)', color: 'var(--color-ink)' }}
+              style={{ backgroundColor: 'var(--color-gold)', color: 'var(--color-coffee)' }}
             >
               <FiZap size={12} /> Up to {maxDiscount}% Off
             </span>
@@ -55,7 +55,7 @@ export default function FlashSale({ items }: { items: Product[] }) {
               <div key={i} className="flex flex-col items-center">
                 <div
                   className="w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center font-extrabold text-xl md:text-2xl"
-                  style={{ backgroundColor: '#fff', color: 'var(--color-ink)' }}
+                  style={{ backgroundColor: '#fff', color: 'var(--color-coffee)' }}
                 >
                   {String(unit.value).padStart(2, '0')}
                 </div>
@@ -75,7 +75,7 @@ export default function FlashSale({ items }: { items: Product[] }) {
           <Link
             to="/offers"
             className="inline-flex items-center gap-2 text-sm font-semibold px-6 py-3 rounded-full transition-colors"
-            style={{ backgroundColor: 'var(--color-gold)', color: 'var(--color-ink)' }}
+            style={{ backgroundColor: 'var(--color-gold)', color: 'var(--color-coffee)' }}
           >
             See All Offers <FiArrowRight />
           </Link>

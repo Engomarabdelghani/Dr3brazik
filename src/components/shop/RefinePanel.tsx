@@ -18,9 +18,9 @@ export default function RefinePanel({ filters, onChange, maxPriceLimit, brands }
             onClick={() => onChange({ ...filters, brand: null })}
             className="text-xs font-semibold px-3.5 py-2 rounded-full border transition-colors"
             style={{
-              borderColor: !filters.brand ? 'var(--color-ink)' : 'var(--color-border)',
-              backgroundColor: !filters.brand ? 'var(--color-ink)' : 'transparent',
-              color: !filters.brand ? '#fff' : 'var(--color-ink)',
+              borderColor: !filters.brand ? 'var(--color-coffee)' : 'var(--color-border)',
+              backgroundColor: !filters.brand ? 'var(--color-coffee)' : 'transparent',
+              color: !filters.brand ? '#fff' : 'var(--color-coffee)',
             }}
           >
             All Brands
@@ -31,9 +31,9 @@ export default function RefinePanel({ filters, onChange, maxPriceLimit, brands }
               onClick={() => onChange({ ...filters, brand: b })}
               className="text-xs font-semibold px-3.5 py-2 rounded-full border transition-colors"
               style={{
-                borderColor: filters.brand === b ? 'var(--color-ink)' : 'var(--color-border)',
-                backgroundColor: filters.brand === b ? 'var(--color-ink)' : 'transparent',
-                color: filters.brand === b ? '#fff' : 'var(--color-ink)',
+                borderColor: filters.brand === b ? 'var(--color-coffee)' : 'var(--color-border)',
+                backgroundColor: filters.brand === b ? 'var(--color-coffee)' : 'transparent',
+                color: filters.brand === b ? '#fff' : 'var(--color-coffee)',
               }}
             >
               {b}

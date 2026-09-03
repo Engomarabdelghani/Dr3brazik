@@ -8,7 +8,7 @@ export default function PriceTag({ price, oldPrice, currency = 'EGP', size = 'md
   };
   return (
     <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-      <span className={`font-bold whitespace-nowrap ${sizes[size]}`} style={{ color: 'var(--color-ink)' }}>
+      <span className={`font-bold whitespace-nowrap ${sizes[size]}`} style={{ color: 'var(--color-coffee)' }}>
         {price.toLocaleString('en-US')} {currency}
       </span>
       {oldPrice && (

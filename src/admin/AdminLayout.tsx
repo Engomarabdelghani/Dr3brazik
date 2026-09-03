@@ -47,8 +47,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               }`
             }
             style={({ isActive }) => ({
-              backgroundColor: isActive ? 'var(--color-ink)' : 'transparent',
-              color: isActive ? '#fff' : 'var(--color-ink)',
+              backgroundColor: isActive ? 'var(--color-coffee)' : 'transparent',
+              color: isActive ? '#fff' : 'var(--color-coffee)',
             })}
           >
             <item.icon size={17} />

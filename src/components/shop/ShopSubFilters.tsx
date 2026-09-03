@@ -48,9 +48,9 @@ export default function ShopSubFilters({ categoryLabel, groups, selected, onTogg
                       onClick={() => onToggle(group.key, option)}
                       className="text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors"
                       style={{
-                        borderColor: active ? 'var(--color-ink)' : 'var(--color-border)',
+                        borderColor: active ? 'var(--color-coffee)' : 'var(--color-border)',
                         backgroundColor: active ? 'var(--color-blush)' : 'transparent',
-                        color: 'var(--color-ink)',
+                        color: 'var(--color-coffee)',
                       }}
                     >
                       {option}

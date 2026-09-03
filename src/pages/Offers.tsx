@@ -56,7 +56,7 @@ export default function Offers() {
                   viewport={{ once: true, margin: '-40px' }}
                   transition={{ duration: 0.5, delay: i * 0.08 }}
                 >
-                  <Link to={href} className="group block relative rounded-3xl overflow-hidden h-52" style={{ backgroundColor: 'var(--color-ink)' }}>
+                  <Link to={href} className="group block relative rounded-3xl overflow-hidden h-52" style={{ backgroundColor: 'var(--color-coffee)' }}>
                     {offer.bannerImage && (
                       <img
                         src={offer.bannerImage}
@@ -68,7 +68,7 @@ export default function Offers() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
                     <div className="absolute inset-0 p-6 flex flex-col justify-end">
                       {offer.discountType === 'bogo' && (
-                        <span className="badge-luxe self-start mb-2" style={{ backgroundColor: 'var(--color-gold)', color: '#fff' }}>
+                        <span className="badge-luxe self-start mb-2" style={{ backgroundColor: 'var(--color-coffee)', color: '#fff' }}>
                           <FiTag size={11} className="inline mr-1" /> BOGO
                         </span>
                       )}

@@ -97,7 +97,7 @@ export default function ProductDetails() {
           <> / <Link to={`/shop?category=${productCategory.id}`}>{productCategory.name}</Link></>
         )}
         {productSubcategory && <> / <span>{productSubcategory.name}</span></>}
-        {' '}/ <span style={{ color: 'var(--color-ink)' }}>{product.name}</span>
+        {' '}/ <span style={{ color: 'var(--color-coffee)' }}>{product.name}</span>
       </p>
 
       <div className="grid lg:grid-cols-2 gap-14">
@@ -148,7 +148,7 @@ export default function ProductDetails() {
               className="w-12 h-12 rounded-full border flex items-center justify-center shrink-0"
               style={{ borderColor: 'var(--color-border)' }}
             >
-              <FiHeart fill={wished ? 'var(--color-gold)' : 'none'} color={wished ? 'var(--color-gold)' : 'var(--color-ink)'} />
+              <FiHeart fill={wished ? 'var(--color-gold)' : 'none'} color={wished ? 'var(--color-gold)' : 'var(--color-coffee)'} />
             </button>
           </div>
 

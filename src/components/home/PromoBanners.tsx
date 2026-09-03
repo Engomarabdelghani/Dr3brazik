@@ -48,8 +48,8 @@ export default function PromoBanners() {
 
   if (isLoading) {
     return (
-      <section className="container-luxe pt-6 md:pt-8">
-        <div className="skeleton w-full h-[180px] sm:h-[260px] md:h-[340px] rounded-3xl" />
+      <section className="w-full">
+        <div className="skeleton w-full h-[220px] sm:h-[320px] md:h-[420px] lg:h-[500px]" />
       </section>
     );
   }
@@ -75,8 +75,9 @@ export default function PromoBanners() {
   };
 
   return (
-    <section className="container-luxe pt-6 md:pt-8">
-      <div className="relative w-full h-[180px] sm:h-[260px] md:h-[340px] lg:h-[400px] overflow-hidden rounded-3xl bg-black">
+    <section className="w-full bg-[#f5e7e5]">
+      <div className="relative w-full h-[240px] sm:h-[320px] md:h-[420px] lg:h-[560px] overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.55),_rgba(245,231,229,0.7)_35%,_rgba(244,227,222,0.96)_100%)]" />
         <AnimatePresence initial={false} mode="wait">
           <motion.div
             key={current.id}
@@ -94,26 +95,23 @@ export default function PromoBanners() {
             onDragEnd={(_, info) => {
               if (info.offset.x < -DRAG_THRESHOLD) goTo(index + 1);
               else if (info.offset.x > DRAG_THRESHOLD) goTo(index - 1);
-              // Reset shortly after so a genuine tap right after still works next time.
               setTimeout(() => { draggedRef.current = false; }, 50);
             }}
             onClick={onTap}
             className={`absolute inset-0 ${active.length > 1 ? 'cursor-grab active:cursor-grabbing' : (current.link || isShoppable || isBundle) ? 'cursor-pointer' : ''}`}
           >
-            {/* Blurred, scaled backdrop — fills any leftover space so the image never has to be cropped */}
             <img
               src={current.image}
               alt=""
               aria-hidden="true"
-              className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-60"
+              className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-30"
             />
-            <div className="absolute inset-0 bg-black/25" />
-            {/* The full, uncropped image */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#f7e5e2]/30 via-transparent to-[#f6dfe7]/15" />
             <img
               src={current.image}
               alt={current.title}
               draggable={false}
-              className="relative w-full h-full object-contain select-none"
+              className="relative w-full h-full object-contain select-none scale-[1.03]"
             />
           </motion.div>
         </AnimatePresence>

@@ -70,7 +70,7 @@ export default function ProductTabs({ product }: ProductTabsProps) {
             key={tab}
             onClick={() => setActive(tab)}
             className="px-5 py-3 text-sm font-semibold whitespace-nowrap relative"
-            style={{ color: active === tab ? 'var(--color-ink)' : 'var(--color-muted)' }}
+            style={{ color: active === tab ? 'var(--color-coffee)' : 'var(--color-muted)' }}
           >
             {tab}
             {tab === 'Reviews' && (
