@@ -159,7 +159,7 @@ export default function ProductDetails() {
             className="mt-3 flex items-center justify-center gap-2 w-full rounded-full py-3 text-sm font-semibold text-white"
             style={{ backgroundColor: '#25D366' }}
           >
-            <FaWhatsapp size={18} /> Order via WhatsApp
+            <FaWhatsapp size={18} />  WhatsApp
           </a>
 
           <div className="grid grid-cols-3 gap-4 mt-10 pt-8 border-t" style={{ borderColor: 'var(--color-border)' }}>
