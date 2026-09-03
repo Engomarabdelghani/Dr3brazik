@@ -47,7 +47,7 @@ export default function ProductCard({ product, onQuickView }: { product: Product
           />
         </Link>
 
-        <div className="absolute top-3 left-5 flex flex-col gap-2">
+        <div className="absolute top-3 left-2 flex flex-col gap-2">
           {product.isNew && <Badge tone="ink">New</Badge>}
           {discount ? (
             <span
