@@ -51,13 +51,12 @@ export default function ProductCard({ product, onQuickView }: { product: Product
           {product.isNew && <Badge tone="ink">New</Badge>}
           {discount ? (
             <span
-              className="text-[17px] font-black leading-none"
+              className="text-[9px] sm:text-[12px] md:text-[17px] font-black leading-none"
               style={{
                 color: 'var(--color-coffee)',
                 writingMode: 'vertical-rl',
                 textOrientation: 'mixed',
-                letterSpacing: '0.12em',
-                
+                letterSpacing: '0.08em',
                 textShadow: '0 0 0 rgba(0,0,0,0)',
               }}
             >
