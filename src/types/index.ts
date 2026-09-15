@@ -44,6 +44,15 @@ export interface Product {
   attributes?: Record<string, string[]>;
   isDeal?: boolean; // true for synthetic "cart items" built from a shoppable promo banner — not a real catalog product
   maxOrderQuantity?: number; // admin-set cap on how many units of this product a customer can order at once
+  variants?: ProductVariant[]; // color options — same product, different photo; price/stock stay shared
+}
+
+export interface ProductVariant {
+  id: string;
+  colorName: string;
+  colorHex?: string;
+  image: string;
+  sortOrder: number;
 }
 
 export interface CartItem {
@@ -100,8 +109,6 @@ export interface PromoBanner {
   productIds?: string[]; // when actionType === 'bundle' — the real products added to cart, each at its own real price
   sortOrder: number;
   isEnabled: boolean;
-  startDate?: string;
-  endDate?: string;
 }
 
 export interface ShippingZone {
@@ -153,7 +160,7 @@ export interface Order {
 }
 
 export type CouponDiscountType = 'percent' | 'fixed';
-export type CouponTargetType = 'all' | 'products';
+export type CouponTargetType = 'all' | 'products' | 'all_except';
 
 export interface Coupon {
   id: string;

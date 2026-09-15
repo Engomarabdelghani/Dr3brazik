@@ -67,7 +67,11 @@ export default function AdminCoupons() {
                   <tr key={c.id} className="border-b last:border-0" style={{ borderColor: 'var(--color-border)' }}>
                     <td className="p-3 font-mono font-bold tracking-wide">{c.code}</td>
                     <td className="p-3" style={{ color: 'var(--color-gold)' }}>{discountLabel(c)}</td>
-                    <td className="p-3">{c.targetType === 'all' ? 'Entire Store' : `${c.productIds?.length ?? 0} product(s)`}</td>
+                    <td className="p-3">
+                      {c.targetType === 'all' ? 'Entire Store'
+                        : c.targetType === 'all_except' ? `Store except ${c.productIds?.length ?? 0} product(s)`
+                        : `${c.productIds?.length ?? 0} product(s)`}
+                    </td>
                     <td className="p-3">{c.minOrderAmount ? `${c.minOrderAmount.toLocaleString('en-US')} EGP` : '—'}</td>
                     <td className="p-3">
                       <span
@@ -143,7 +147,7 @@ function CouponModal({ coupon, onClose, onSaved }: { coupon: Coupon | null; onCl
   const { data: searchResults } = useQuery({
     queryKey: ['admin', 'coupon-product-search', productSearch],
     queryFn: () => fetchAdminProducts({ search: productSearch, page: 1, pageSize: 8 }),
-    enabled: targetType === 'products' && productSearch.trim().length > 1,
+    enabled: (targetType === 'products' || targetType === 'all_except') && productSearch.trim().length > 1,
   });
 
   const addProduct = (p: { id: string; name: string; price: number; currency: string; images: string[] }) => {
@@ -157,7 +161,7 @@ function CouponModal({ coupon, onClose, onSaved }: { coupon: Coupon | null; onCl
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!code.trim()) { setError('Please enter a code.'); return; }
-    if (targetType === 'products' && selectedProducts.length === 0) { setError('Choose at least one product.'); return; }
+    if ((targetType === 'products' || targetType === 'all_except') && selectedProducts.length === 0) { setError('Choose at least one product.'); return; }
 
     setSaving(true);
     setError(null);
@@ -167,7 +171,7 @@ function CouponModal({ coupon, onClose, onSaved }: { coupon: Coupon | null; onCl
         discountType,
         discountValue: Number(discountValue) || 0,
         targetType,
-        productIds: targetType === 'products' ? selectedProducts.map((p) => p.id) : undefined,
+        productIds: (targetType === 'products' || targetType === 'all_except') ? selectedProducts.map((p) => p.id) : undefined,
         minOrderAmount: minOrderAmount ? Number(minOrderAmount) : undefined,
         startDate: startDate ? new Date(startDate).toISOString() : undefined,
         endDate: endDate ? new Date(endDate).toISOString() : undefined,
@@ -202,10 +206,10 @@ function CouponModal({ coupon, onClose, onSaved }: { coupon: Coupon | null; onCl
           />
 
           <div className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => setDiscountType('percent')} className="btn-secondary" style={discountType === 'percent' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}>
+            <button type="button" onClick={() => setDiscountType('percent')} className="btn-secondary" style={discountType === 'percent' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
               Percent Off
             </button>
-            <button type="button" onClick={() => setDiscountType('fixed')} className="btn-secondary" style={discountType === 'fixed' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}>
+            <button type="button" onClick={() => setDiscountType('fixed')} className="btn-secondary" style={discountType === 'fixed' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
               Fixed Amount
             </button>
           </div>
@@ -233,15 +237,24 @@ function CouponModal({ coupon, onClose, onSaved }: { coupon: Coupon | null; onCl
           <div>
             <label className="text-xs mb-1.5 block font-semibold" style={{ color: 'var(--color-heading)' }}>Applies To</label>
             <div className="flex gap-2 mb-2">
-              <button type="button" onClick={() => setTargetType('all')} className="btn-secondary flex-1" style={targetType === 'all' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}>
+              <button type="button" onClick={() => setTargetType('all')} className="btn-secondary flex-1 text-xs" style={targetType === 'all' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
                 Entire Store
               </button>
-              <button type="button" onClick={() => setTargetType('products')} className="btn-secondary flex-1" style={targetType === 'products' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}>
+              <button type="button" onClick={() => setTargetType('all_except')} className="btn-secondary flex-1 text-xs" style={targetType === 'all_except' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
+                Store Except…
+              </button>
+              <button type="button" onClick={() => setTargetType('products')} className="btn-secondary flex-1 text-xs" style={targetType === 'products' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
                 Specific Products
               </button>
             </div>
 
-            {targetType === 'products' && (
+            {targetType === 'all_except' && (
+              <p className="text-[11px] mb-2" style={{ color: 'var(--color-muted)' }}>
+                Applies to everything in the store EXCEPT the products you pick below.
+              </p>
+            )}
+
+            {(targetType === 'products' || targetType === 'all_except') && (
               <div>
                 <div className="relative mb-2">
                   <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2" size={14} style={{ color: 'var(--color-muted)' }} />

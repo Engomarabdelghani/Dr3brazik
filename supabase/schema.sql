@@ -340,22 +340,15 @@ alter table promo_banners add column if not exists image text not null default '
 alter table promo_banners add column if not exists link text;
 alter table promo_banners add column if not exists sort_order integer not null default 0;
 alter table promo_banners add column if not exists is_enabled boolean not null default true;
-alter table promo_banners add column if not exists start_date timestamptz;
-alter table promo_banners add column if not exists end_date timestamptz;
 alter table promo_banners add column if not exists created_at timestamptz not null default now();
 
 create index if not exists idx_promo_banners_sort on promo_banners(sort_order);
-create index if not exists idx_promo_banners_active_dates on promo_banners(is_enabled, start_date, end_date);
 
 alter table promo_banners enable row level security;
 
 drop policy if exists "public read enabled promo banners" on promo_banners;
 create policy "public read enabled promo banners" on promo_banners
-  for select using (
-    is_enabled = true
-    and (start_date is null or start_date <= now())
-    and (end_date is null or end_date >= now())
-  );
+  for select using (is_enabled = true);
 
 drop policy if exists "admin full access promo banners" on promo_banners;
 create policy "admin full access promo banners" on promo_banners
@@ -688,3 +681,46 @@ create policy "public read promo_banner_products" on promo_banner_products for s
 drop policy if exists "admin full access promo_banner_products" on promo_banner_products;
 create policy "admin full access promo_banner_products" on promo_banner_products
   for all using (is_admin()) with check (is_admin());
+
+-- ============================================================================
+-- BLOCK: Product color variants (same product, different color photos)
+-- Lets the admin add color options to a product (e.g. Red / Blue), each with
+-- its own photo — the customer taps a color swatch on the product page and
+-- the main image swaps to that color's photo. Purely visual: price, stock,
+-- and everything else stays shared across all colors of the same product.
+-- Self-healing: builds column-by-column so this works even if a table with
+-- this name already exists in a different shape from an earlier attempt.
+-- Safe to re-run.
+-- ============================================================================
+create table if not exists product_variants (
+  id uuid primary key default gen_random_uuid()
+);
+alter table product_variants add column if not exists product_id uuid references products(id) on delete cascade;
+alter table product_variants add column if not exists color_name text not null default '';
+alter table product_variants add column if not exists color_hex text;
+alter table product_variants add column if not exists image text not null default '';
+alter table product_variants add column if not exists sort_order integer not null default 0;
+alter table product_variants add column if not exists created_at timestamptz not null default now();
+
+create index if not exists idx_product_variants_product on product_variants(product_id);
+
+alter table product_variants enable row level security;
+
+drop policy if exists "public read product_variants" on product_variants;
+create policy "public read product_variants" on product_variants for select using (true);
+
+drop policy if exists "admin full access product_variants" on product_variants;
+create policy "admin full access product_variants" on product_variants
+  for all using (is_admin()) with check (is_admin());
+
+-- ============================================================================
+-- BLOCK: Coupon "entire store except these products" option
+-- Adds a third target_type value: 'all_except' — the coupon applies storewide
+-- but excludes whichever products are picked (reusing the existing
+-- coupon_products join table, now meaning "excluded" instead of "included"
+-- when target_type = 'all_except').
+-- Safe to re-run.
+-- ============================================================================
+alter table coupons drop constraint if exists coupons_target_type_check;
+alter table coupons add constraint coupons_target_type_check
+  check (target_type in ('all', 'products', 'all_except'));

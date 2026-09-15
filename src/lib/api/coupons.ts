@@ -70,7 +70,7 @@ function toRow(input: CouponInput) {
 export async function createCoupon(input: CouponInput): Promise<string> {
   const { data, error } = await supabase.from('coupons').insert(toRow(input)).select('id').single();
   if (error) throw error;
-  if (input.targetType === 'products' && input.productIds?.length) {
+  if ((input.targetType === 'products' || input.targetType === 'all_except') && input.productIds?.length) {
     await supabase.from('coupon_products').insert(input.productIds.map((productId) => ({ coupon_id: data.id, product_id: productId })));
   }
   return data.id;
@@ -80,7 +80,7 @@ export async function updateCoupon(id: string, input: CouponInput): Promise<void
   const { error } = await supabase.from('coupons').update(toRow(input)).eq('id', id);
   if (error) throw error;
   await supabase.from('coupon_products').delete().eq('coupon_id', id);
-  if (input.targetType === 'products' && input.productIds?.length) {
+  if ((input.targetType === 'products' || input.targetType === 'all_except') && input.productIds?.length) {
     await supabase.from('coupon_products').insert(input.productIds.map((productId) => ({ coupon_id: id, product_id: productId })));
   }
 }
@@ -100,6 +100,7 @@ export function isCouponActive(coupon: Coupon): boolean {
 
 function couponTargetsProduct(coupon: Coupon, productId: string): boolean {
   if (coupon.targetType === 'all') return true;
+  if (coupon.targetType === 'all_except') return !coupon.productIds?.includes(productId);
   return Boolean(coupon.productIds?.includes(productId));
 }
 
