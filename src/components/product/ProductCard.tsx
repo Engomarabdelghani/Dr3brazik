@@ -49,20 +49,22 @@ export default function ProductCard({ product, onQuickView }: { product: Product
           />
         </Link>
 
-        <div className="absolute top-4 left-4 flex flex-col gap-2 max-w-[calc(100%-2rem)]">
-          {!product.inStock ? (
-            <span className="badge-luxe flex items-center gap-1 whitespace-nowrap" style={{ backgroundColor: 'var(--color-ink)', color: '#fff' }}>
-              Out of Stock
-            </span>
-          ) : (
+        <div className="absolute top-3 left-3 flex flex-col gap-2">
+          {product.inStock && (
             <>
               {product.isNew && <Badge tone="ink">New</Badge>}
               {discount ? (
                 <span
-                  className="badge-luxe flex items-center gap-1 whitespace-nowrap"
-                  style={{ backgroundColor: 'var(--color-coffee)', color: '#fff' }}
+                  className="text-[9px] sm:text-[12px] md:text-[17px] font-black leading-none"
+                  style={{
+                    color: 'var(--color-coffee)',
+                    writingMode: 'vertical-rl',
+                    textOrientation: 'mixed',
+                    letterSpacing: '0.08em',
+                    textShadow: '0 0 0 rgba(0,0,0,0)',
+                  }}
                 >
-                  Sale {discount}%
+                  SALE {discount}% OFF
                 </span>
               ) : null}
               {bogoOffer && <Badge tone="bogo">{getBogoLabel(bogoOffer)}</Badge>}
@@ -93,11 +95,10 @@ export default function ProductCard({ product, onQuickView }: { product: Product
         <button
           onClick={() => product.inStock && addItem(product)}
           disabled={!product.inStock}
-          className={`w-full h-11 rounded-full text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${
-            product.inStock
+          className={`w-full h-11 rounded-full text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${product.inStock
               ? 'bg-[var(--color-coffee)] text-white hover:bg-[var(--color-gold)]'
               : 'bg-[var(--color-border)] text-[var(--color-muted)] cursor-not-allowed'
-          }`}
+            }`}
         >
           <FiShoppingBag size={15} /> {product.inStock ? 'Add to Cart' : 'Out of Stock'}
         </button>
