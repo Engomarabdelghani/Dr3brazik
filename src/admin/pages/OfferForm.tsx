@@ -68,7 +68,7 @@ export default function OfferForm() {
 
   const { data: searchResults } = useQuery({
     queryKey: ['admin', 'offer-product-search', productSearch],
-    queryFn: () => fetchAdminProducts({ search: productSearch, page: 1, pageSize: 8 }),
+    queryFn: () => fetchAdminProducts({ search: productSearch, page: 1, pageSize: 50 }),
     enabled: targetType === 'products' && productSearch.trim().length > 1,
   });
 
@@ -163,13 +163,13 @@ export default function OfferForm() {
             <input required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Offer title (e.g. Summer Sale)" className="input-luxe" />
 
             <div className="grid grid-cols-3 gap-2">
-              <button type="button" onClick={() => setDiscountType('percent')} className="btn-secondary" style={discountType === 'percent' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}>
+              <button type="button" onClick={() => setDiscountType('percent')} className="btn-secondary" style={discountType === 'percent' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
                 Percent Off
               </button>
-              <button type="button" onClick={() => setDiscountType('fixed')} className="btn-secondary" style={discountType === 'fixed' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}>
+              <button type="button" onClick={() => setDiscountType('fixed')} className="btn-secondary" style={discountType === 'fixed' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
                 Fixed Amount
               </button>
-              <button type="button" onClick={() => setDiscountType('bogo')} className="btn-secondary" style={discountType === 'bogo' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}>
+              <button type="button" onClick={() => setDiscountType('bogo')} className="btn-secondary" style={discountType === 'bogo' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
                 BOGO
               </button>
             </div>
@@ -232,7 +232,7 @@ export default function OfferForm() {
                 type="button"
                 onClick={() => setTargetType('category')}
                 className="btn-secondary flex-1"
-                style={targetType === 'category' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}
+                style={targetType === 'category' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}
               >
                 Entire Category
               </button>
@@ -240,7 +240,7 @@ export default function OfferForm() {
                 type="button"
                 onClick={() => setTargetType('products')}
                 className="btn-secondary flex-1"
-                style={targetType === 'products' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}
+                style={targetType === 'products' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}
               >
                 Specific Products
               </button>
@@ -259,7 +259,7 @@ export default function OfferForm() {
                 </div>
 
                 {searchResults && searchResults.products.length > 0 && (
-                  <div className="space-y-1 mb-4 max-h-56 overflow-y-auto rounded-xl border" style={{ borderColor: 'var(--color-border)' }}>
+                  <div className="space-y-1 mb-4 max-h-72 overflow-y-auto rounded-xl border" style={{ borderColor: 'var(--color-border)' }}>
                     {searchResults.products.map((p) => (
                       <button
                         type="button"
@@ -310,7 +310,7 @@ export default function OfferForm() {
         <div className="space-y-6">
           <div className="card-luxe p-6">
             <h2 className="font-semibold mb-4">Preview</h2>
-            <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--color-coffee)' }}>
+            <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--color-ink)' }}>
               {(bannerImage || previewProduct?.image) && (
                 <img src={cld(bannerImage || previewProduct!.image!, 300)} alt={previewProduct?.name ?? title} className="w-full h-32 object-cover" />
               )}

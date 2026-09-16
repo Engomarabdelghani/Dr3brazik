@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiTrash2, FiShoppingBag, FiTag, FiArrowRight } from 'react-icons/fi';
-import { useCart } from '../context/CartContext';
+import { useCart, orderCapFor } from '../context/CartContext';
 import { cld } from '../utils/cloudinary';
 import QuantityStepper from '../components/ui/QuantityStepper';
 import Button from '../components/ui/Button';
@@ -74,7 +74,7 @@ export default function Cart() {
                   </button>
                 </div>
                 <div className="flex items-center justify-between mt-4">
-                  <QuantityStepper value={quantity} onChange={(q) => updateQuantity(product.id, q)} max={product.maxOrderQuantity ?? 99} />
+                  <QuantityStepper value={quantity} onChange={(q) => updateQuantity(product.id, q)} max={orderCapFor(product) ?? 99} />
                   <p className="font-bold">{((product.effectivePrice ?? product.price) * quantity).toLocaleString('en-US')} {product.currency}</p>
                 </div>
               </div>

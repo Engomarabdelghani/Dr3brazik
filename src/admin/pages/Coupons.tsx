@@ -146,7 +146,7 @@ function CouponModal({ coupon, onClose, onSaved }: { coupon: Coupon | null; onCl
 
   const { data: searchResults } = useQuery({
     queryKey: ['admin', 'coupon-product-search', productSearch],
-    queryFn: () => fetchAdminProducts({ search: productSearch, page: 1, pageSize: 8 }),
+    queryFn: () => fetchAdminProducts({ search: productSearch, page: 1, pageSize: 50 }),
     enabled: (targetType === 'products' || targetType === 'all_except') && productSearch.trim().length > 1,
   });
 
@@ -206,10 +206,10 @@ function CouponModal({ coupon, onClose, onSaved }: { coupon: Coupon | null; onCl
           />
 
           <div className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => setDiscountType('percent')} className="btn-secondary" style={discountType === 'percent' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}>
+            <button type="button" onClick={() => setDiscountType('percent')} className="btn-secondary" style={discountType === 'percent' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
               Percent Off
             </button>
-            <button type="button" onClick={() => setDiscountType('fixed')} className="btn-secondary" style={discountType === 'fixed' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}>
+            <button type="button" onClick={() => setDiscountType('fixed')} className="btn-secondary" style={discountType === 'fixed' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
               Fixed Amount
             </button>
           </div>
@@ -237,13 +237,13 @@ function CouponModal({ coupon, onClose, onSaved }: { coupon: Coupon | null; onCl
           <div>
             <label className="text-xs mb-1.5 block font-semibold" style={{ color: 'var(--color-heading)' }}>Applies To</label>
             <div className="flex gap-2 mb-2">
-              <button type="button" onClick={() => setTargetType('all')} className="btn-secondary flex-1 text-xs" style={targetType === 'all' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}>
+              <button type="button" onClick={() => setTargetType('all')} className="btn-secondary flex-1 text-xs" style={targetType === 'all' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
                 Entire Store
               </button>
-              <button type="button" onClick={() => setTargetType('all_except')} className="btn-secondary flex-1 text-xs" style={targetType === 'all_except' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}>
+              <button type="button" onClick={() => setTargetType('all_except')} className="btn-secondary flex-1 text-xs" style={targetType === 'all_except' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
                 Store Except…
               </button>
-              <button type="button" onClick={() => setTargetType('products')} className="btn-secondary flex-1 text-xs" style={targetType === 'products' ? { backgroundColor: 'var(--color-coffee)', color: '#fff' } : undefined}>
+              <button type="button" onClick={() => setTargetType('products')} className="btn-secondary flex-1 text-xs" style={targetType === 'products' ? { backgroundColor: 'var(--color-ink)', color: '#fff' } : undefined}>
                 Specific Products
               </button>
             </div>
@@ -261,7 +261,7 @@ function CouponModal({ coupon, onClose, onSaved }: { coupon: Coupon | null; onCl
                   <input value={productSearch} onChange={(e) => setProductSearch(e.target.value)} placeholder="Search products…" className="input-luxe pl-10" />
                 </div>
                 {searchResults && searchResults.products.length > 0 && (
-                  <div className="space-y-1 mb-3 max-h-40 overflow-y-auto rounded-xl border" style={{ borderColor: 'var(--color-border)' }}>
+                  <div className="space-y-1 mb-3 max-h-72 overflow-y-auto rounded-xl border" style={{ borderColor: 'var(--color-border)' }}>
                     {searchResults.products.map((p) => (
                       <button
                         type="button" key={p.id} onClick={() => addProduct(p)}

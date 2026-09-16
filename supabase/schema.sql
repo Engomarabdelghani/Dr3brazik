@@ -724,3 +724,42 @@ create policy "admin full access product_variants" on product_variants
 alter table coupons drop constraint if exists coupons_target_type_check;
 alter table coupons add constraint coupons_target_type_check
   check (target_type in ('all', 'products', 'all_except'));
+
+-- ============================================================================
+-- BLOCK: Rebuild products view so it picks up later-added columns
+--
+-- WHY THIS IS NEEDED: `products_with_effective_price` is defined with `p.*`.
+-- Postgres expands `*` into a fixed column list AT CREATION TIME — it does not
+-- re-expand it later. So every column added to `products` AFTER the view was
+-- created (max_order_quantity, and anything added from here on) was invisible
+-- to the storefront, which reads from this view. That's why the per-product
+-- "max quantity per order" cap silently did nothing.
+--
+-- Re-run this block after ANY future `alter table products add column`.
+-- Safe to re-run.
+-- ============================================================================
+drop view if exists products_with_effective_price cascade;
+create view products_with_effective_price as
+select
+  p.*,
+  coalesce(
+    (
+      select case o.discount_type
+        when 'percent' then round(p.price * (1 - o.discount_value / 100), 2)
+        when 'fixed' then greatest(p.price - o.discount_value, 0)
+      end
+      from offers o
+      left join offer_products op on op.offer_id = o.id
+      where o.is_enabled
+        and o.discount_type in ('percent', 'fixed')
+        and now() between o.start_date and o.end_date
+        and (
+          (o.target_type = 'products' and op.product_id = p.id)
+          or (o.target_type = 'category' and o.category_id = p.category_id)
+        )
+      order by o.discount_value desc
+      limit 1
+    ),
+    p.price
+  ) as effective_price
+from products p;

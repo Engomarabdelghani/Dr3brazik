@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type { CartItem, Product, Coupon } from '../types';
+import type { CartItem, Product } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { fetchOffers, isOfferActive, getBogoLabel } from '../lib/api/offers';
 import { computeBogoDiscount, findActiveBogoOfferFor } from '../utils/bogo';
@@ -19,8 +19,6 @@ interface CartContextValue {
   itemCount: number;
   coupon: string | null;
   couponDiscount: number;
-  appliedCoupon?: Coupon | null;
-  couponResult?: CouponValidationResult;
   discount: number;
   bogoDiscount: number;
   bogoLabel: string | null;
@@ -29,6 +27,19 @@ interface CartContextValue {
 }
 
 const CartContext = createContext<CartContextValue | undefined>(undefined);
+
+/**
+ * The most a customer may have of this product in one order: the admin's
+ * per-product "max quantity per order" and the actual stock on hand, whichever
+ * is lower. Returns null when neither applies (no cap set, unlimited stock).
+ * Synthetic banner "deal" items have no real stock, so they're never capped here.
+ */
+export function orderCapFor(product: Product): number | null {
+  const caps: number[] = [];
+  if (product.maxOrderQuantity != null) caps.push(product.maxOrderQuantity);
+  if (!product.isDeal && product.stock != null) caps.push(product.stock);
+  return caps.length ? Math.max(Math.min(...caps), 0) : null;
+}
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useLocalStorage<CartItem[]>('dk-cart', []);
@@ -40,7 +51,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addItem = useCallback((product: Product, quantity = 1) => {
     setItems((prev) => {
       const existing = prev.find((i) => i.product.id === product.id);
-      const cap = product.maxOrderQuantity;
+      const cap = orderCapFor(product);
       if (existing) {
         const nextQty = cap != null ? Math.min(existing.quantity + quantity, cap) : existing.quantity + quantity;
         return prev.map((i) =>
@@ -63,7 +74,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         ? prev.filter((i) => i.product.id !== productId)
         : prev.map((i) => {
             if (i.product.id !== productId) return i;
-            const cap = i.product.maxOrderQuantity;
+            const cap = orderCapFor(i.product);
             return { ...i, quantity: cap != null ? Math.min(quantity, cap) : quantity };
           })
     );
@@ -88,10 +99,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [coupon, coupons, items, subtotal]);
 
   const couponDiscount = couponResult.ok ? (couponResult.discount ?? 0) : 0;
-  const appliedCoupon = useMemo(() => {
-    if (!coupon) return null;
-    return coupons.find((c) => c.code === coupon) ?? null;
-  }, [coupon, coupons]);
 
   const bogoDiscount = useMemo(() => computeBogoDiscount(items, offers), [items, offers]);
 
@@ -119,7 +126,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const value: CartContextValue = {
     items, addItem, removeItem, updateQuantity, clearCart,
     isOpen, openCart: () => setIsOpen(true), closeCart: () => setIsOpen(false),
-    subtotal, itemCount, coupon: couponResult.ok ? coupon : null, couponDiscount, appliedCoupon, couponResult, discount, bogoDiscount, bogoLabel, applyCoupon, removeCoupon,
+    subtotal, itemCount, coupon: couponResult.ok ? coupon : null, couponDiscount, discount, bogoDiscount, bogoLabel, applyCoupon, removeCoupon,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

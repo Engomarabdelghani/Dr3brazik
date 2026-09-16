@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { FiX, FiTrash2, FiShoppingBag } from 'react-icons/fi';
-import { useCart } from '../../context/CartContext';
+import { useCart, orderCapFor } from '../../context/CartContext';
 import { cld } from '../../utils/cloudinary';
 import QuantityStepper from '../ui/QuantityStepper';
 import Button from '../ui/Button';
@@ -49,7 +49,7 @@ export default function CartDrawer() {
                           <p className="text-sm font-medium mt-1">{product.price.toLocaleString('en-US')} {product.currency}</p>
                         </div>
                         <div className="flex items-center justify-between mt-2">
-                          <QuantityStepper value={quantity} onChange={(q) => updateQuantity(product.id, q)} max={product.maxOrderQuantity ?? 99} />
+                          <QuantityStepper value={quantity} onChange={(q) => updateQuantity(product.id, q)} max={orderCapFor(product) ?? 99} />
                           <button aria-label="Remove item" onClick={() => removeItem(product.id)} className="text-gray-400 hover:text-red-500 transition-colors">
                             <FiTrash2 size={16} />
                           </button>

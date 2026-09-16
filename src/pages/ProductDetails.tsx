@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { FiHeart, FiShoppingBag, FiTruck, FiShield, FiRotateCcw } from 'react-icons/fi';
 import { useProduct, useProducts, getRelated, useOffers } from '../hooks/useCatalog';
 import { useCategories } from '../hooks/useCatalog';
-import { useCart } from '../context/CartContext';
+import { useCart, orderCapFor } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useRecentlyViewed } from '../context/RecentlyViewedContext';
 import type { Subcategory } from '../data/taxonomy';
@@ -32,6 +32,7 @@ export default function ProductDetails() {
   const { items: recentlyViewed, addView } = useRecentlyViewed();
   const { data: offers = [] } = useOffers();
   const [quantity, setQuantity] = useState(1);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
 
   useEffect(() => {
     if (product) addView(product);
@@ -57,10 +58,10 @@ export default function ProductDetails() {
   const productSubcategory = productCategory?.subcategories.find((s: Subcategory) => s.id === product.subcategory);
   const bogoOffer = findActiveBogoOfferFor({ id: product.id, categoryId: product.categoryId }, offers);
   const cartQtyForProduct = items.find((i) => i.product.id === product.id)?.quantity ?? 0;
-  const remainingAllowed = product.maxOrderQuantity != null
-    ? Math.max(product.maxOrderQuantity - cartQtyForProduct, 0)
-    : 99;
-
+  const orderCap = orderCapFor(product);
+  const remainingAllowed = orderCap != null ? Math.max(orderCap - cartQtyForProduct, 0) : 99;
+  const selectedVariant = product.variants?.find((v) => v.id === selectedVariantId);
+  const displayImages = selectedVariant ? [selectedVariant.image, ...product.images] : product.images;
 
   return (
     <div className="container-luxe py-12">
@@ -94,11 +95,47 @@ export default function ProductDetails() {
           <> / <Link to={`/shop?category=${productCategory.id}`}>{productCategory.name}</Link></>
         )}
         {productSubcategory && <> / <span>{productSubcategory.name}</span></>}
-        {' '}/ <span style={{ color: 'var(--color-coffee)' }}>{product.name}</span>
+        {' '}/ <span style={{ color: 'var(--color-ink)' }}>{product.name}</span>
       </p>
 
       <div className="grid lg:grid-cols-2 gap-14">
-        <Gallery images={product.images} name={product.name} />
+        <Gallery images={displayImages} name={product.name} key={selectedVariantId ?? 'default'} />
+
+        {product.variants && product.variants.length > 0 && (
+          <div className="mt-4">
+            <p className="text-xs font-semibold mb-2" style={{ color: 'var(--color-muted)' }}>
+              Color{selectedVariant ? `: ${selectedVariant.colorName}` : ''}
+            </p>
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => setSelectedVariantId(null)}
+                aria-label="Default color"
+                className="w-9 h-9 rounded-full overflow-hidden border-2 transition-colors"
+                style={{ borderColor: !selectedVariant ? 'var(--color-gold)' : 'var(--color-border)' }}
+              >
+                <img src={product.images[0]} alt="Default" className="w-full h-full object-cover" />
+              </button>
+              {product.variants.map((v) => (
+                <button
+                  key={v.id}
+                  type="button"
+                  onClick={() => setSelectedVariantId(v.id)}
+                  aria-label={v.colorName}
+                  title={v.colorName}
+                  className="w-9 h-9 rounded-full overflow-hidden border-2 transition-colors"
+                  style={{ borderColor: selectedVariantId === v.id ? 'var(--color-gold)' : 'var(--color-border)' }}
+                >
+                  {v.colorHex ? (
+                    <span className="w-full h-full block" style={{ backgroundColor: v.colorHex }} />
+                  ) : (
+                    <img src={v.image} alt={v.colorName} className="w-full h-full object-cover" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="lg:sticky lg:top-28 self-start">
           <p className="text-sm font-medium" style={{ color: 'var(--color-gold)' }}>{product.brand}</p>
@@ -123,9 +160,11 @@ export default function ProductDetails() {
             {product.inStock ? <Badge tone="success">In Stock</Badge> : <Badge tone="muted">Out of Stock</Badge>}
             {bogoOffer && <Badge tone="bogo">{getBogoLabel(bogoOffer)}</Badge>}
           </div>
-          {product.maxOrderQuantity != null && (
+          {orderCap != null && (
             <p className="text-xs mt-2" style={{ color: 'var(--color-muted)' }}>
-              Limited to {product.maxOrderQuantity} per order
+              {product.maxOrderQuantity != null && product.maxOrderQuantity <= (product.stock ?? Infinity)
+                ? `Limited to ${orderCap} per order`
+                : `Only ${orderCap} left in stock`}
               {cartQtyForProduct > 0 && ` — you already have ${cartQtyForProduct} in your cart`}
             </p>
           )}
@@ -145,10 +184,9 @@ export default function ProductDetails() {
               className="w-12 h-12 rounded-full border flex items-center justify-center shrink-0"
               style={{ borderColor: 'var(--color-border)' }}
             >
-              <FiHeart fill={wished ? 'var(--color-gold)' : 'none'} color={wished ? 'var(--color-gold)' : 'var(--color-coffee)'} />
+              <FiHeart fill={wished ? 'var(--color-gold)' : 'none'} color={wished ? 'var(--color-gold)' : 'var(--color-ink)'} />
             </button>
           </div>
-
 
           <div className="grid grid-cols-3 gap-4 mt-10 pt-8 border-t" style={{ borderColor: 'var(--color-border)' }}>
             <div className="text-center">
