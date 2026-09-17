@@ -1,6 +1,7 @@
 import { supabase, PRODUCT_IMAGES_BUCKET } from '../supabase';
 import { mapProduct, type CategoryLookup } from '../mappers';
 import { fetchCategoryRows, fetchSubcategoryRows } from './categories';
+import { fetchVariantsForProduct } from './productVariants';
 import type { Product, ProductImage } from '../../types';
 
 const PRODUCT_VIEW = 'products_with_effective_price';
@@ -32,7 +33,9 @@ export async function fetchProductBySlug(slug: string): Promise<Product | null> 
   ]);
   if (error) throw error;
   if (!data) return null;
-  return mapProduct(data, categoriesById, subcategoriesById);
+  const product = mapProduct(data, categoriesById, subcategoriesById);
+  product.variants = await fetchVariantsForProduct(product.id);
+  return product;
 }
 
 export interface AdminProductQuery {
@@ -89,7 +92,9 @@ export async function fetchProductById(id: string): Promise<Product | null> {
   ]);
   if (error) throw error;
   if (!data) return null;
-  return mapProduct(data, categoriesById, subcategoriesById);
+  const product = mapProduct(data, categoriesById, subcategoriesById);
+  product.variants = await fetchVariantsForProduct(product.id);
+  return product;
 }
 
 export async function fetchProductsByIds(ids: string[]): Promise<Product[]> {
@@ -162,10 +167,6 @@ function toRow(input: ProductInput) {
     meta_description: input.metaDescription || null,
     images: input.images,
     max_order_quantity: input.maxOrderQuantity ?? null,
-    attributes: {
-      // keep any existing attributes shape; store max_order_quantity as a fallback
-      max_order_quantity: input.maxOrderQuantity ?? null,
-    },
   };
 }
 
@@ -242,4 +243,18 @@ export async function uploadProductImage(file: File, folder: string): Promise<Pr
 export async function deleteProductImage(path: string | null): Promise<void> {
   if (!path) return;
   await supabase.storage.from(PRODUCT_IMAGES_BUCKET).remove([path]);
+}
+
+/**
+ * Subtracts the ordered quantities from stock, atomically inside the database
+ * so simultaneous checkouts can't oversell. Synthetic banner "deal" items are
+ * skipped — they aren't real catalog rows.
+ */
+export async function decrementStock(items: { productId: string; quantity: number }[]): Promise<void> {
+  const payload = items
+    .filter((i) => !i.productId.startsWith('deal-'))
+    .map((i) => ({ product_id: i.productId, quantity: i.quantity }));
+  if (payload.length === 0) return;
+  const { error } = await supabase.rpc('decrement_product_stock', { items: payload });
+  if (error) throw error;
 }

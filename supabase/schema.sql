@@ -763,3 +763,62 @@ select
     p.price
   ) as effective_price
 from products p;
+
+-- ============================================================================
+-- BLOCK: Shipping cities (per-city delivery price inside a governorate)
+-- Each governorate (shipping_zones) can now hold cities, each with its own
+-- delivery price. At checkout the customer picks governorate then city, and
+-- the city's price is used. A governorate with no cities keeps working exactly
+-- as before, using its own price.
+-- Self-healing: builds column-by-column so this works even if a table with
+-- this name already exists in a different shape. Safe to re-run.
+-- ============================================================================
+create table if not exists shipping_cities (
+  id uuid primary key default gen_random_uuid()
+);
+alter table shipping_cities add column if not exists zone_id uuid references shipping_zones(id) on delete cascade;
+alter table shipping_cities add column if not exists name text not null default '';
+alter table shipping_cities add column if not exists price numeric(10,2) not null default 0;
+alter table shipping_cities add column if not exists sort_order integer not null default 0;
+alter table shipping_cities add column if not exists is_enabled boolean not null default true;
+alter table shipping_cities add column if not exists created_at timestamptz not null default now();
+
+create index if not exists idx_shipping_cities_zone on shipping_cities(zone_id);
+
+alter table shipping_cities enable row level security;
+
+drop policy if exists "public read enabled shipping cities" on shipping_cities;
+create policy "public read enabled shipping cities" on shipping_cities
+  for select using (is_enabled = true);
+
+drop policy if exists "admin full access shipping cities" on shipping_cities;
+create policy "admin full access shipping cities" on shipping_cities
+  for all using (is_admin()) with check (is_admin());
+
+-- ============================================================================
+-- BLOCK: Decrement stock when an order is placed
+-- A single atomic function the storefront calls at checkout. Doing the
+-- subtraction inside the database (rather than read-then-write from the app)
+-- means two customers checking out at the same second can't both pass the
+-- same stock check and oversell. Stock never drops below 0.
+-- Safe to re-run.
+-- ============================================================================
+create or replace function decrement_product_stock(items jsonb)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  item jsonb;
+begin
+  for item in select * from jsonb_array_elements(items)
+  loop
+    update products
+    set stock = greatest(stock - (item->>'quantity')::int, 0)
+    where id = (item->>'product_id')::uuid;
+  end loop;
+end;
+$$;
+
+grant execute on function decrement_product_stock(jsonb) to anon, authenticated;

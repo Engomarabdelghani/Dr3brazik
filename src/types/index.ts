@@ -116,6 +116,16 @@ export interface PromoBanner {
 export interface ShippingZone {
   id: string;
   name: string;
+  price: number; // used when this governorate has no cities
+  sortOrder: number;
+  isEnabled: boolean;
+  cities?: ShippingCity[];
+}
+
+export interface ShippingCity {
+  id: string;
+  zoneId: string;
+  name: string;
   price: number;
   sortOrder: number;
   isEnabled: boolean;

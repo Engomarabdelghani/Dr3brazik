@@ -24,12 +24,18 @@ export default function ProductForm() {
   const isEdit = Boolean(id);
   const navigate = useNavigate();
 
+  const resetFormState = () => {
+    setForm(emptyForm);
+    setImages([]);
+    setError(null);
+  };
+
   const { data: categories = [] } = useQuery({ queryKey: ['admin', 'categories-raw'], queryFn: fetchCategoryRows });
   const { data: subcategories = [] } = useQuery({ queryKey: ['admin', 'subcategories-raw'], queryFn: fetchSubcategoryRows });
   const { data: existing, isLoading: loadingExisting } = useQuery({
-    queryKey: ['admin', 'product', id],
+    queryKey: ['admin', 'product', id ?? 'new'],
     queryFn: () => fetchProductById(id!),
-    enabled: isEdit,
+    enabled: isEdit && !!id,
   });
 
   const [form, setForm] = useState(emptyForm);
@@ -38,6 +44,11 @@ export default function ProductForm() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!isEdit) {
+      resetFormState();
+      return;
+    }
+
     if (!existing) return;
     setForm({
       name: existing.name, nameAr: existing.nameAr ?? '', slug: existing.slug, brand: existing.brand,
@@ -54,7 +65,13 @@ export default function ProductForm() {
       metaTitle: existing.metaTitle ?? '', metaDescription: existing.metaDescription ?? '',
     });
     setImages(existing.imageObjects ?? []);
-  }, [existing]);
+  }, [existing, isEdit]);
+
+  useEffect(() => {
+    if (isEdit && id) {
+      setError(null);
+    }
+  }, [id, isEdit]);
 
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => setForm((f) => ({ ...f, [key]: value }));
 

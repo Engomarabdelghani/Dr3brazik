@@ -6,6 +6,7 @@ import { FiCreditCard, FiTruck, FiTag } from 'react-icons/fi';
 import { useCart } from '../context/CartContext';
 import { WHATSAPP_NUMBER, buildWhatsAppOrderMessage } from '../data/constants';
 import { fetchShippingZones } from '../lib/api/shippingZones';
+import { decrementStock } from '../lib/api/products';
 import { cld } from '../utils/cloudinary';
 import Button from '../components/ui/Button';
 import { useSeo } from '../hooks/useSeo';
@@ -17,23 +18,33 @@ export default function Checkout() {
   const { items, subtotal, discount, coupon, applyCoupon, removeCoupon, bogoLabel, clearCart } = useCart();
   const navigate = useNavigate();
   const { data: shippingZones = [] } = useQuery({ queryKey: ['shipping-zones'], queryFn: fetchShippingZones });
-  const [form, setForm] = useState({ name: '', phone: '', address: '', governorateId: '', notes: '' });
+  const [form, setForm] = useState({ name: '', phone: '', address: '', governorateId: '', cityId: '', notes: '' });
   const [payment, setPayment] = useState<PaymentMethod>('cod');
   const [error, setError] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState('');
   const [couponError, setCouponError] = useState('');
+  const [placing, setPlacing] = useState(false);
 
   if (items.length === 0) return <Navigate to="/cart" replace />;
 
   const enabledZones = shippingZones.filter((z) => z.isEnabled);
   const selectedZone = enabledZones.find((z) => z.id === form.governorateId);
+  const enabledCities = (selectedZone?.cities ?? []).filter((c) => c.isEnabled);
+  const selectedCity = enabledCities.find((c) => c.id === form.cityId);
 
   const total = subtotal - discount;
-  const shipping = selectedZone?.price ?? 0;
-  const grandTotal = total + shipping;
+  const cityRequired = enabledCities.length > 0;
+  const shipping = cityRequired ? (selectedCity?.price ?? 0) : (selectedZone?.price ?? 0);
+  const hasValidShippingSelection = !selectedZone ? false : cityRequired ? !!selectedCity : true;
+  const grandTotal = hasValidShippingSelection ? total + shipping : total;
 
   const onChange = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-    setForm((f) => ({ ...f, [field]: e.target.value }));
+    setForm((f) => ({
+      ...f,
+      [field]: e.target.value,
+      // Changing governorate invalidates whatever city was picked under the old one.
+      ...(field === 'governorateId' ? { cityId: '' } : {}),
+    }));
 
   const onApplyCoupon = () => {
     const result = applyCoupon(couponCode);
@@ -45,13 +56,19 @@ export default function Checkout() {
     }
   };
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (placing) return;
     if (!selectedZone) {
       setError('Please choose your governorate to calculate delivery.');
       return;
     }
+    if (enabledCities.length > 0 && !selectedCity) {
+      setError('Please choose your city to calculate delivery.');
+      return;
+    }
     setError(null);
+    setPlacing(true);
 
     const message = buildWhatsAppOrderMessage({
       items: items.map((i) => ({ name: i.product.name, quantity: i.quantity, price: i.product.effectivePrice ?? i.product.price })),
@@ -62,9 +79,17 @@ export default function Checkout() {
       customerName: form.name,
       customerPhone: form.phone,
       address: form.address,
-      governorate: selectedZone.name,
+      governorate: selectedCity ? `${selectedZone.name} — ${selectedCity.name}` : selectedZone.name,
       notes: form.notes || undefined,
     });
+
+    try {
+      await decrementStock(items.map((i) => ({ productId: i.product.id, quantity: i.quantity })));
+    } catch {
+      // Never block the customer's order over a stock-sync hiccup — the WhatsApp
+      // message still goes through and the admin can correct stock manually.
+    }
+
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, '_blank');
     clearCart();
     navigate('/');
@@ -85,9 +110,19 @@ export default function Checkout() {
               <select required value={form.governorateId} onChange={onChange('governorateId')} className="input-luxe">
                 <option value="">Select Governorate</option>
                 {enabledZones.map((z) => (
-                  <option key={z.id} value={z.id}>{z.name} — {z.price.toLocaleString('en-US')} EGP</option>
+                  <option key={z.id} value={z.id}>
+                    {z.name}{(z.cities ?? []).filter((c) => c.isEnabled).length === 0 ? ` — ${z.price.toLocaleString('en-US')} EGP` : ''}
+                  </option>
                 ))}
               </select>
+              {enabledCities.length > 0 && (
+                <select required value={form.cityId} onChange={onChange('cityId')} className="input-luxe">
+                  <option value="">Select City</option>
+                  {enabledCities.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name} — {c.price.toLocaleString('en-US')} EGP</option>
+                  ))}
+                </select>
+              )}
               <input required value={form.address} onChange={onChange('address')} placeholder="Detailed Address (street, building, floor…)" className="input-luxe" />
             </div>
             <textarea
@@ -102,9 +137,11 @@ export default function Checkout() {
           <div className="card-luxe p-6 md:p-8">
             <h2 className="font-bold mb-5 flex items-center gap-2"><FiTruck /> Delivery</h2>
             <p className="text-sm" style={{ color: 'var(--color-muted)' }}>
-              {selectedZone
-                ? `Delivery to ${selectedZone.name}: ${selectedZone.price.toLocaleString('en-US')} EGP`
-                : 'Choose your governorate above to see the delivery price.'}
+              {!selectedZone
+                ? 'Choose your governorate above to see the delivery price.'
+                : enabledCities.length > 0 && !selectedCity
+                  ? 'Choose your city above to see the delivery price.'
+                  : `Delivery to ${selectedCity ? `${selectedZone.name} — ${selectedCity.name}` : selectedZone.name}: ${shipping.toLocaleString('en-US')} EGP`}
             </p>
           </div>
 
@@ -179,7 +216,13 @@ export default function Checkout() {
             )}
             <div className="flex justify-between">
               <span style={{ color: 'var(--color-muted)' }}>Shipping</span>
-              <span>{selectedZone ? `${shipping.toLocaleString('en-US')} EGP` : 'Select governorate'}</span>
+              <span>
+                {!selectedZone
+                  ? 'Select governorate'
+                  : cityRequired && !selectedCity
+                    ? 'Select city'
+                    : `${shipping.toLocaleString('en-US')} EGP`}
+              </span>
             </div>
           </div>
           <div className="h-px" style={{ backgroundColor: 'var(--color-border)' }} />
@@ -187,7 +230,7 @@ export default function Checkout() {
 
           {error && <p className="text-xs" style={{ color: '#dc2626' }}>{error}</p>}
 
-          <Button type="submit" variant="primary" fullWidth>Place Order</Button>
+          <Button type="submit" variant="primary" fullWidth disabled={placing}>{placing ? 'Placing Order…' : 'Place Order'}</Button>
           <p className="text-xs text-center" style={{ color: 'var(--color-muted)' }}>
             You'll confirm your order details via WhatsApp
           </p>
