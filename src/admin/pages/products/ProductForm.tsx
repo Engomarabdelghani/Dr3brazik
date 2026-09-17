@@ -32,7 +32,7 @@ export default function ProductForm() {
 
   const { data: categories = [] } = useQuery({ queryKey: ['admin', 'categories-raw'], queryFn: fetchCategoryRows });
   const { data: subcategories = [] } = useQuery({ queryKey: ['admin', 'subcategories-raw'], queryFn: fetchSubcategoryRows });
-  const { data: existing, isLoading: loadingExisting } = useQuery({
+  const { data: existing, isLoading: loadingExisting, isError: loadingExistingError } = useQuery({
     queryKey: ['admin', 'product', id ?? 'new'],
     queryFn: () => fetchProductById(id!),
     enabled: isEdit && !!id,
@@ -145,6 +145,17 @@ export default function ProductForm() {
 
   if (isEdit && loadingExisting) {
     return <p className="text-sm" style={{ color: 'var(--color-muted)' }}>Loading product…</p>;
+  }
+
+  if (isEdit && !existing) {
+    return (
+      <div className="space-y-4">
+        <p className="text-sm" style={{ color: '#dc2626' }}>
+          {loadingExistingError ? 'Could not load this product.' : 'Product not found.'}
+        </p>
+        <Link to="/admin/products" className="btn-primary inline-flex">Back to Products</Link>
+      </div>
+    );
   }
 
   return (

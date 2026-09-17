@@ -86,13 +86,18 @@ export async function fetchAdminProducts(query: AdminProductQuery): Promise<Admi
 }
 
 export async function fetchProductById(id: string): Promise<Product | null> {
-  const [{ data, error }, { categoriesById, subcategoriesById }] = await Promise.all([
-    supabase.from(PRODUCT_VIEW).select('*').eq('id', id).maybeSingle(),
-    buildCategoryMaps(),
-  ]);
-  if (error) throw error;
-  if (!data) return null;
-  const product = mapProduct(data, categoriesById, subcategoriesById);
+  const { categoriesById, subcategoriesById } = await buildCategoryMaps();
+  const adminResult = await supabase.from('products').select('*').eq('id', id).maybeSingle();
+  let row = adminResult.data;
+
+  if (!row) {
+    const storefrontResult = await supabase.from(PRODUCT_VIEW).select('*').eq('id', id).maybeSingle();
+    if (storefrontResult.error) throw adminResult.error ?? storefrontResult.error;
+    row = storefrontResult.data;
+  }
+
+  if (!row) return null;
+  const product = mapProduct(row, categoriesById, subcategoriesById);
   product.variants = await fetchVariantsForProduct(product.id);
   return product;
 }
