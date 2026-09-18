@@ -83,14 +83,31 @@ export default function Checkout() {
       notes: form.notes || undefined,
     });
 
+    // Open the WhatsApp tab FIRST, synchronously, before any `await`.
+    // Browsers only allow window.open() to bypass the popup blocker while
+    // it's still running inside the original click event; any `await`
+    // before it (like the stock update below) can push it past that
+    // window — especially under slow network / high load — causing it to
+    // be silently blocked while the rest of the code (clearing the cart,
+    // navigating away) still runs. That's what was emptying the cart
+    // without the order ever reaching WhatsApp.
+    const waWindow = window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, '_blank');
+
+    if (!waWindow) {
+      // Popup was blocked — don't lose the order. Keep the cart intact and
+      // let the customer retry (or allow popups for the site).
+      setError('تعذر فتح واتساب تلقائيًا. اضغط "إرسال الطلب" مرة أخرى، أو اسمح للموقع بفتح النوافذ المنبثقة من إعدادات المتصفح.');
+      setPlacing(false);
+      return;
+    }
+
     try {
       await decrementStock(items.map((i) => ({ productId: i.product.id, quantity: i.quantity })));
     } catch {
       // Never block the customer's order over a stock-sync hiccup — the WhatsApp
-      // message still goes through and the admin can correct stock manually.
+      // message already went through and the admin can correct stock manually.
     }
 
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, '_blank');
     clearCart();
     navigate('/');
   };
