@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiBox, FiTag, FiPercent, FiImage, FiPlus, FiAlertTriangle, FiArrowRight } from 'react-icons/fi';
+import { FiBox, FiTag, FiPercent, FiImage, FiPlus, FiAlertTriangle, FiArrowRight, FiShoppingBag } from 'react-icons/fi';
 import { fetchDashboardStats } from '../../lib/api/dashboard';
 import { cld } from '../../utils/cloudinary';
 
@@ -48,6 +48,18 @@ export default function AdminDashboard() {
         ))}
       </div>
 
+      {!isLoading && data && data.newOrderCount > 0 && (
+        <div className="flex items-center gap-3 p-4 rounded-2xl mb-4" style={{ backgroundColor: 'rgba(201,162,39,0.1)' }}>
+          <FiShoppingBag style={{ color: 'var(--color-gold)' }} />
+          <p className="text-sm" style={{ color: 'var(--color-coffee)' }}>
+            <strong>{data.newOrderCount}</strong> new order{data.newOrderCount > 1 ? 's are' : ' is'} waiting to be confirmed.
+          </p>
+          <Link to="/admin/orders?status=new" className="text-sm font-semibold ml-auto flex items-center gap-1" style={{ color: 'var(--color-gold)' }}>
+            View <FiArrowRight size={14} />
+          </Link>
+        </div>
+      )}
+
       {!isLoading && data && data.outOfStockCount > 0 && (
         <div className="flex items-center gap-3 p-4 rounded-2xl mb-8" style={{ backgroundColor: 'rgba(220,38,38,0.06)' }}>
           <FiAlertTriangle style={{ color: '#dc2626' }} />
@@ -80,7 +92,7 @@ export default function AdminDashboard() {
                 className="flex items-center gap-4 p-2 rounded-xl hover:bg-black/5 transition-colors"
               >
                 <img
-                  src={p.images[0] ? cld(p.images[0], 100) : 'https://picsum.photos/seed/placeholder/100/100'}
+                  src={p.images[0] ? cld(p.images[0], 100) : '/images/placeholder.svg'}
                   alt={p.name}
                   className="w-12 h-12 rounded-xl object-cover shrink-0"
                 />

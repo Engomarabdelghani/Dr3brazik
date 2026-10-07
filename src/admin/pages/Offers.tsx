@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { FiPlus, FiEdit2, FiTrash2, FiPercent, FiLink, FiCheck } from 'react-icons/fi';
-import { fetchOffers, deleteOffer, setOfferEnabled, isOfferActive, getBogoLabel } from '../../lib/api/offers';
+import { fetchAdminOffers, deleteOffer, setOfferEnabled, isOfferActive, getBogoLabel } from '../../lib/api/offers';
 import { fetchCategoryRows } from '../../lib/api/categories';
 
 export default function AdminOffers() {
   const queryClient = useQueryClient();
-  const { data: offers = [], isLoading } = useQuery({ queryKey: ['admin', 'offers'], queryFn: fetchOffers });
+  const { data: offers = [], isLoading } = useQuery({ queryKey: ['admin', 'offers'], queryFn: fetchAdminOffers });
   const { data: categories = [] } = useQuery({ queryKey: ['admin', 'categories-raw'], queryFn: fetchCategoryRows });
   const [copiedId, setCopiedId] = useState<string | null>(null);
 

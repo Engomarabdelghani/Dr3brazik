@@ -1,8 +1,10 @@
+import { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAdminAuth } from '../context/AdminAuthContext';
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { session, isAdmin, loading } = useAdminAuth();
+  const { isAdmin, loading, ensureSession } = useAdminAuth();
+  useEffect(ensureSession, [ensureSession]);
 
   if (loading) {
     return (
@@ -12,7 +14,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     );
   }
 
-  if (!session || !isAdmin) {
+  if (!isAdmin) {
     return <Navigate to="/admin/login" replace />;
   }
 

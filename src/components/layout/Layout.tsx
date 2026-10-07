@@ -6,14 +6,15 @@ import Footer from './Footer';
 import CartDrawer from './CartDrawer';
 import WhatsAppButton from '../common/WhatsAppButton';
 import AnnouncementBar, { ANNOUNCEMENT_BAR_HEIGHT } from './AnnouncementBar';
-import { fetchCoupons, isCouponActive } from '../../lib/api/coupons';
+import { fetchCouponAnnouncements } from '../../lib/api/coupons';
 
 const NAVBAR_HEIGHT = 80; // px — matches the existing pt-20 the page content was already padded with
 
 export default function Layout() {
   const { pathname } = useLocation();
-  const { data: coupons = [] } = useQuery({ queryKey: ['coupons'], queryFn: fetchCoupons, staleTime: 60_000 });
-  const announcementCoupon = coupons.find((c) => c.targetType === 'all' && c.isPublic && isCouponActive(c));
+  // Only public, active, storewide codes come back from the API (newest first), so the first one is shown.
+  const { data: announcements = [] } = useQuery({ queryKey: ['coupons', 'announcements'], queryFn: fetchCouponAnnouncements, staleTime: 60_000 });
+  const announcementCoupon = announcements[0];
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });

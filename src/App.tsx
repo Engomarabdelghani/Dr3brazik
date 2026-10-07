@@ -10,6 +10,7 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
+import OrderConfirmation from './pages/OrderConfirmation';
 import Wishlist from './pages/Wishlist';
 import NotFound from './pages/NotFound';
 import { CartProvider } from './context/CartContext';
@@ -31,6 +32,7 @@ import AdminSocialPosts from './admin/pages/SocialPosts';
 import AdminTestimonials from './admin/pages/Testimonials';
 import AdminCoupons from './admin/pages/Coupons';
 import AdminTeam from './admin/pages/Team';
+import AdminOrders from './admin/pages/Orders';
 
 export default function App() {
   return (
@@ -51,6 +53,7 @@ export default function App() {
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/cart" element={<Cart />} />
                   <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/order-confirmed" element={<OrderConfirmation />} />
                   <Route path="/wishlist" element={<Wishlist />} />
                   <Route path="/404" element={<NotFound />} />
                   <Route path="*" element={<NotFound />} />
@@ -66,6 +69,7 @@ export default function App() {
                   }
                 >
                   <Route index element={<AdminDashboard />} />
+                  <Route path="orders" element={<AdminOrders />} />
                   <Route path="products" element={<ProductsList />} />
                   <Route path="products/new" element={<ProductForm />} />
                   <Route path="products/:id/edit" element={<ProductForm />} />

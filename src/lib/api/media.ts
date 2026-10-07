@@ -1,27 +1,24 @@
-import { supabase, SITE_IMAGES_BUCKET } from '../supabase';
+import { api } from '../../api/client';
 
-/** Uploads a single image to the shared site-images bucket under `folder/`, returns its public URL + storage path. */
+/** Uploads one image to Cloudinary through the API. `folder`: categories, offers, promo-banners, social-posts, testimonials or products/<slug>. */
+export async function uploadImage(file: File, folder: string): Promise<{ url: string; key: string }> {
+  const form = new FormData();
+  form.append('folder', folder);
+  form.append('file', file);
+  return api.post<{ url: string; key: string }>('/admin/uploads', form);
+}
+
+/** Deletes an uploaded image. The server ignores anything outside its own folder (seed or external images). */
+export async function deleteUploadedImage(target: { key: string } | { url: string }): Promise<void> {
+  await api.delete('/admin/uploads', target);
+}
+
+/** Single-image uploads (category images, offer and promo banners, social posts, testimonials). */
 export async function uploadSiteImage(file: File, folder: string): Promise<{ url: string; path: string }> {
-  const ext = file.name.split('.').pop() ?? 'jpg';
-  const path = `${folder}/${crypto.randomUUID()}.${ext}`;
-  const { error } = await supabase.storage.from(SITE_IMAGES_BUCKET).upload(path, file, {
-    cacheControl: '31536000',
-    upsert: false,
-  });
-  if (error) throw error;
-  const { data } = supabase.storage.from(SITE_IMAGES_BUCKET).getPublicUrl(path);
-  return { url: data.publicUrl, path };
+  const { url, key } = await uploadImage(file, folder);
+  return { url, path: key };
 }
 
-export async function deleteSiteImage(path: string | null | undefined): Promise<void> {
-  if (!path) return;
-  await supabase.storage.from(SITE_IMAGES_BUCKET).remove([path]);
-}
-
-/** Extracts the storage path from a public site-images URL, so we can delete old images by URL alone. */
-export function sitePathFromUrl(url: string | null | undefined): string | null {
-  if (!url) return null;
-  const marker = `/${SITE_IMAGES_BUCKET}/`;
-  const i = url.indexOf(marker);
-  return i === -1 ? null : url.slice(i + marker.length);
+export async function deleteSiteImage(url: string | null | undefined): Promise<void> {
+  if (url) await deleteUploadedImage({ url });
 }

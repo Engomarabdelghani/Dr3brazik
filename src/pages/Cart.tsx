@@ -13,10 +13,14 @@ export default function Cart() {
   const { items, updateQuantity, removeItem, subtotal, coupon, discount, applyCoupon, removeCoupon } = useCart();
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
+  const [applying, setApplying] = useState(false);
 
-  const onApply = (e: React.FormEvent) => {
+  const onApply = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = applyCoupon(code);
+    if (applying) return;
+    setApplying(true);
+    const result = await applyCoupon(code);
+    setApplying(false);
     if (!result.ok) {
       setError(result.message ?? 'Invalid coupon code');
     } else {
@@ -98,7 +102,7 @@ export default function Cart() {
                 className="input-luxe pl-9 py-2.5 text-sm"
               />
             </div>
-            <button type="submit" className="btn-secondary px-4 text-xs">Apply</button>
+            <button type="submit" disabled={applying} className="btn-secondary px-4 text-xs">{applying ? '…' : 'Apply'}</button>
           </form>
           {error && <p className="text-xs text-red-500 -mt-3 mb-4">{error}</p>}
           {coupon && (

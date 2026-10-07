@@ -1,8 +1,10 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly VITE_SUPABASE_URL: string;
-  readonly VITE_SUPABASE_ANON_KEY: string;
+  /** Base URL of the Node API, e.g. https://api.dr3brazik.com/api. Defaults to /api. */
+  readonly VITE_API_BASE_URL?: string;
+  /** development | staging | production */
+  readonly VITE_APP_ENV?: string;
 }
 
 interface ImportMeta {

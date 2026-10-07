@@ -1,79 +1,66 @@
 #!/usr/bin/env node
 /**
- * Generates public/sitemap.xml from the live Supabase catalog before every build.
- * Runs automatically via `npm run build` (see package.json). Safe to run anytime —
- * it only reads from Supabase and overwrites public/sitemap.xml.
+ * Generates public/sitemap.xml from the live catalog before every build
+ * (wired as `prebuild` in package.json). Safe to run anytime: it only reads
+ * from the API and overwrites public/sitemap.xml.
  *
- * Needs VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY — reads them straight out of
- * your .env file (same one Vite uses), no separate setup needed.
+ * Needs an absolute VITE_API_BASE_URL (e.g. https://api.dr3brazik.com/api), from
+ * the environment (Vercel/CI) or the .env file Vite uses. If the API can't be
+ * reached, the sitemap still gets the static pages and the build continues.
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { createClient } from '@supabase/supabase-js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
 
 const SITE_URL = 'https://dr3brazik.com';
 
-function loadEnv() {
-  // On Vercel (and most CI), env vars are injected straight into process.env —
-  // there's no physical .env file there. Locally, fall back to reading .env directly.
-  if (process.env.VITE_SUPABASE_URL && process.env.VITE_SUPABASE_ANON_KEY) {
-    return { VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY };
-  }
+function readApiBaseUrl() {
+  // On Vercel (and most CI), env vars are injected straight into process.env;
+  // there's no physical .env file there. Locally, fall back to reading .env.
+  if (process.env.VITE_API_BASE_URL) return process.env.VITE_API_BASE_URL;
   const envPath = path.join(ROOT, '.env');
-  if (!existsSync(envPath)) {
-    console.warn('[sitemap] No .env file and no env vars found — skipping product/category URLs.');
-    return {};
+  if (!existsSync(envPath)) return undefined;
+  for (const line of readFileSync(envPath, 'utf-8').split('\n')) {
+    const match = line.match(/^\s*VITE_API_BASE_URL\s*=\s*(.*)?\s*$/);
+    if (match) return (match[1] ?? '').trim();
   }
-  const text = readFileSync(envPath, 'utf-8');
-  const env = {};
-  for (const line of text.split('\n')) {
-    const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
-    if (match) env[match[1]] = (match[2] ?? '').trim();
-  }
-  return env;
+  return undefined;
 }
 
 async function main() {
-  const env = loadEnv();
-  const url = env.VITE_SUPABASE_URL;
-  const key = env.VITE_SUPABASE_ANON_KEY;
+  const apiBase = readApiBaseUrl()?.replace(/\/+$/, '');
 
   const staticUrls = ['/', '/shop', '/offers', '/about', '/contact'];
   let productUrls = [];
   let categoryUrls = [];
 
-  if (url && key) {
+  if (apiBase && /^https?:\/\//.test(apiBase)) {
     try {
-      const supabase = createClient(url, key);
-      const [{ data: products }, { data: categories }] = await Promise.all([
-        supabase.from('products').select('slug, updated_at').eq('is_visible', true),
-        supabase.from('categories').select('id, slug'),
-      ]);
-      productUrls = (products ?? []).map((p) => ({ loc: `/product/${p.slug}`, lastmod: p.updated_at }));
-      categoryUrls = (categories ?? []).map((c) => ({ loc: `/shop?category=${c.id}` }));
+      const res = await fetch(`${apiBase}/sitemap-data`, { signal: AbortSignal.timeout(15_000) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const { data } = await res.json();
+      productUrls = data.products.map((p) => ({ loc: `/product/${p.slug}`, lastmod: p.updatedAt }));
+      // The Shop's category filter uses slugs (the old sitemap linked the category UUID).
+      categoryUrls = data.categories.map((c) => ({ loc: `/shop?category=${encodeURIComponent(c.slug)}` }));
     } catch (err) {
-      console.warn('[sitemap] Could not fetch from Supabase, falling back to static pages only:', err.message);
+      console.warn('[sitemap] Could not fetch from the API, falling back to static pages only:', err.message);
     }
   } else {
-    console.warn('[sitemap] Missing Supabase env vars — generating static pages only.');
+    console.warn('[sitemap] VITE_API_BASE_URL is missing or not an absolute URL; generating static pages only.');
   }
 
-  const allUrls = [
-    ...staticUrls.map((loc) => ({ loc })),
-    ...categoryUrls,
-    ...productUrls,
-  ];
+  const allUrls = [...staticUrls.map((loc) => ({ loc })), ...categoryUrls, ...productUrls];
 
+  const escape = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${allUrls
   .map(
     (u) => `  <url>
-    <loc>${SITE_URL}${u.loc}</loc>${u.lastmod ? `\n    <lastmod>${new Date(u.lastmod).toISOString().split('T')[0]}</lastmod>` : ''}
+    <loc>${escape(`${SITE_URL}${u.loc}`)}</loc>${u.lastmod ? `\n    <lastmod>${new Date(u.lastmod).toISOString().split('T')[0]}</lastmod>` : ''}
   </url>`
   )
   .join('\n')}

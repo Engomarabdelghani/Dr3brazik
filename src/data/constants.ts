@@ -19,6 +19,8 @@ export const SOCIAL_LINKS = [
 ];
 
 export function buildWhatsAppOrderMessage(params: {
+  /** Set once the order is saved on the server, so the shop can look it up (e.g. S-0513). */
+  orderCode?: string;
   items: { name: string; quantity: number; price: number }[];
   subtotal: number;
   discount?: number;
@@ -32,6 +34,7 @@ export function buildWhatsAppOrderMessage(params: {
 }) {
   const lines = [
     `Hello ${SITE_NAME}, I'd like to place an order:`,
+    ...(params.orderCode ? [`Order ${params.orderCode}`] : []),
     '',
     'Order Details:',
     ...params.items.map((i) => `• ${i.name} x${i.quantity} — ${i.price * i.quantity} EGP`),

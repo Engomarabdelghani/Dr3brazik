@@ -3,14 +3,14 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiMessageSquare } from 'react-icons/fi';
 import {
-  fetchTestimonials, createTestimonial, updateTestimonial, deleteTestimonial, type TestimonialInput,
+  fetchAdminTestimonials, createTestimonial, updateTestimonial, deleteTestimonial, type TestimonialInput,
 } from '../../lib/api/testimonials';
 import type { Testimonial } from '../../types';
 import SingleImageUploader from '../components/SingleImageUploader';
 
 export default function AdminTestimonials() {
   const queryClient = useQueryClient();
-  const { data: testimonials = [], isLoading } = useQuery({ queryKey: ['admin', 'testimonials'], queryFn: fetchTestimonials });
+  const { data: testimonials = [], isLoading } = useQuery({ queryKey: ['admin', 'testimonials'], queryFn: fetchAdminTestimonials });
   const [editing, setEditing] = useState<Testimonial | 'new' | null>(null);
 
   const invalidate = () => {

@@ -145,7 +145,7 @@ export default function ProductsList() {
               <tr key={p.id} className="border-b last:border-0" style={{ borderColor: 'var(--color-border)' }}>
                 <td className="p-3">
                   <img
-                    src={p.images[0] ? cld(p.images[0], 80) : 'https://picsum.photos/seed/placeholder/80/80'}
+                    src={p.images[0] ? cld(p.images[0], 80) : '/images/placeholder.svg'}
                     alt={p.name}
                     className="w-11 h-11 rounded-lg object-cover"
                   />

@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiInstagram, FiPlay } from 'react-icons/fi';
-import { fetchSocialPosts, createSocialPost, updateSocialPost, deleteSocialPost, type SocialPostInput } from '../../lib/api/socialPosts';
+import { fetchAdminSocialPosts, createSocialPost, updateSocialPost, deleteSocialPost, type SocialPostInput } from '../../lib/api/socialPosts';
 import type { SocialPost } from '../../types';
 import SingleImageUploader from '../components/SingleImageUploader';
 
 export default function AdminSocialPosts() {
   const queryClient = useQueryClient();
-  const { data: posts = [], isLoading } = useQuery({ queryKey: ['admin', 'social-posts'], queryFn: fetchSocialPosts });
+  const { data: posts = [], isLoading } = useQuery({ queryKey: ['admin', 'social-posts'], queryFn: fetchAdminSocialPosts });
   const [editing, setEditing] = useState<SocialPost | 'new' | null>(null);
 
   const invalidate = () => {

@@ -3,9 +3,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiImage, FiShoppingBag, FiSearch, FiPackage } from 'react-icons/fi';
 import {
-  fetchPromoBanners, createPromoBanner, updatePromoBanner, deletePromoBanner, type PromoBannerInput,
+  fetchAdminPromoBanners, createPromoBanner, updatePromoBanner, deletePromoBanner, type PromoBannerInput,
 } from '../../lib/api/promoBanners';
-import { fetchOffers, isOfferActive, getBogoLabel } from '../../lib/api/offers';
+import { fetchAdminOffers, isOfferActive, getBogoLabel } from '../../lib/api/offers';
 import { fetchAdminProducts, fetchProductsByIds } from '../../lib/api/products';
 import { cld } from '../../utils/cloudinary';
 import type { PromoBanner, PromoBannerAction } from '../../types';
@@ -13,7 +13,7 @@ import SingleImageUploader from '../components/SingleImageUploader';
 
 export default function AdminPromoBanners() {
   const queryClient = useQueryClient();
-  const { data: banners = [], isLoading } = useQuery({ queryKey: ['admin', 'promo-banners'], queryFn: fetchPromoBanners });
+  const { data: banners = [], isLoading } = useQuery({ queryKey: ['admin', 'promo-banners'], queryFn: fetchAdminPromoBanners });
   const [editing, setEditing] = useState<PromoBanner | 'new' | null>(null);
 
   const invalidate = () => {
@@ -102,7 +102,7 @@ export default function AdminPromoBanners() {
 function BannerModal({ banner, nextSortOrder, onClose, onSaved }: {
   banner: PromoBanner | null; nextSortOrder: number; onClose: () => void; onSaved: () => void;
 }) {
-  const { data: offers = [] } = useQuery({ queryKey: ['admin', 'offers'], queryFn: fetchOffers });
+  const { data: offers = [] } = useQuery({ queryKey: ['admin', 'offers'], queryFn: fetchAdminOffers });
   const activeOffers = offers.filter(isOfferActive);
 
   const [title, setTitle] = useState(banner?.title ?? '');
@@ -241,7 +241,7 @@ function BannerModal({ banner, nextSortOrder, onClose, onSaved }: {
                       disabled={selectedProducts.some((sp) => sp.id === p.id)}
                       className="w-full text-left px-3 py-2 hover:bg-black/5 flex items-center gap-3 disabled:opacity-40"
                     >
-                      <img src={p.images[0] ? cld(p.images[0], 60) : 'https://picsum.photos/seed/placeholder/60/60'} alt={p.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
+                      <img src={p.images[0] ? cld(p.images[0], 60) : '/images/placeholder.svg'} alt={p.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
                       <span className="flex-1 text-sm truncate">{p.name}</span>
                       <span className="text-xs shrink-0" style={{ color: 'var(--color-muted)' }}>{p.price} {p.currency}</span>
                     </button>
@@ -251,7 +251,7 @@ function BannerModal({ banner, nextSortOrder, onClose, onSaved }: {
               <div className="space-y-2">
                 {selectedProducts.map((p) => (
                   <div key={p.id} className="flex items-center gap-2 p-2 rounded-xl bg-white">
-                    <img src={p.image ? cld(p.image, 60) : 'https://picsum.photos/seed/placeholder/60/60'} alt={p.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
+                    <img src={p.image ? cld(p.image, 60) : '/images/placeholder.svg'} alt={p.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
                     <span className="flex-1 text-sm truncate">{p.name}</span>
                     <span className="text-xs shrink-0" style={{ color: 'var(--color-muted)' }}>{p.price} {p.currency}</span>
                     <button type="button" onClick={() => removeProduct(p.id)} aria-label={`Remove ${p.name}`} className="shrink-0 hover:text-red-500 transition-colors">

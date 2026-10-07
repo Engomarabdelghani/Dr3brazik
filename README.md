@@ -1,6 +1,6 @@
 # 💎 Dr. Karam AbdelRazek – Luxury Cosmetics E-Commerce Platform
 
-A modern, luxury-inspired e-commerce platform for cosmetics and skincare, built with **React, TypeScript, Vite, Tailwind CSS, Framer Motion, and Supabase**.
+A modern, luxury-inspired e-commerce platform for cosmetics and skincare, built with **React, TypeScript, Vite, Tailwind CSS and Framer Motion**, backed by a **Node.js + Express + MySQL** API (`server/`).
 
 The project includes a complete customer storefront and a secure admin dashboard for managing products, categories, offers, media, and website settings without requiring a traditional backend server.
 
@@ -28,7 +28,7 @@ The project includes a complete customer storefront and a secure admin dashboard
 
 ## 🔐 Admin Dashboard
 
-A secure admin panel powered by Supabase Authentication and Row Level Security.
+A secure admin panel; every admin request is authenticated and authorised by the API.
 
 ### Dashboard
 - Business statistics
@@ -75,13 +75,11 @@ A secure admin panel powered by Supabase Authentication and Row Level Security.
 
 # 🔒 Authentication & Security
 
-- Supabase Authentication
-- Protected Admin Routes
-- Row Level Security (RLS)
-- Secure Storage
-- Admin authorization using the `admins` table
-
-Only authenticated administrators can access the dashboard.
+- Admin login with email + password (bcrypt), short-lived access token kept in memory and a rotating refresh token in an httpOnly cookie
+- Every `/api/admin/*` route checks the admin on each request; removing someone takes effect immediately
+- Owner-only team management (add, remove, reset password)
+- Prices, coupons, shipping and stock are calculated and enforced by the server, never trusted from the browser
+- Rate limits on login, coupon checks and checkout
 
 ---
 
@@ -89,19 +87,20 @@ Only authenticated administrators can access the dashboard.
 
 ### Frontend
 
-- React 18
+- React 19
 - TypeScript
 - Vite
 - Tailwind CSS
 - Framer Motion
 - React Router
-- Context API
+- TanStack Query
 
-### Backend Services
+### Backend (`server/`)
 
-- Supabase Database
-- Supabase Authentication
-- Supabase Storage
+- Node.js + Express + TypeScript
+- MySQL 8 (mysql2)
+- Zod validation
+- Cloudinary for images
 
 ---
 
@@ -124,61 +123,33 @@ npm install
 
 ---
 
-## 3. Create a Supabase Project
+## 3. Set Up the API and Database
 
-Create a project from:
+Follow [server/README.md](server/README.md): create the MySQL user, fill in `server/.env`, then
 
-https://supabase.com
-
----
-
-## 4. Import Database
-
-Run the following SQL files inside the Supabase SQL Editor:
-
-```
-supabase/schema.sql
-```
-
-then
-
-```
-supabase/seed.sql
+```bash
+cd server
+npm install
+npm run db:migrate
+npm run db:seed
+npm run admin:create -- --email you@example.com --name "Your Name" --role owner
+npm run dev
 ```
 
 ---
 
-## 5. Create an Admin User
+## 4. Configure the Frontend
 
-Go to
-
-```
-Authentication → Users
+```bash
+cp .env.example .env
 ```
 
-Create a new administrator account.
-
-Copy the generated User ID (UUID), then execute:
-
-```sql
-INSERT INTO admins (user_id)
-VALUES ('YOUR_USER_UUID');
-```
+Locally the defaults work: Vite proxies `/api` to the API on port 4000.
+In production set `VITE_API_BASE_URL` to the API's absolute URL (e.g. `https://api.dr3brazik.com/api`).
 
 ---
 
-## 6. Configure Environment Variables
-
-Create a `.env` file.
-
-```env
-VITE_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
-VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
-```
-
----
-
-## 7. Run Development Server
+## 5. Run Development Server
 
 ```bash
 npm run dev
@@ -216,23 +187,21 @@ npm run preview
 
 ```
 src
-│
-├── admin
+├── admin            admin dashboard pages and components
+├── api              HTTP client, in-memory token store, API types
 ├── components
-├── context
+├── context          cart, wishlist, recently viewed, admin auth
 ├── hooks
-├── lib
-│   ├── api
-│   ├── mappers.ts
-│   └── supabase.ts
+├── lib/api          one module per feature (products, offers, coupons, orders, ...)
 ├── pages
-├── data
-└── styles
+└── data
 
-supabase
-│
-├── schema.sql
-└── seed.sql
+server               Node.js + MySQL API (see server/README.md)
+├── migrations       versioned SQL migrations + dev seed
+├── scripts          migrate, seed, create-admin
+└── src/modules      auth, team, products, pricing, cart, orders, ...
+
+supabase             the previous Supabase schema, kept for the data migration
 ```
 
 ---
@@ -256,10 +225,16 @@ supabase
 
 - Login
 - Dashboard
+- Orders
 - Products
 - Categories
 - Offers
-- Settings
+- Coupons
+- Promo Banners
+- Shipping Zones
+- Social Posts
+- Testimonials
+- Team
 
 ---
 
@@ -282,7 +257,6 @@ src/data/constants.ts
 # 🔮 Future Improvements
 
 - Online Payment Integration (Paymob / Stripe)
-- Order Management System
 - Customer Accounts
 - Product Reviews & Ratings
 - Email Notifications
@@ -290,7 +264,6 @@ src/data/constants.ts
 - Inventory Management
 - Multi-language Support
 - Dark Mode
-- Coupon Management
 - Shipping Integration
 
 ---

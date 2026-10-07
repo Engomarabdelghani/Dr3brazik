@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { FiArrowLeft, FiSave, FiSearch, FiX } from 'react-icons/fi';
-import { fetchOffers, createOffer, updateOffer, getBogoLabel, type OfferInput } from '../../lib/api/offers';
+import { fetchAdminOffers, createOffer, updateOffer, getBogoLabel, type OfferInput } from '../../lib/api/offers';
 import { fetchCategoryRows } from '../../lib/api/categories';
 import { fetchAdminProducts, fetchProductsByIds } from '../../lib/api/products';
 import { cld } from '../../utils/cloudinary';
@@ -21,7 +21,7 @@ export default function OfferForm() {
   const isEdit = Boolean(id);
   const navigate = useNavigate();
 
-  const { data: offers } = useQuery({ queryKey: ['admin', 'offers'], queryFn: fetchOffers, enabled: isEdit });
+  const { data: offers } = useQuery({ queryKey: ['admin', 'offers'], queryFn: fetchAdminOffers, enabled: isEdit });
   const { data: categories = [] } = useQuery({ queryKey: ['admin', 'categories-raw'], queryFn: fetchCategoryRows });
   const existing = offers?.find((o) => o.id === id);
 
@@ -269,7 +269,7 @@ export default function OfferForm() {
                         className="w-full text-left px-3 py-2 hover:bg-black/5 flex items-center gap-3 disabled:opacity-40"
                       >
                         <img
-                          src={p.images[0] ? cld(p.images[0], 60) : 'https://picsum.photos/seed/placeholder/60/60'}
+                          src={p.images[0] ? cld(p.images[0], 60) : '/images/placeholder.svg'}
                           alt={p.name}
                           className="w-9 h-9 rounded-lg object-cover shrink-0"
                         />
@@ -287,7 +287,7 @@ export default function OfferForm() {
                   {selectedProducts.map((p) => (
                     <div key={p.id} className="flex items-center gap-3 p-2 rounded-xl" style={{ backgroundColor: 'var(--color-blush)' }}>
                       <img
-                        src={p.image ? cld(p.image, 60) : 'https://picsum.photos/seed/placeholder/60/60'}
+                        src={p.image ? cld(p.image, 60) : '/images/placeholder.svg'}
                         alt={p.name}
                         className="w-9 h-9 rounded-lg object-cover shrink-0"
                       />

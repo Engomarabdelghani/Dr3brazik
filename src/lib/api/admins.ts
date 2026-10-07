@@ -1,29 +1,21 @@
-import { supabase } from '../supabase';
+import { api } from '../../api/client';
+import type { TeamMember } from '../../api/types';
 
-export interface AdminUser {
-  userId: string;
-  name: string;
-  createdAt: string;
+export async function fetchAdmins(): Promise<TeamMember[]> {
+  return api.get<TeamMember[]>('/admin/team');
 }
 
-export async function fetchAdmins(): Promise<AdminUser[]> {
-  const { data, error } = await supabase.from('admins').select('*').order('created_at');
-  if (error) throw error;
-  return (data ?? []).map((row) => ({ userId: row.user_id, name: row.name, createdAt: row.created_at }));
+/** Owner only: creates the login directly (no more creating it in Supabase first). */
+export async function addAdmin(input: { name: string; email: string; password: string }): Promise<TeamMember> {
+  return api.post<TeamMember>('/admin/team', input);
 }
 
-/** The currently logged-in admin's own user id — used to stop someone removing their own access by mistake. */
-export async function getCurrentUserId(): Promise<string | undefined> {
-  const { data } = await supabase.auth.getUser();
-  return data.user?.id;
+/** Owner only. Takes effect on the member's very next request. */
+export async function removeAdmin(id: string): Promise<void> {
+  await api.delete(`/admin/team/${id}`);
 }
 
-export async function addAdmin(userId: string, name: string): Promise<void> {
-  const { error } = await supabase.from('admins').insert({ user_id: userId.trim(), name: name.trim() });
-  if (error) throw error;
-}
-
-export async function removeAdmin(userId: string): Promise<void> {
-  const { error } = await supabase.from('admins').delete().eq('user_id', userId);
-  if (error) throw error;
+/** Owner only. Signs the member out everywhere. */
+export async function resetAdminPassword(id: string, password: string): Promise<void> {
+  await api.put(`/admin/team/${id}/password`, { password });
 }

@@ -1,10 +1,6 @@
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { FiCheck, FiStar, FiTrash2 } from 'react-icons/fi';
+import { FiCheck } from 'react-icons/fi';
 import type { Product, FAQ } from '../../types';
-import { fetchReviews, createReview, deleteReview } from '../../lib/api/reviews';
-import { useAdminAuth } from '../../context/AdminAuthContext';
-import RatingStars from '../ui/RatingStars';
 
 const sampleFaqs: FAQ[] = [
   { question: 'How often should I use this product?', answer: 'For best results, use as directed in the description — typically once or twice daily as part of your skincare routine.' },
@@ -12,7 +8,8 @@ const sampleFaqs: FAQ[] = [
   { question: 'What is your return policy?', answer: 'Unopened products can be returned within 14 days of delivery. Contact us via WhatsApp to start a return.' },
 ];
 
-const tabs = ['Description', 'Ingredients', 'Benefits', 'Reviews', 'FAQ'] as const;
+// Reviews are switched off until the feature is rebuilt on the new API (owner decision, 4 Oct 2026).
+const tabs = ['Description', 'Ingredients', 'Benefits', 'FAQ'] as const;
 type Tab = typeof tabs[number];
 
 interface ProductTabsProps {
@@ -21,46 +18,6 @@ interface ProductTabsProps {
 
 export default function ProductTabs({ product }: ProductTabsProps) {
   const [active, setActive] = useState<Tab>('Description');
-  const queryClient = useQueryClient();
-  const { isAdmin } = useAdminAuth(); // real Supabase admin session — same one used by /admin
-
-  const { data: reviews = [], isLoading: reviewsLoading } = useQuery({
-    queryKey: ['reviews', product.id],
-    queryFn: () => fetchReviews(product.id),
-  });
-
-  const [authorName, setAuthorName] = useState('');
-  const [comment, setComment] = useState('');
-  const [rating, setRating] = useState(5);
-  const [hoverRating, setHoverRating] = useState(0);
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleAddReview = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!authorName.trim() || !comment.trim()) return;
-    setSubmitting(true);
-    try {
-      await createReview({ productId: product.id, author: authorName, rating, comment });
-      await queryClient.invalidateQueries({ queryKey: ['reviews', product.id] });
-      setAuthorName('');
-      setComment('');
-      setRating(5);
-    } catch {
-      alert('Could not submit your review. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleDeleteReview = async (id: string) => {
-    if (!confirm('Delete this review? This cannot be undone.')) return;
-    try {
-      await deleteReview(id);
-      await queryClient.invalidateQueries({ queryKey: ['reviews', product.id] });
-    } catch {
-      alert('Could not delete this review.');
-    }
-  };
 
   return (
     <div className="mt-20 relative">
@@ -73,11 +30,6 @@ export default function ProductTabs({ product }: ProductTabsProps) {
             style={{ color: active === tab ? 'var(--color-coffee)' : 'var(--color-muted)' }}
           >
             {tab}
-            {tab === 'Reviews' && (
-              <span className="ml-1.5 text-xs rounded-full px-2 py-0.5" style={{ backgroundColor: 'var(--color-blush)' }}>
-                {reviews.length}
-              </span>
-            )}
             {active === tab && (
               <span className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: 'var(--color-gold)' }} />
             )}
@@ -108,84 +60,6 @@ export default function ProductTabs({ product }: ProductTabsProps) {
               </li>
             ))}
           </ul>
-        )}
-
-        {active === 'Reviews' && (
-          <div className="space-y-8">
-            <form onSubmit={handleAddReview} className="p-5 rounded-2xl space-y-4" style={{ backgroundColor: 'var(--color-cream)' }}>
-              <h4 className="font-semibold text-base">Write a Review</h4>
-
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--color-muted)' }}>Your Rating</label>
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      type="button"
-                      key={star}
-                      onClick={() => setRating(star)}
-                      onMouseEnter={() => setHoverRating(star)}
-                      onMouseLeave={() => setHoverRating(0)}
-                      className="text-lg focus:outline-none transition-colors"
-                      style={{ color: star <= (hoverRating || rating) ? 'var(--color-gold)' : '#d1d5db' }}
-                    >
-                      <FiStar fill={star <= (hoverRating || rating) ? 'currentColor' : 'none'} />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <input
-                type="text"
-                required
-                placeholder="Your Name"
-                value={authorName}
-                onChange={(e) => setAuthorName(e.target.value)}
-                className="input-luxe bg-white"
-              />
-
-              <textarea
-                required
-                rows={3}
-                placeholder="Share your thoughts about this product..."
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                className="input-luxe bg-white"
-              />
-
-              <button type="submit" disabled={submitting} className="btn-primary">
-                {submitting ? 'Submitting…' : 'Submit Review'}
-              </button>
-            </form>
-
-            <div className="space-y-6">
-              {reviewsLoading && <p className="text-sm" style={{ color: 'var(--color-muted)' }}>Loading reviews…</p>}
-              {!reviewsLoading && reviews.length === 0 && (
-                <p className="text-sm italic" style={{ color: 'var(--color-muted)' }}>No reviews yet. Be the first to leave one!</p>
-              )}
-              {reviews.map((r) => (
-                <div key={r.id} className="pb-6 border-b" style={{ borderColor: 'var(--color-border)' }}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <p className="font-semibold text-sm">{r.author}</p>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs" style={{ color: 'var(--color-muted)' }}>{r.date}</span>
-                      {isAdmin && (
-                        <button
-                          onClick={() => handleDeleteReview(r.id)}
-                          className="flex items-center gap-1 text-xs px-2 py-1 rounded-full transition-colors"
-                          style={{ color: '#dc2626', backgroundColor: 'rgba(220,38,38,0.08)' }}
-                          title="Delete review (admin)"
-                        >
-                          <FiTrash2 size={13} /> Delete
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  <RatingStars rating={r.rating} size={12} />
-                  <p className="text-sm mt-2" style={{ color: 'var(--color-muted)' }}>{r.comment}</p>
-                </div>
-              ))}
-            </div>
-          </div>
         )}
 
         {active === 'FAQ' && (

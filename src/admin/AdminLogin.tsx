@@ -1,18 +1,19 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiLock, FiMail, FiAlertCircle } from 'react-icons/fi';
 import { useAdminAuth } from '../context/AdminAuthContext';
 
 export default function AdminLogin() {
-  const { session, isAdmin, loading, signIn } = useAdminAuth();
+  const { isAdmin, loading, signIn, ensureSession } = useAdminAuth();
+  useEffect(ensureSession, [ensureSession]);
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  if (!loading && session && isAdmin) return <Navigate to="/admin" replace />;
+  if (!loading && isAdmin) return <Navigate to="/admin" replace />;
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -3,14 +3,14 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiTruck, FiChevronDown, FiChevronRight } from 'react-icons/fi';
 import {
-  fetchShippingZones, createShippingZone, updateShippingZone, deleteShippingZone, type ShippingZoneInput,
+  fetchAdminShippingZones, createShippingZone, updateShippingZone, deleteShippingZone, type ShippingZoneInput,
   createShippingCity, updateShippingCity, deleteShippingCity, type ShippingCityInput,
 } from '../../lib/api/shippingZones';
 import type { ShippingZone, ShippingCity } from '../../types';
 
 export default function AdminShippingZones() {
   const queryClient = useQueryClient();
-  const { data: zones = [], isLoading } = useQuery({ queryKey: ['admin', 'shipping-zones'], queryFn: fetchShippingZones });
+  const { data: zones = [], isLoading } = useQuery({ queryKey: ['admin', 'shipping-zones'], queryFn: fetchAdminShippingZones });
   const [editing, setEditing] = useState<ShippingZone | 'new' | null>(null);
   const [cityEditing, setCityEditing] = useState<{ zone: ShippingZone; city: ShippingCity | null } | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());

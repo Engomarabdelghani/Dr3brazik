@@ -1,12 +1,11 @@
 import { useRef, useState } from 'react';
 import { FiUpload, FiX, FiLoader, FiImage } from 'react-icons/fi';
 import { compressImage } from '../../utils/imageCompression';
-import { uploadSiteImage, deleteSiteImage, sitePathFromUrl } from '../../lib/api/media';
+import { uploadSiteImage, deleteSiteImage } from '../../lib/api/media';
 
 /**
- * Drag-and-drop single-image uploader. Uploads straight to the shared
- * `site-images` storage bucket (compressed client-side first) and reports
- * back the resulting public URL — used for category images, offer banners,
+ * Drag-and-drop single-image uploader. Uploads through the API to Cloudinary
+ * (compressed client-side first) and reports back the resulting public URL — used for category images, offer banners,
  * and promo banners.
  */
 export default function SingleImageUploader({
@@ -32,10 +31,11 @@ export default function SingleImageUploader({
     setError(null);
     try {
       const compressed = await compressImage(file);
-      const previousPath = sitePathFromUrl(value);
+      const previousUrl = value;
       const { url } = await uploadSiteImage(compressed, folder);
       onChange(url);
-      if (previousPath) await deleteSiteImage(previousPath);
+      // The server only deletes files it owns; seed and external images are left alone.
+      if (previousUrl) await deleteSiteImage(previousUrl);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
@@ -44,9 +44,9 @@ export default function SingleImageUploader({
   };
 
   const removeImage = async () => {
-    const path = sitePathFromUrl(value);
+    const previousUrl = value;
     onChange('');
-    if (path) await deleteSiteImage(path);
+    if (previousUrl) await deleteSiteImage(previousUrl);
   };
 
   if (value) {

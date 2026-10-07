@@ -68,6 +68,7 @@ export default function ProductDetails() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
+          // "<" escaped so a product text containing "</script>" can't close this tag.
           __html: JSON.stringify({
             '@context': 'https://schema.org',
             '@type': 'Product',
@@ -86,7 +87,7 @@ export default function ProductDetails() {
             ...(product.reviewCount > 0
               ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: product.rating, reviewCount: product.reviewCount } }
               : {}),
-          }),
+          }).replace(/</g, '\\u003c'),
         }}
       />
       <p className="text-sm mb-8" style={{ color: 'var(--color-muted)' }}>

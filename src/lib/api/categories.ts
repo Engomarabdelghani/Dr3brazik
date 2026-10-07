@@ -1,6 +1,10 @@
-import { supabase } from '../supabase';
-import type { Category, Subcategory } from '../../data/taxonomy';
+import { api } from '../../api/client';
+import type { Category } from '../../data/taxonomy';
 
+/**
+ * Admin rows keep the snake_case field names the admin pages were written
+ * against (Categories, ProductForm), mapped here from the API's camelCase.
+ */
 export interface CategoryRow {
   id: string;
   slug: string;
@@ -19,61 +23,58 @@ export interface SubcategoryRow {
   sort_order: number;
 }
 
+interface AdminCategoriesResponse {
+  categories: { id: string; slug: string; name: string; nameAr: string | null; image: string | null; description: string | null; sortOrder: number }[];
+  subcategories: { id: string; categoryId: string; slug: string; name: string; sortOrder: number }[];
+}
+
+const fetchAdminCategories = () => api.get<AdminCategoriesResponse>('/admin/categories');
+
 export async function fetchCategoryRows(): Promise<CategoryRow[]> {
-  const { data, error } = await supabase.from('categories').select('*').order('sort_order');
-  if (error) throw error;
-  return data ?? [];
-}
-
-export async function fetchSubcategoryRows(): Promise<SubcategoryRow[]> {
-  const { data, error } = await supabase.from('subcategories').select('*').order('sort_order');
-  if (error) throw error;
-  return data ?? [];
-}
-
-export async function fetchCategories(): Promise<Category[]> {
-  const [cats, subs] = await Promise.all([fetchCategoryRows(), fetchSubcategoryRows()]);
-  return cats.map((c) => ({
-    id: c.slug,
+  const { categories } = await fetchAdminCategories();
+  return categories.map((c) => ({
+    id: c.id,
+    slug: c.slug,
     name: c.name,
-    nameAr: c.name_ar ?? undefined,
-    image: c.image ?? '',
-    subcategories: subs
-      .filter((s) => s.category_id === c.id)
-      .map((s): Subcategory => ({ id: s.slug, name: s.name })),
+    name_ar: c.nameAr,
+    image: c.image,
+    description: c.description,
+    sort_order: c.sortOrder,
   }));
 }
 
-export async function createCategory(input: { slug: string; name: string; nameAr?: string; image?: string; description?: string }) {
-  const { error } = await supabase.from('categories').insert({
-    slug: input.slug, name: input.name, name_ar: input.nameAr ?? null, image: input.image ?? null, description: input.description ?? null,
-  });
-  if (error) throw error;
+export async function fetchSubcategoryRows(): Promise<SubcategoryRow[]> {
+  const { subcategories } = await fetchAdminCategories();
+  return subcategories.map((s) => ({ id: s.id, category_id: s.categoryId, slug: s.slug, name: s.name, sort_order: s.sortOrder }));
 }
 
-export async function updateCategory(id: string, input: { slug: string; name: string; nameAr?: string; image?: string; description?: string }) {
-  const { error } = await supabase.from('categories').update({
-    slug: input.slug, name: input.name, name_ar: input.nameAr ?? null, image: input.image ?? null, description: input.description ?? null,
-  }).eq('id', id);
-  if (error) throw error;
+/** Storefront tree: ids are slugs. */
+export async function fetchCategories(): Promise<Category[]> {
+  return api.get<Category[]>('/categories');
+}
+
+type CategoryInput = { slug: string; name: string; nameAr?: string; image?: string; description?: string };
+
+export async function createCategory(input: CategoryInput) {
+  await api.post('/admin/categories', input);
+}
+
+export async function updateCategory(id: string, input: CategoryInput) {
+  await api.put(`/admin/categories/${id}`, input);
 }
 
 export async function deleteCategory(id: string) {
-  const { error } = await supabase.from('categories').delete().eq('id', id);
-  if (error) throw error;
+  await api.delete(`/admin/categories/${id}`);
 }
 
 export async function createSubcategory(categoryId: string, input: { slug: string; name: string }) {
-  const { error } = await supabase.from('subcategories').insert({ category_id: categoryId, slug: input.slug, name: input.name });
-  if (error) throw error;
+  await api.post(`/admin/categories/${categoryId}/subcategories`, input);
 }
 
 export async function updateSubcategory(id: string, input: { slug: string; name: string }) {
-  const { error } = await supabase.from('subcategories').update({ slug: input.slug, name: input.name }).eq('id', id);
-  if (error) throw error;
+  await api.put(`/admin/subcategories/${id}`, input);
 }
 
 export async function deleteSubcategory(id: string) {
-  const { error } = await supabase.from('subcategories').delete().eq('id', id);
-  if (error) throw error;
+  await api.delete(`/admin/subcategories/${id}`);
 }

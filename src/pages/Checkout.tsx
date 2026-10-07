@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { FaWhatsapp } from 'react-icons/fa';
-import { FiCreditCard, FiTruck, FiTag } from 'react-icons/fi';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { FiCreditCard, FiTruck, FiTag, FiCheckCircle } from 'react-icons/fi';
 import { useCart } from '../context/CartContext';
-import { WHATSAPP_NUMBER, buildWhatsAppOrderMessage } from '../data/constants';
+// WhatsApp hand-off is switched off for now (owner's request, 5 Oct 2026); see onSubmit.
+// import { WHATSAPP_NUMBER, buildWhatsAppOrderMessage } from '../data/constants';
 import { fetchShippingZones } from '../lib/api/shippingZones';
-import { decrementStock } from '../lib/api/products';
+import { placeOrder, toCartRefs } from '../lib/api/orders';
+import { isApiError } from '../api/client';
+import { saveLastOrder, type ConfirmedOrder } from '../utils/lastOrder';
 import { cld } from '../utils/cloudinary';
 import Button from '../components/ui/Button';
 import { useSeo } from '../hooks/useSeo';
@@ -17,6 +19,9 @@ export default function Checkout() {
   useSeo({ title: 'Checkout', path: '/checkout', noindex: true });
   const { items, subtotal, discount, coupon, applyCoupon, removeCoupon, bogoLabel, clearCart } = useCart();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  // One key per checkout visit: a double click or a retry after a network error can't create two orders.
+  const idempotencyKey = useRef(crypto.randomUUID());
   const { data: shippingZones = [] } = useQuery({ queryKey: ['shipping-zones'], queryFn: fetchShippingZones });
   const [form, setForm] = useState({ name: '', phone: '', address: '', governorateId: '', cityId: '', notes: '' });
   const [payment, setPayment] = useState<PaymentMethod>('cod');
@@ -24,8 +29,12 @@ export default function Checkout() {
   const [couponCode, setCouponCode] = useState('');
   const [couponError, setCouponError] = useState('');
   const [placing, setPlacing] = useState(false);
+  // Set once the order is saved. Clearing the cart re-renders this page before the
+  // router has switched to /order-confirmed (navigation runs as a transition), and the
+  // empty-cart redirect below would otherwise win and send the customer to /cart.
+  const orderPlaced = useRef(false);
 
-  if (items.length === 0) return <Navigate to="/cart" replace />;
+  if (items.length === 0 && !orderPlaced.current) return <Navigate to="/cart" replace />;
 
   const enabledZones = shippingZones.filter((z) => z.isEnabled);
   const selectedZone = enabledZones.find((z) => z.id === form.governorateId);
@@ -46,8 +55,8 @@ export default function Checkout() {
       ...(field === 'governorateId' ? { cityId: '' } : {}),
     }));
 
-  const onApplyCoupon = () => {
-    const result = applyCoupon(couponCode);
+  const onApplyCoupon = async () => {
+    const result = await applyCoupon(couponCode);
     if (!result.ok) {
       setCouponError(result.message ?? 'Invalid coupon code');
     } else {
@@ -70,46 +79,78 @@ export default function Checkout() {
     setError(null);
     setPlacing(true);
 
-    const message = buildWhatsAppOrderMessage({
-      items: items.map((i) => ({ name: i.product.name, quantity: i.quantity, price: i.product.effectivePrice ?? i.product.price })),
-      subtotal,
-      discount,
-      shippingPrice: shipping,
-      total: grandTotal,
-      customerName: form.name,
-      customerPhone: form.phone,
-      address: form.address,
-      governorate: selectedCity ? `${selectedZone.name} — ${selectedCity.name}` : selectedZone.name,
-      notes: form.notes || undefined,
-    });
-
-    // Open the WhatsApp tab FIRST, synchronously, before any `await`.
-    // Browsers only allow window.open() to bypass the popup blocker while
-    // it's still running inside the original click event; any `await`
-    // before it (like the stock update below) can push it past that
-    // window — especially under slow network / high load — causing it to
-    // be silently blocked while the rest of the code (clearing the cart,
-    // navigating away) still runs. That's what was emptying the cart
-    // without the order ever reaching WhatsApp.
-    const waWindow = window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, '_blank');
-
-    if (!waWindow) {
-      // Popup was blocked — don't lose the order. Keep the cart intact and
-      // let the customer retry (or allow popups for the site).
-      setError('تعذر فتح واتساب تلقائيًا. اضغط "إرسال الطلب" مرة أخرى، أو اسمح للموقع بفتح النوافذ المنبثقة من إعدادات المتصفح.');
-      setPlacing(false);
-      return;
-    }
+    // WhatsApp hand-off: switched off for now. To bring it back, uncomment this block,
+    // the message block below, `waWindow.close()` in the catch, and the constants import.
+    // The tab must be opened here, synchronously inside the click, or popup blockers stop it.
+    //
+    // const waWindow = window.open('', '_blank');
+    // if (!waWindow) {
+    //   setError('تعذر فتح واتساب تلقائيًا. اضغط "إرسال الطلب" مرة أخرى، أو اسمح للموقع بفتح النوافذ المنبثقة من إعدادات المتصفح.');
+    //   setPlacing(false);
+    //   return;
+    // }
 
     try {
-      await decrementStock(items.map((i) => ({ productId: i.product.id, quantity: i.quantity })));
-    } catch {
-      // Never block the customer's order over a stock-sync hiccup — the WhatsApp
-      // message already went through and the admin can correct stock manually.
-    }
+      // The server re-prices everything, applies the coupon, updates stock and saves the order.
+      const order = await placeOrder(
+        {
+          customer: { name: form.name, phone: form.phone, address: form.address, notes: form.notes || undefined },
+          zoneId: selectedZone.id,
+          cityId: selectedCity?.id ?? null,
+          paymentMethod: payment,
+          couponCode: coupon,
+          items: toCartRefs(items),
+        },
+        idempotencyKey.current
+      );
 
-    clearCart();
-    navigate('/');
+      // WhatsApp hand-off (switched off for now, see above):
+      // const message = buildWhatsAppOrderMessage({
+      //   orderCode: order.orderCode,
+      //   items: order.items.map((i) => ({ name: i.name, quantity: i.quantity, price: i.price })),
+      //   subtotal: order.subtotal,
+      //   discount: order.discount,
+      //   shippingPrice: order.shippingPrice,
+      //   total: order.total,
+      //   customerName: form.name,
+      //   customerPhone: form.phone,
+      //   address: form.address,
+      //   governorate: selectedCity ? `${selectedZone.name} — ${selectedCity.name}` : selectedZone.name,
+      //   notes: form.notes || undefined,
+      // });
+      // const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
+      // waWindow.location.href = whatsappUrl;
+
+      // The server returns the lines in cart order, so the cart supplies the thumbnails.
+      const confirmed: ConfirmedOrder = {
+        orderNumber: order.orderNumber,
+        orderCode: order.orderCode,
+        createdAt: order.createdAt,
+        customerName: form.name,
+        phone: form.phone,
+        address: form.address,
+        delivery: `Delivery to ${selectedCity ? `${selectedZone.name} — ${selectedCity.name}` : selectedZone.name}`,
+        paymentMethod: payment,
+        items: order.items.map((line, i) => ({ ...line, image: items[i]?.product.images[0] })),
+        subtotal: order.subtotal,
+        discount: order.discount,
+        shippingPrice: order.shippingPrice,
+        total: order.total,
+        // whatsappUrl,
+      };
+      saveLastOrder(confirmed);
+      orderPlaced.current = true;
+      navigate('/order-confirmed', { replace: true, state: confirmed });
+      clearCart();
+    } catch (err) {
+      // waWindow.close();
+      // Prices, stock limits or the coupon changed: refresh the summary so the customer sees why.
+      queryClient.invalidateQueries({ queryKey: ['cart-quote'] });
+      if (isApiError(err) && err.code.startsWith('COUPON_')) removeCoupon();
+      const details = isApiError(err) && err.errors.length ? ` ${err.errors.map((e) => e.message).join(' · ')}` : '';
+      setError(`${err instanceof Error ? err.message : 'Could not place your order. Please try again.'}${details}`);
+      setPlacing(false);
+    }
   };
 
   return (
@@ -248,11 +289,8 @@ export default function Checkout() {
           {error && <p className="text-xs" style={{ color: '#dc2626' }}>{error}</p>}
 
           <Button type="submit" variant="primary" fullWidth disabled={placing}>{placing ? 'Placing Order…' : 'Place Order'}</Button>
-          <p className="text-xs text-center" style={{ color: 'var(--color-muted)' }}>
-            You'll confirm your order details via WhatsApp
-          </p>
-          <div className="flex items-center justify-center gap-2 text-xs font-semibold" style={{ color: '#25D366' }}>
-            <FaWhatsapp /> Order confirmation sent via WhatsApp
+          <div className="flex items-center justify-center gap-2 text-xs text-center" style={{ color: 'var(--color-muted)' }}>
+            <FiCheckCircle className="shrink-0" style={{ color: 'var(--color-gold)' }} /> You'll get your order number right away, then we call to confirm.
           </div>
         </div>
       </form>

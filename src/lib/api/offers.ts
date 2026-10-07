@@ -1,49 +1,14 @@
-import { supabase } from '../supabase';
+import { api } from '../../api/client';
 import type { Offer, DiscountType, OfferTargetType } from '../../types';
 
-interface OfferRow {
-  id: string;
-  title: string;
-  discount_type: DiscountType;
-  discount_value: number | null;
-  target_type: OfferTargetType;
-  category_id: string | null;
-  banner_image: string | null;
-  start_date: string;
-  end_date: string;
-  is_enabled: boolean;
-  bogo_buy_qty: number;
-  bogo_get_qty: number;
-  bogo_get_discount_percent: number;
-  offer_products?: { product_id: string }[];
-}
-
-function mapOffer(row: OfferRow): Offer {
-  return {
-    id: row.id,
-    title: row.title,
-    discountType: row.discount_type,
-    discountValue: Number(row.discount_value ?? 0),
-    targetType: row.target_type,
-    categoryId: row.category_id ?? undefined,
-    productIds: row.offer_products?.map((p) => p.product_id),
-    bannerImage: row.banner_image ?? undefined,
-    startDate: row.start_date,
-    endDate: row.end_date,
-    isEnabled: row.is_enabled,
-    bogoBuyQty: row.bogo_buy_qty ?? 1,
-    bogoGetQty: row.bogo_get_qty ?? 1,
-    bogoGetDiscountPercent: row.bogo_get_discount_percent ?? 100,
-  };
-}
-
+/** Storefront: enabled offers (including upcoming/expired; use isOfferActive). */
 export async function fetchOffers(): Promise<Offer[]> {
-  const { data, error } = await supabase
-    .from('offers')
-    .select('*, offer_products(product_id)')
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return (data ?? []).map(mapOffer);
+  return api.get<Offer[]>('/offers');
+}
+
+/** Admin: every offer, disabled ones included. */
+export async function fetchAdminOffers(): Promise<Offer[]> {
+  return api.get<Offer[]>('/admin/offers');
 }
 
 export interface OfferInput {
@@ -62,51 +27,20 @@ export interface OfferInput {
   bogoGetDiscountPercent?: number;
 }
 
-function toRow(input: OfferInput) {
-  return {
-    title: input.title,
-    discount_type: input.discountType,
-    discount_value: input.discountType === 'bogo' ? 0 : input.discountValue,
-    target_type: input.targetType,
-    category_id: input.targetType === 'category' ? input.categoryId : null,
-    banner_image: input.bannerImage || null,
-    start_date: input.startDate,
-    end_date: input.endDate,
-    is_enabled: input.isEnabled,
-    bogo_buy_qty: input.discountType === 'bogo' ? (input.bogoBuyQty ?? 1) : 1,
-    bogo_get_qty: input.discountType === 'bogo' ? (input.bogoGetQty ?? 1) : 1,
-    bogo_get_discount_percent: input.discountType === 'bogo' ? (input.bogoGetDiscountPercent ?? 100) : 100,
-  };
-}
-
 export async function createOffer(input: OfferInput): Promise<string> {
-  const { data, error } = await supabase.from('offers').insert(toRow(input)).select('id').single();
-  if (error) throw error;
-
-  if (input.targetType === 'products' && input.productIds?.length) {
-    await supabase.from('offer_products').insert(input.productIds.map((productId) => ({ offer_id: data.id, product_id: productId })));
-  }
-  return data.id;
+  return (await api.post<{ id: string }>('/admin/offers', input)).id;
 }
 
 export async function updateOffer(id: string, input: OfferInput): Promise<void> {
-  const { error } = await supabase.from('offers').update(toRow(input)).eq('id', id);
-  if (error) throw error;
-
-  await supabase.from('offer_products').delete().eq('offer_id', id);
-  if (input.targetType === 'products' && input.productIds?.length) {
-    await supabase.from('offer_products').insert(input.productIds.map((productId) => ({ offer_id: id, product_id: productId })));
-  }
+  await api.put(`/admin/offers/${id}`, input);
 }
 
 export async function deleteOffer(id: string): Promise<void> {
-  const { error } = await supabase.from('offers').delete().eq('id', id);
-  if (error) throw error;
+  await api.delete(`/admin/offers/${id}`);
 }
 
 export async function setOfferEnabled(id: string, isEnabled: boolean): Promise<void> {
-  const { error } = await supabase.from('offers').update({ is_enabled: isEnabled }).eq('id', id);
-  if (error) throw error;
+  await api.patch(`/admin/offers/${id}/enabled`, { isEnabled });
 }
 
 export function isOfferActive(offer: Offer): boolean {

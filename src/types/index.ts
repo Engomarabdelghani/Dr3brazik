@@ -1,7 +1,10 @@
 export interface ProductImage {
   url: string;
+  /** Storage path on the API server (products/<folder>/<file>); null for a not-yet-migrated external image. */
   path: string | null;
   position: number;
+  /** Set by the API: the first image is the primary (main) one. */
+  isPrimary?: boolean;
 }
 
 export interface Product {

@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiTag, FiSearch } from 'react-icons/fi';
 import {
-  fetchCoupons, createCoupon, updateCoupon, deleteCoupon, isCouponActive, type CouponInput,
+  fetchAdminCoupons, createCoupon, updateCoupon, deleteCoupon, isCouponActive, type CouponInput,
 } from '../../lib/api/coupons';
 import { fetchAdminProducts, fetchProductsByIds } from '../../lib/api/products';
 import { cld } from '../../utils/cloudinary';
@@ -11,12 +11,12 @@ import type { Coupon, CouponDiscountType, CouponTargetType } from '../../types';
 
 export default function AdminCoupons() {
   const queryClient = useQueryClient();
-  const { data: coupons = [], isLoading } = useQuery({ queryKey: ['admin', 'coupons'], queryFn: fetchCoupons });
+  const { data: coupons = [], isLoading } = useQuery({ queryKey: ['admin', 'coupons'], queryFn: fetchAdminCoupons });
   const [editing, setEditing] = useState<Coupon | 'new' | null>(null);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['admin', 'coupons'] });
-    queryClient.invalidateQueries({ queryKey: ['coupons'] });
+    queryClient.invalidateQueries({ queryKey: ['coupons', 'announcements'] });
   };
 
   const onDelete = async (coupon: Coupon) => {
@@ -268,7 +268,7 @@ function CouponModal({ coupon, onClose, onSaved }: { coupon: Coupon | null; onCl
                         disabled={selectedProducts.some((sp) => sp.id === p.id)}
                         className="w-full text-left px-3 py-2 hover:bg-black/5 flex items-center gap-3 disabled:opacity-40"
                       >
-                        <img src={p.images[0] ? cld(p.images[0], 60) : 'https://picsum.photos/seed/placeholder/60/60'} alt={p.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
+                        <img src={p.images[0] ? cld(p.images[0], 60) : '/images/placeholder.svg'} alt={p.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
                         <span className="flex-1 text-sm truncate">{p.name}</span>
                       </button>
                     ))}
@@ -277,7 +277,7 @@ function CouponModal({ coupon, onClose, onSaved }: { coupon: Coupon | null; onCl
                 <div className="space-y-2">
                   {selectedProducts.map((p) => (
                     <div key={p.id} className="flex items-center gap-2 p-2 rounded-xl" style={{ backgroundColor: 'var(--color-blush)' }}>
-                      <img src={p.image ? cld(p.image, 60) : 'https://picsum.photos/seed/placeholder/60/60'} alt={p.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
+                      <img src={p.image ? cld(p.image, 60) : '/images/placeholder.svg'} alt={p.name} className="w-8 h-8 rounded-lg object-cover shrink-0" />
                       <span className="flex-1 text-sm truncate">{p.name}</span>
                       <button type="button" onClick={() => removeProduct(p.id)} aria-label={`Remove ${p.name}`} className="shrink-0 hover:text-red-500 transition-colors">
                         <FiX size={14} />

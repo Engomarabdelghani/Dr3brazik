@@ -1,49 +1,14 @@
-import { supabase } from '../supabase';
-import type { ShippingZone, ShippingCity } from '../../types';
+import { api } from '../../api/client';
+import type { ShippingZone } from '../../types';
 
-interface ShippingCityRow {
-  id: string;
-  zone_id: string;
-  name: string;
-  price: number;
-  sort_order: number;
-  is_enabled: boolean;
-}
-
-interface ShippingZoneRow {
-  id: string;
-  name: string;
-  price: number;
-  sort_order: number;
-  is_enabled: boolean;
-  shipping_cities?: ShippingCityRow[];
-}
-
-function mapCity(row: ShippingCityRow): ShippingCity {
-  return {
-    id: row.id, zoneId: row.zone_id, name: row.name, price: Number(row.price),
-    sortOrder: row.sort_order, isEnabled: row.is_enabled,
-  };
-}
-
-function mapZone(row: ShippingZoneRow): ShippingZone {
-  return {
-    id: row.id,
-    name: row.name,
-    price: Number(row.price),
-    sortOrder: row.sort_order,
-    isEnabled: row.is_enabled,
-    cities: (row.shipping_cities ?? []).map(mapCity).sort((a, b) => a.sortOrder - b.sortOrder),
-  };
-}
-
+/** Storefront: enabled governorates with their enabled cities. */
 export async function fetchShippingZones(): Promise<ShippingZone[]> {
-  const { data, error } = await supabase
-    .from('shipping_zones')
-    .select('*, shipping_cities(*)')
-    .order('sort_order');
-  if (error) throw error;
-  return (data ?? []).map(mapZone);
+  return api.get<ShippingZone[]>('/shipping-zones');
+}
+
+/** Admin: every governorate and city. */
+export async function fetchAdminShippingZones(): Promise<ShippingZone[]> {
+  return api.get<ShippingZone[]>('/admin/shipping-zones');
 }
 
 export interface ShippingZoneInput {
@@ -54,22 +19,15 @@ export interface ShippingZoneInput {
 }
 
 export async function createShippingZone(input: ShippingZoneInput): Promise<void> {
-  const { error } = await supabase.from('shipping_zones').insert({
-    name: input.name, price: input.price, sort_order: input.sortOrder, is_enabled: input.isEnabled,
-  });
-  if (error) throw error;
+  await api.post('/admin/shipping-zones', input);
 }
 
 export async function updateShippingZone(id: string, input: ShippingZoneInput): Promise<void> {
-  const { error } = await supabase.from('shipping_zones').update({
-    name: input.name, price: input.price, sort_order: input.sortOrder, is_enabled: input.isEnabled,
-  }).eq('id', id);
-  if (error) throw error;
+  await api.put(`/admin/shipping-zones/${id}`, input);
 }
 
 export async function deleteShippingZone(id: string): Promise<void> {
-  const { error } = await supabase.from('shipping_zones').delete().eq('id', id);
-  if (error) throw error;
+  await api.delete(`/admin/shipping-zones/${id}`);
 }
 
 export interface ShippingCityInput {
@@ -81,22 +39,13 @@ export interface ShippingCityInput {
 }
 
 export async function createShippingCity(input: ShippingCityInput): Promise<void> {
-  const { error } = await supabase.from('shipping_cities').insert({
-    zone_id: input.zoneId, name: input.name, price: input.price,
-    sort_order: input.sortOrder, is_enabled: input.isEnabled,
-  });
-  if (error) throw error;
+  await api.post('/admin/shipping-cities', input);
 }
 
 export async function updateShippingCity(id: string, input: ShippingCityInput): Promise<void> {
-  const { error } = await supabase.from('shipping_cities').update({
-    zone_id: input.zoneId, name: input.name, price: input.price,
-    sort_order: input.sortOrder, is_enabled: input.isEnabled,
-  }).eq('id', id);
-  if (error) throw error;
+  await api.put(`/admin/shipping-cities/${id}`, input);
 }
 
 export async function deleteShippingCity(id: string): Promise<void> {
-  const { error } = await supabase.from('shipping_cities').delete().eq('id', id);
-  if (error) throw error;
+  await api.delete(`/admin/shipping-cities/${id}`);
 }

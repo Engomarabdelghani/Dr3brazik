@@ -26,3 +26,7 @@ dist-ssr
 # environment variables
 .env
 .env.local
+
+# Data migration outputs (may contain customer data)
+server/migration-output/
+server/url-map.csv

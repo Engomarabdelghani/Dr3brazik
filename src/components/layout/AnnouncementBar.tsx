@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FiCopy, FiCheck } from 'react-icons/fi';
-import type { Coupon } from '../../types';
+import type { CouponAnnouncement } from '../../api/types';
 
 export const ANNOUNCEMENT_BAR_HEIGHT = 36; // px — kept in sync with Navbar's top offset and Layout's main padding
 
@@ -9,7 +9,7 @@ export const ANNOUNCEMENT_BAR_HEIGHT = 36; // px — kept in sync with Navbar's 
  * Only ever shows a coupon whose targetType is 'all' — a product-restricted
  * code would be misleading shown on every page regardless of what's in view.
  */
-export default function AnnouncementBar({ coupon }: { coupon: Coupon }) {
+export default function AnnouncementBar({ coupon }: { coupon: CouponAnnouncement }) {
   const [copied, setCopied] = useState(false);
 
 

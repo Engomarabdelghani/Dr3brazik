@@ -1,4 +1,4 @@
-// Categories and subcategories are now managed live in Supabase (Categories
+// Categories and subcategories are managed live through the API (Categories
 // page in the admin dashboard) instead of being hard-coded here. This file
 // only keeps the shared TypeScript shapes that the storefront components use.
 

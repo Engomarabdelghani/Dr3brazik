@@ -1,10 +1,10 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { CartItem, Product } from '../types';
+import type { CartQuote } from '../api/types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { fetchOffers, isOfferActive, getBogoLabel } from '../lib/api/offers';
-import { computeBogoDiscount, findActiveBogoOfferFor } from '../utils/bogo';
-import { fetchCoupons, evaluateCoupon, type CouponValidationResult } from '../lib/api/coupons';
+import { validateCoupon, type CouponValidationResult } from '../lib/api/coupons';
+import { fetchCartQuote, toCartRefs } from '../lib/api/orders';
 
 interface CartContextValue {
   items: CartItem[];
@@ -22,8 +22,11 @@ interface CartContextValue {
   discount: number;
   bogoDiscount: number;
   bogoLabel: string | null;
-  applyCoupon: (code: string) => CouponValidationResult;
+  /** Checks the code with the server; on success it is kept and applied to every quote. */
+  applyCoupon: (code: string) => Promise<CouponValidationResult>;
   removeCoupon: () => void;
+  /** The latest server quote (null until the first one arrives or when the cart is empty). */
+  quote: CartQuote | null;
 }
 
 const CartContext = createContext<CartContextValue | undefined>(undefined);
@@ -45,8 +48,61 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useLocalStorage<CartItem[]>('dk-cart', []);
   const [isOpen, setIsOpen] = useState(false);
   const [coupon, setCoupon] = useLocalStorage<string | null>('dk-coupon', null);
-  const { data: offers = [] } = useQuery({ queryKey: ['offers'], queryFn: fetchOffers, staleTime: 60_000 });
-  const { data: coupons = [] } = useQuery({ queryKey: ['coupons'], queryFn: fetchCoupons, staleTime: 60_000 });
+
+  const refs = useMemo(() => toCartRefs(items), [items]);
+
+  // The server prices the cart: saved snapshots can be days old, and coupons/BOGO
+  // are evaluated there. Re-fetched whenever the items or the coupon change.
+  const { data: quote = null } = useQuery({
+    queryKey: ['cart-quote', refs, coupon],
+    queryFn: () => fetchCartQuote({ items: refs, couponCode: coupon }),
+    enabled: refs.length > 0,
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+  });
+
+  // Bring the saved snapshots up to date with the quote (price, offer price, stock,
+  // limit), and drop lines that can no longer be bought (hidden/deleted product, ended deal).
+  useEffect(() => {
+    if (!quote || quote.lines.length !== items.length) return;
+    let changed = false;
+    const next: CartItem[] = [];
+    for (const item of items) {
+      const line = quote.lines.find((l) => l.key === item.product.id);
+      if (!line) {
+        next.push(item);
+        continue;
+      }
+      if (!line.available && line.problem !== 'LIMIT_EXCEEDED') {
+        changed = true;
+        continue;
+      }
+      const product = item.product;
+      const fresh: Product = product.isDeal
+        ? { ...product, price: line.price }
+        : {
+            ...product,
+            price: line.price,
+            effectivePrice: line.effectivePrice,
+            stock: line.stock ?? product.stock,
+            inStock: (line.stock ?? 0) > 0,
+            maxOrderQuantity: line.maxOrderQuantity ?? undefined,
+          };
+      const cap = line.cap;
+      const quantity = cap != null && cap > 0 ? Math.min(item.quantity, cap) : item.quantity;
+      if (
+        fresh.price !== product.price ||
+        fresh.effectivePrice !== product.effectivePrice ||
+        fresh.stock !== product.stock ||
+        fresh.maxOrderQuantity !== product.maxOrderQuantity ||
+        quantity !== item.quantity
+      ) {
+        changed = true;
+      }
+      next.push({ product: fresh, quantity });
+    }
+    if (changed) setItems(next);
+  }, [quote, items, setItems]);
 
   const addItem = useCallback((product: Product, quantity = 1) => {
     setItems((prev) => {
@@ -82,51 +138,42 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = useCallback(() => setItems([]), [setItems]);
 
-  const subtotal = useMemo(
+  // While the first quote loads, show the snapshot prices.
+  const localSubtotal = useMemo(
     () => items.reduce((sum, i) => sum + (i.product.effectivePrice ?? i.product.price) * i.quantity, 0),
     [items]
   );
+  const subtotal = quote?.subtotal ?? localSubtotal;
 
   const itemCount = useMemo(() => items.reduce((sum, i) => sum + i.quantity, 0), [items]);
 
-  // Re-evaluated live against the current cart + coupon list — so if the admin
-  // disables/deletes/edits a coupon mid-session, the applied discount updates
-  // automatically instead of silently staying stale.
-  const couponResult = useMemo(() => {
-    if (!coupon) return { ok: false } as CouponValidationResult;
-    const match = coupons.find((c) => c.code === coupon);
-    return evaluateCoupon(match, items, subtotal);
-  }, [coupon, coupons, items, subtotal]);
-
-  const couponDiscount = couponResult.ok ? (couponResult.discount ?? 0) : 0;
-
-  const bogoDiscount = useMemo(() => computeBogoDiscount(items, offers), [items, offers]);
-
-  const bogoLabel = useMemo(() => {
-    if (bogoDiscount <= 0) return null;
-    const activeBogo = offers.filter((o) => o.discountType === 'bogo' && isOfferActive(o));
-    const matched = items
-      .map((i) => findActiveBogoOfferFor({ id: i.product.id, categoryId: i.product.categoryId }, activeBogo))
-      .find(Boolean);
-    return matched ? getBogoLabel(matched) : null;
-  }, [bogoDiscount, offers, items]);
-
+  // A coupon that stops applying (disabled, expired, cart changed) silently stops discounting, as before.
+  const couponOk = quote?.coupon?.ok === true;
+  const couponDiscount = couponOk ? quote!.couponDiscount : 0;
+  const bogoDiscount = quote?.bogoDiscount ?? 0;
+  const bogoLabel = quote?.bogoLabel ?? null;
   const discount = couponDiscount + bogoDiscount;
 
-  const applyCoupon = useCallback((code: string): CouponValidationResult => {
+  const applyCoupon = useCallback(async (code: string): Promise<CouponValidationResult> => {
     const upper = code.trim().toUpperCase();
-    const match = coupons.find((c) => c.code === upper);
-    const result = evaluateCoupon(match, items, subtotal);
-    if (result.ok) setCoupon(upper);
-    return result;
-  }, [coupons, items, subtotal, setCoupon]);
+    if (!upper) return { ok: false, message: 'Invalid coupon code' };
+    try {
+      const result = await validateCoupon(upper, refs);
+      if (!result.ok) return { ok: false, message: result.message };
+      setCoupon(upper);
+      return { ok: true, discount: result.discount };
+    } catch (err) {
+      return { ok: false, message: err instanceof Error ? err.message : 'Could not check this code. Please try again.' };
+    }
+  }, [refs, setCoupon]);
 
   const removeCoupon = useCallback(() => setCoupon(null), [setCoupon]);
 
   const value: CartContextValue = {
     items, addItem, removeItem, updateQuantity, clearCart,
     isOpen, openCart: () => setIsOpen(true), closeCart: () => setIsOpen(false),
-    subtotal, itemCount, coupon: couponResult.ok ? coupon : null, couponDiscount, discount, bogoDiscount, bogoLabel, applyCoupon, removeCoupon,
+    subtotal, itemCount, coupon: couponOk ? coupon : null, couponDiscount, discount, bogoDiscount, bogoLabel, applyCoupon, removeCoupon,
+    quote: items.length ? quote : null,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
