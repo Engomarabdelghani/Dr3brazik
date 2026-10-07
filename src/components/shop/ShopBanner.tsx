@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 export default function ShopBanner({ title, eyebrow }: { title: string; eyebrow: string }) {
+  const { t } = useTranslation();
   return (
     <section className="relative h-[220px] md:h-[260px] overflow-hidden">
       <img
@@ -25,7 +27,7 @@ export default function ShopBanner({ title, eyebrow }: { title: string; eyebrow:
         </span>
         <h1 className="mt-3 text-2xl md:text-4xl font-extrabold text-white tracking-tight">{title}</h1>
         <p className="mt-3 text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>
-          <Link to="/" className="hover:text-white transition-colors">Home</Link> / <span className="text-white">Shop</span>
+          <Link to="/" className="hover:text-white transition-colors">{t('common.home')}</Link> / <span className="text-white">{t('common.shop')}</span>
         </p>
       </motion.div>
     </section>

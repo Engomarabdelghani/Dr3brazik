@@ -7,8 +7,10 @@ import QuantityStepper from '../components/ui/QuantityStepper';
 import Button from '../components/ui/Button';
 import EmptyState from '../components/ui/EmptyState';
 import { useSeo } from '../hooks/useSeo';
+import { useTranslation } from 'react-i18next';
 
 export default function Cart() {
+  const { t } = useTranslation();
   useSeo({ title: 'Shopping Cart', path: '/cart', noindex: true });
   const { items, updateQuantity, removeItem, subtotal, coupon, discount, applyCoupon, removeCoupon } = useCart();
   const [code, setCode] = useState('');
@@ -22,7 +24,7 @@ export default function Cart() {
     const result = await applyCoupon(code);
     setApplying(false);
     if (!result.ok) {
-      setError(result.message ?? 'Invalid coupon code');
+      setError(result.message ?? t('cart.invalidCoupon'));
     } else {
       setError('');
       setCode('');
@@ -34,9 +36,9 @@ export default function Cart() {
       <div className="container-luxe py-20">
         <EmptyState
           icon={FiShoppingBag}
-          title="Your bag is empty"
-          description="Looks like you haven't added anything to your bag yet. Discover our luxury collection."
-          actionLabel="Start Shopping"
+          title={t('cart.bagEmpty')}
+          description={t('cart.emptyDescription')}
+          actionLabel={t('cart.startShopping')}
           actionTo="/shop"
         />
       </div>
@@ -45,8 +47,8 @@ export default function Cart() {
 
   return (
     <div className="container-luxe py-12">
-      <span className="eyebrow">Your Bag</span>
-      <h1 className="section-title mt-3 mb-10">Shopping Cart</h1>
+      <span className="eyebrow">{t('cart.yourBag')}</span>
+      <h1 className="section-title mt-3 mb-10">{t('cart.shoppingCart')}</h1>
 
       <div className="grid lg:grid-cols-3 gap-10">
         <div className="lg:col-span-2 space-y-4">
@@ -56,7 +58,7 @@ export default function Cart() {
               <div className="flex-1 flex flex-col justify-between">
                 <div className="flex justify-between gap-4">
                   <div>
-                    <p className="text-xs" style={{ color: 'var(--color-muted)' }}>{product.isDeal ? 'Special Offer' : product.brand}</p>
+                    <p className="text-xs" style={{ color: 'var(--color-muted)' }}>{product.isDeal ? t('cart.specialOffer') : product.brand}</p>
                     {product.isDeal ? (
                       <p className="font-semibold">{product.name}</p>
                     ) : (
@@ -73,7 +75,7 @@ export default function Cart() {
                       <p className="text-sm font-medium mt-1">{product.price.toLocaleString('en-US')} {product.currency}</p>
                     )}
                   </div>
-                  <button aria-label="Remove item" onClick={() => removeItem(product.id)} className="text-gray-400 hover:text-red-500 transition-colors h-fit">
+                  <button aria-label={t('cart.removeItem')} onClick={() => removeItem(product.id)} className="text-gray-400 hover:text-red-500 transition-colors h-fit">
                     <FiTrash2 size={18} />
                   </button>
                 </div>
@@ -85,58 +87,58 @@ export default function Cart() {
             </div>
           ))}
           <Link to="/shop" className="inline-flex items-center gap-2 text-sm font-semibold mt-2 hover:text-[var(--color-gold)] transition-colors">
-            Continue Shopping <FiArrowRight />
+            {t('cart.continueShopping')} <FiArrowRight className="rtl-flip" />
           </Link>
         </div>
 
         <div className="card-luxe p-6 h-fit">
-          <h2 className="font-bold text-lg mb-5">Order Summary</h2>
+          <h2 className="font-bold text-lg mb-5">{t('cart.orderSummary')}</h2>
 
           <form onSubmit={onApply} className="flex gap-2 mb-5">
             <div className="relative flex-1">
-              <FiTag className="absolute left-3.5 top-1/2 -translate-y-1/2" size={14} style={{ color: 'var(--color-muted)' }} />
+              <FiTag className="absolute start-3.5 top-1/2 -translate-y-1/2" size={14} style={{ color: 'var(--color-muted)' }} />
               <input
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                placeholder="Coupon code"
-                className="input-luxe pl-9 py-2.5 text-sm"
+                placeholder={t('cart.couponCode')}
+                className="input-luxe ps-9 py-2.5 text-sm"
               />
             </div>
-            <button type="submit" disabled={applying} className="btn-secondary px-4 text-xs">{applying ? '…' : 'Apply'}</button>
+            <button type="submit" disabled={applying} className="btn-secondary px-4 text-xs">{applying ? '…' : t('cart.apply')}</button>
           </form>
           {error && <p className="text-xs text-red-500 -mt-3 mb-4">{error}</p>}
           {coupon && (
             <div className="flex items-center justify-between text-xs mb-4 px-3 py-2 rounded-lg" style={{ backgroundColor: 'rgba(201,162,39,0.1)' }}>
-              <span>Coupon <strong>{coupon}</strong> applied</span>
-              <button onClick={removeCoupon} className="font-semibold">Remove</button>
+              <span>{t('cart.couponApplied', { code: coupon })}</span>
+              <button onClick={removeCoupon} className="font-semibold">{t('cart.remove')}</button>
             </div>
           )}
 
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <span style={{ color: 'var(--color-muted)' }}>Subtotal</span>
+              <span style={{ color: 'var(--color-muted)' }}>{t('cart.subtotal')}</span>
               <span className="font-semibold">{subtotal.toLocaleString('en-US')} EGP</span>
             </div>
             {discount > 0 && (
               <div className="flex justify-between">
-                <span style={{ color: 'var(--color-muted)' }}>Discount</span>
+                <span style={{ color: 'var(--color-muted)' }}>{t('cart.discount')}</span>
                 <span className="font-semibold" style={{ color: 'var(--color-gold)' }}>-{discount.toLocaleString('en-US')} EGP</span>
               </div>
             )}
             <div className="flex justify-between">
-              <span style={{ color: 'var(--color-muted)' }}>Shipping</span>
-              <span className="font-semibold">Calculated at checkout</span>
+              <span style={{ color: 'var(--color-muted)' }}>{t('cart.shipping')}</span>
+              <span className="font-semibold">{t('cart.calculatedCheckout')}</span>
             </div>
           </div>
 
           <div className="h-px my-5" style={{ backgroundColor: 'var(--color-border)' }} />
           <div className="flex justify-between font-bold text-lg mb-6">
-            <span>Total</span>
+            <span>{t('cart.total')}</span>
             <span>{(subtotal - discount).toLocaleString('en-US')} EGP</span>
           </div>
 
           <Link to="/checkout">
-            <Button variant="primary" fullWidth>Proceed to Checkout</Button>
+            <Button variant="primary" fullWidth>{t('cart.proceedCheckout')}</Button>
           </Link>
         </div>
       </div>

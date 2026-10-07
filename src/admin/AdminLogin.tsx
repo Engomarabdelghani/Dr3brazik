@@ -3,8 +3,11 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiLock, FiMail, FiAlertCircle } from 'react-icons/fi';
 import { useAdminAuth } from '../context/AdminAuthContext';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from '../components/common/LanguageSwitcher';
 
 export default function AdminLogin() {
+  const { t } = useTranslation();
   const { isAdmin, loading, signIn, ensureSession } = useAdminAuth();
   useEffect(ensureSession, [ensureSession]);
   const navigate = useNavigate();
@@ -41,31 +44,32 @@ export default function AdminLogin() {
       >
         <div className="flex flex-col items-center mb-8">
           <img src="/images/logo.png" alt="Dr. Karam AbdelRazek" className="h-12 w-auto object-contain mb-2" />
-          <p className="text-xs tracking-[0.2em] uppercase" style={{ color: 'var(--color-gold)' }}>Admin Dashboard</p>
+          <p className="text-xs tracking-[0.2em] uppercase" style={{ color: 'var(--color-gold)' }}>{t('admin.loginTitle')}</p>
+          <LanguageSwitcher />
         </div>
 
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="relative">
-            <FiMail className="absolute left-4 top-1/2 -translate-y-1/2" size={16} style={{ color: 'var(--color-muted)' }} />
+            <FiMail className="absolute start-4 top-1/2 -translate-y-1/2" size={16} style={{ color: 'var(--color-muted)' }} />
             <input
               type="email"
               required
               autoFocus
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              className="input-luxe pl-11"
+              placeholder={t('admin.email')}
+              className="input-luxe ps-11"
             />
           </div>
           <div className="relative">
-            <FiLock className="absolute left-4 top-1/2 -translate-y-1/2" size={16} style={{ color: 'var(--color-muted)' }} />
+            <FiLock className="absolute start-4 top-1/2 -translate-y-1/2" size={16} style={{ color: 'var(--color-muted)' }} />
             <input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              className="input-luxe pl-11"
+              placeholder={t('admin.password')}
+              className="input-luxe ps-11"
             />
           </div>
 
@@ -76,7 +80,7 @@ export default function AdminLogin() {
           )}
 
           <button type="submit" disabled={submitting} className="btn-primary w-full mt-2">
-            {submitting ? 'Signing in…' : 'Sign In'}
+            {submitting ? t('admin.signingIn') : t('admin.signIn')}
           </button>
         </form>
       </motion.div>

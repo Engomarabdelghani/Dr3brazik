@@ -6,6 +6,7 @@ import { getBogoLabel, offerTargetsProduct } from '../lib/api/offers';
 import ProductCard from '../components/product/ProductCard';
 import { ProductCardSkeleton } from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
+import { useTranslation } from 'react-i18next';
 
 /**
  * A dedicated page for a single offer — e.g. what a promo banner links to.
@@ -14,6 +15,7 @@ import EmptyState from '../components/ui/EmptyState';
  * multiple categories), with the discount already applied via effectivePrice.
  */
 export default function OfferCollection() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const { data: offers = [], isLoading: offersLoading } = useOffers();
   const { data: products = [], isLoading: productsLoading } = useProducts();
@@ -32,7 +34,7 @@ export default function OfferCollection() {
   if (!isLoading && !offer) {
     return (
       <div className="container-luxe py-20">
-        <EmptyState icon={FiTag} title="Offer not found" description="This offer may have ended or been removed." actionLabel="Browse Offers" actionTo="/offers" />
+        <EmptyState icon={FiTag} title={t('offers.offerNotFound')} description={t('offers.offerEnded')} actionLabel={t('offers.browseOffers')} actionTo="/offers" />
       </div>
     );
   }
@@ -59,7 +61,7 @@ export default function OfferCollection() {
         )}
         <div className="relative container-luxe text-center">
           <Link to="/offers" className="inline-flex items-center gap-2 text-sm font-medium mb-6 text-white/70 hover:text-white transition-colors">
-            <FiArrowLeft /> Back to Offers
+            <FiArrowLeft className="rtl-flip" /> {t('offers.backToOffers')}
           </Link>
           {isLoading ? (
             <div className="skeleton h-10 w-64 mx-auto rounded-lg" />
@@ -78,7 +80,7 @@ export default function OfferCollection() {
             {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
           </div>
         ) : matchedProducts.length === 0 ? (
-          <EmptyState icon={FiTag} title="No products in this offer" description="Check back soon." actionLabel="Browse Shop" actionTo="/shop" />
+          <EmptyState icon={FiTag} title={t('offers.noProducts')} description={t('offers.checkBack')} actionLabel={t('offers.browseShop')} actionTo="/shop" />
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-7">
             {matchedProducts.map((p) => <ProductCard key={p.id} product={p} />)}

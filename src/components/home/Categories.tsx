@@ -2,15 +2,17 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import SectionHeading from '../common/SectionHeading';
 import { useCategories } from '../../hooks/useCatalog';
+import { useTranslation } from 'react-i18next';
 
 export default function Categories() {
+  const { t } = useTranslation();
   const { data: categories = [], isLoading } = useCategories();
 
   if (!isLoading && categories.length === 0) return null;
 
   return (
     <section className="container-luxe py-16 md:py-28 px-4 md:px-0">
-      <SectionHeading eyebrow="Shop by Category" title="Curated for Every Ritual" align="center" />
+      <SectionHeading eyebrow={t('home.shopByCategory')} title={t('home.curatedRitual')} align="center" />
       
       {/* استخدام أعمدة CSS لعمل تأثير الزجزاج والسحب التلقائي للعناصر للأعلى (Masonry) */}
       <div className="mt-10 md:mt-14 columns-2 md:columns-3 gap-4 md:gap-6 space-y-4 md:space-y-6">

@@ -13,18 +13,20 @@ import Pagination from '../components/shop/Pagination';
 import EmptyState from '../components/ui/EmptyState';
 import { useSeo } from '../hooks/useSeo';
 import type { SortOption } from '../types';
+import { useTranslation } from 'react-i18next';
 
 const PAGE_SIZE = 9;
 
 const sortLabels: Record<SortOption, string> = {
-  featured: 'Featured',
-  'price-asc': 'Price: Low to High',
-  'price-desc': 'Price: High to Low',
-  newest: 'Newest',
-  rating: 'Top Rated',
+  featured: 'products.featured',
+  'price-asc': 'products.priceLowHigh',
+  'price-desc': 'products.priceHighLow',
+  newest: 'products.newest',
+  rating: 'products.topRated',
 };
 
 export default function Shop() {
+  const { t, i18n } = useTranslation();
   const { data: products = [], isLoading } = useProducts();
   const { data: categories = [] } = useCategories();
   useSeo({ title: 'Shop All Products', description: 'Browse the full collection of luxury skincare, makeup, and fragrance.', path: '/shop' });
@@ -120,13 +122,13 @@ export default function Shop() {
 
   return (
     <div style={{ backgroundColor: 'var(--color-surface)' }}>
-      <ShopBanner eyebrow="Full Collection" title="Shop All Products" />
+      <ShopBanner eyebrow={t('products.fullCollection')} title={t('products.shopAll')} />
 
       <div className="container-luxe py-12">
         {query && (
           <div className="mb-8 inline-flex items-center gap-2 text-sm px-4 py-2 rounded-full" style={{ backgroundColor: 'rgba(201,162,39,0.1)' }}>
-            <FiSearch size={14} /> Results for "{query}"
-            <button onClick={clearSearch} aria-label="Clear search"><FiX size={14} /></button>
+            <FiSearch size={14} /> {t('products.resultsFor', { query })}
+            <button onClick={clearSearch} aria-label={t('products.clearSearch')}><FiX size={14} /></button>
           </div>
         )}
 
@@ -141,7 +143,7 @@ export default function Shop() {
                 color: !filters.category ? '#fff' : 'var(--color-coffee)',
               }}
             >
-              All
+              {t('products.all')}
             </button>
             {categories.map((c) => (
               <button
@@ -165,7 +167,7 @@ export default function Shop() {
                 color: activeRefineCount > 0 ? 'var(--color-gold)' : 'var(--color-coffee)',
               }}
             >
-              <FiSliders size={12} /> Filters
+              <FiSliders size={12} /> {t('products.filters')}
               {activeRefineCount > 0 && (
                 <span className="w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center text-white" style={{ backgroundColor: 'var(--color-gold)' }}>
                   {activeRefineCount}
@@ -174,30 +176,30 @@ export default function Shop() {
             </button>
           </div>
 
-          <div className="flex items-center gap-4 ml-auto">
-            <p className="text-xs hidden sm:block" style={{ color: 'var(--color-muted)' }}>{filtered.length} products</p>
+          <div className="flex items-center gap-4 ms-auto">
+            <p className="text-xs hidden sm:block" style={{ color: 'var(--color-muted)' }}>{t('products.productCount', { count: filtered.length })}</p>
             <div className="relative">
               <button
                 onClick={() => setSortOpen((v) => !v)}
                 className="flex items-center gap-1.5 text-xs font-semibold border rounded-full px-4 py-2.5"
                 style={{ borderColor: 'var(--color-border)' }}
               >
-                Sort: {sortLabels[sort]} <FiChevronDown size={13} />
+                {t('products.sort')}: {t(sortLabels[sort])} <FiChevronDown size={13} />
               </button>
               <AnimatePresence>
                 {sortOpen && (
                   <motion.div
                     initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-                    className="absolute right-0 mt-3 w-48 card-luxe p-2 z-20"
+                    className="absolute end-0 mt-3 w-48 card-luxe p-2 z-20"
                   >
                     {(Object.keys(sortLabels) as SortOption[]).map((key) => (
                       <button
                         key={key}
                         onClick={() => { setSort(key); setSortOpen(false); }}
-                        className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-black/5 transition-colors"
+                        className="w-full text-start px-3 py-2 rounded-lg text-sm hover:bg-black/5 transition-colors"
                         style={{ color: sort === key ? 'var(--color-gold)' : 'var(--color-coffee)', fontWeight: sort === key ? 600 : 400 }}
                       >
-                        {sortLabels[key]}
+                        {t(sortLabels[key])}
                       </button>
                     ))}
                   </motion.div>
@@ -217,7 +219,7 @@ export default function Shop() {
                 color: !filters.subcategory ? 'var(--color-gold)' : 'var(--color-muted)',
               }}
             >
-              All {activeCategory.name}
+              {t('products.allCategory', { category: activeCategory.name })}
             </button>
             {activeCategory.subcategories.map((sc) => (
               <button
@@ -254,9 +256,9 @@ export default function Shop() {
         ) : paginated.length === 0 ? (
           <EmptyState
             icon={FiSearch}
-            title="No products found"
-            description="Try adjusting your filters or search term to find what you're looking for."
-            actionLabel="Reset Filters"
+            title={t('products.noProducts')}
+            description={t('products.adjustFilters')}
+            actionLabel={t('products.resetFilters')}
             actionTo="/shop"
           />
         ) : (
@@ -282,13 +284,14 @@ export default function Shop() {
               className="fixed inset-0 bg-black/40 z-50" onClick={() => setRefineOpen(false)}
             />
             <motion.div
-              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+              initial={{ x: i18n.language.startsWith('ar') ? '-100%' : '100%' }} animate={{ x: 0 }} exit={{ x: i18n.language.startsWith('ar') ? '-100%' : '100%' }}
               transition={{ type: 'tween', duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-              className="fixed top-0 right-0 bottom-0 w-[86%] max-w-sm bg-white z-50 p-6 overflow-y-auto"
+              className="fixed top-0 bottom-0 w-[86%] max-w-sm bg-white z-50 p-6 overflow-y-auto"
+              style={{ insetInlineEnd: 0 }}
             >
               <div className="flex items-center justify-between mb-8">
-                <h3 className="font-bold text-lg">Filters</h3>
-                <button onClick={() => setRefineOpen(false)} aria-label="Close filters panel"><FiX size={20} /></button>
+                <h3 className="font-bold text-lg">{t('products.filters')}</h3>
+                <button onClick={() => setRefineOpen(false)} aria-label={t('products.closeFilters')}><FiX size={20} /></button>
               </div>
               <RefinePanel filters={filters} onChange={(f) => { setFilters(f); setPage(1); }} maxPriceLimit={MAX_PRICE} brands={brands} />
             </motion.div>

@@ -8,8 +8,10 @@ import Stats from '../components/home/Stats';
 import Testimonials from '../components/home/Testimonials';
 import InstagramGallery from '../components/home/InstagramGallery';
 import { useProducts, getFeatured, getNewArrivals } from '../hooks/useCatalog';
+import { useTranslation } from 'react-i18next';
 
 export default function Home() {
+  const { t } = useTranslation();
   const { data: products = [] } = useProducts();
 
   return (
@@ -19,17 +21,17 @@ export default function Home() {
       <Hero />
       <BrandsSlider />
       <ProductSection
-        eyebrow="Handpicked"
-        title="Featured Products"
-        description="Our most-loved formulas, chosen for their exceptional results."
+        eyebrow={t('home.handpicked')}
+        title={t('home.featuredProducts')}
+        description={t('home.featuredDescription')}
         items={getFeatured(products)}
         viewAllHref="/shop"
       />
       {/* <FlashSale items={getFlashSale(products)} /> */}
       <ProductSection
-        eyebrow="Just Landed"
-        title="New Arrivals"
-        description="The latest additions to the Dr. Karam collection."
+        eyebrow={t('home.justLanded')}
+        title={t('home.newArrivals')}
+        description={t('home.newArrivalsDescription')}
         items={getNewArrivals(products)}
         viewAllHref="/shop"
       />

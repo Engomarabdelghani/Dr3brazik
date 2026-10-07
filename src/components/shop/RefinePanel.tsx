@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 export interface Filters {
   category: string | null;
   subcategory: string | null;
@@ -9,10 +11,11 @@ export interface Filters {
 export default function RefinePanel({ filters, onChange, maxPriceLimit, brands }: {
   filters: Filters; onChange: (f: Filters) => void; maxPriceLimit: number; brands: string[];
 }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-8">
       <div>
-        <h3 className="font-semibold text-sm mb-4 tracking-wide">Brand</h3>
+        <h3 className="font-semibold text-sm mb-4 tracking-wide">{t('products.brand')}</h3>
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => onChange({ ...filters, brand: null })}
@@ -23,7 +26,7 @@ export default function RefinePanel({ filters, onChange, maxPriceLimit, brands }
               color: !filters.brand ? '#fff' : 'var(--color-coffee)',
             }}
           >
-            All Brands
+            {t('products.allBrands')}
           </button>
           {brands.map((b) => (
             <button
@@ -45,7 +48,7 @@ export default function RefinePanel({ filters, onChange, maxPriceLimit, brands }
       <div className="h-px" style={{ backgroundColor: 'var(--color-border)' }} />
 
       <div>
-        <h3 className="font-semibold text-sm mb-4 tracking-wide">Max Price</h3>
+        <h3 className="font-semibold text-sm mb-4 tracking-wide">{t('products.maxPrice')}</h3>
         <input
           type="range"
           min={0}
@@ -55,7 +58,7 @@ export default function RefinePanel({ filters, onChange, maxPriceLimit, brands }
           onChange={(e) => onChange({ ...filters, maxPrice: Number(e.target.value) })}
           className="w-full accent-[var(--color-gold)]"
         />
-        <p className="text-sm mt-2" style={{ color: 'var(--color-muted)' }}>Up to {filters.maxPrice.toLocaleString('en-US')} EGP</p>
+        <p className="text-sm mt-2" style={{ color: 'var(--color-muted)' }}>{t('products.upToPrice', { price: filters.maxPrice.toLocaleString('en-US') })}</p>
       </div>
 
       <div className="h-px" style={{ backgroundColor: 'var(--color-border)' }} />
@@ -67,7 +70,7 @@ export default function RefinePanel({ filters, onChange, maxPriceLimit, brands }
           onChange={(e) => onChange({ ...filters, inStockOnly: e.target.checked })}
           className="w-4 h-4 accent-[var(--color-gold)]"
         />
-        <span className="text-sm">In Stock Only</span>
+        <span className="text-sm">{t('products.inStockOnly')}</span>
       </label>
     </div>
   );

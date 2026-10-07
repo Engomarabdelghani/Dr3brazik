@@ -1,4 +1,5 @@
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { useTranslation } from 'react-i18next';
 
 /** Builds a compact page list like [1, 2, 3, '…', 14] instead of listing every page. */
 function buildPageList(current: number, total: number): (number | '…')[] {
@@ -16,6 +17,7 @@ function buildPageList(current: number, total: number): (number | '…')[] {
 }
 
 export default function Pagination({ page, totalPages, onChange }: { page: number; totalPages: number; onChange: (page: number) => void }) {
+  const { t } = useTranslation();
   if (totalPages <= 1) return null;
   const pages = buildPageList(page, totalPages);
 
@@ -30,11 +32,11 @@ export default function Pagination({ page, totalPages, onChange }: { page: numbe
       <button
         onClick={() => onChange(Math.max(1, page - 1))}
         disabled={page === 1}
-        aria-label="Previous page"
+        aria-label={t('products.previousPage')}
         className="w-9 h-9 rounded-full flex items-center justify-center transition-colors disabled:opacity-40"
         style={pillStyle(false)}
       >
-        <FiChevronLeft size={15} />
+        <FiChevronLeft size={15} className="rtl-flip" />
       </button>
 
       {pages.map((p, i) =>
@@ -46,7 +48,7 @@ export default function Pagination({ page, totalPages, onChange }: { page: numbe
           <button
             key={p}
             onClick={() => onChange(p)}
-            aria-label={`Page ${p}`}
+            aria-label={t('products.pageNumber', { page: p })}
             aria-current={page === p ? 'page' : undefined}
             className="w-9 h-9 rounded-full text-sm font-semibold transition-colors"
             style={pillStyle(page === p)}
@@ -59,11 +61,11 @@ export default function Pagination({ page, totalPages, onChange }: { page: numbe
       <button
         onClick={() => onChange(Math.min(totalPages, page + 1))}
         disabled={page === totalPages}
-        aria-label="Next page"
+        aria-label={t('products.nextPage')}
         className="w-9 h-9 rounded-full flex items-center justify-center transition-colors disabled:opacity-40"
         style={pillStyle(false)}
       >
-        <FiChevronRight size={15} />
+        <FiChevronRight size={15} className="rtl-flip" />
       </button>
     </div>
   );

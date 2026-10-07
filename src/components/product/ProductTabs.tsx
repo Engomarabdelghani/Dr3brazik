@@ -1,12 +1,9 @@
 import { useState } from 'react';
 import { FiCheck } from 'react-icons/fi';
-import type { Product, FAQ } from '../../types';
+import type { Product } from '../../types';
+import { useTranslation } from 'react-i18next';
 
-const sampleFaqs: FAQ[] = [
-  { question: 'How often should I use this product?', answer: 'For best results, use as directed in the description — typically once or twice daily as part of your skincare routine.' },
-  { question: 'Is this suitable for sensitive skin?', answer: 'Our formulas are dermatologically tested, but we always recommend a patch test 24 hours before first use.' },
-  { question: 'What is your return policy?', answer: 'Unopened products can be returned within 14 days of delivery. Contact us via WhatsApp to start a return.' },
-];
+const sampleFaqs = ['faqUse', 'faqSensitive', 'faqReturn'] as const;
 
 // Reviews are switched off until the feature is rebuilt on the new API (owner decision, 4 Oct 2026).
 const tabs = ['Description', 'Ingredients', 'Benefits', 'FAQ'] as const;
@@ -17,6 +14,7 @@ interface ProductTabsProps {
 }
 
 export default function ProductTabs({ product }: ProductTabsProps) {
+  const { t } = useTranslation();
   const [active, setActive] = useState<Tab>('Description');
 
   return (
@@ -29,7 +27,7 @@ export default function ProductTabs({ product }: ProductTabsProps) {
             className="px-5 py-3 text-sm font-semibold whitespace-nowrap relative"
             style={{ color: active === tab ? 'var(--color-coffee)' : 'var(--color-muted)' }}
           >
-            {tab}
+            {t(`productDetails.${tab.toLowerCase()}Tab`)}
             {active === tab && (
               <span className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: 'var(--color-gold)' }} />
             )}
@@ -64,10 +62,10 @@ export default function ProductTabs({ product }: ProductTabsProps) {
 
         {active === 'FAQ' && (
           <div className="space-y-5">
-            {sampleFaqs.map((f) => (
-              <div key={f.question}>
-                <p className="font-semibold text-sm mb-1.5">{f.question}</p>
-                <p className="text-sm" style={{ color: 'var(--color-muted)' }}>{f.answer}</p>
+            {sampleFaqs.map((faq) => (
+              <div key={faq}>
+                <p className="font-semibold text-sm mb-1.5">{t(`productDetails.${faq}Question`)}</p>
+                <p className="text-sm" style={{ color: 'var(--color-muted)' }}>{t(`productDetails.${faq}Answer`)}</p>
               </div>
             ))}
           </div>

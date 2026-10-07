@@ -6,8 +6,12 @@ import { cld } from '../../utils/cloudinary';
 import QuantityStepper from '../ui/QuantityStepper';
 import Button from '../ui/Button';
 import EmptyState from '../ui/EmptyState';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 
 export default function CartDrawer() {
+  const { t } = useTranslation();
+  const isArabic = i18n.language.startsWith('ar');
   const { items, isOpen, closeCart, updateQuantity, removeItem, subtotal, discount } = useCart();
 
   return (
@@ -19,22 +23,23 @@ export default function CartDrawer() {
             className="fixed inset-0 bg-black/40 z-[60]" onClick={closeCart}
           />
           <motion.aside
-            initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+            initial={{ x: isArabic ? '-100%' : '100%' }} animate={{ x: 0 }} exit={{ x: isArabic ? '-100%' : '100%' }}
             transition={{ type: 'tween', duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed top-0 right-0 bottom-0 w-full max-w-md bg-white z-[60] flex flex-col shadow-2xl"
+            className="fixed top-0 bottom-0 w-full max-w-md bg-white z-[60] flex flex-col shadow-2xl"
+            style={{ insetInlineEnd: 0 }}
           >
             <div className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: 'var(--color-border)' }}>
-              <h2 className="text-lg font-bold flex items-center gap-2"><FiShoppingBag /> Your Bag ({items.length})</h2>
-              <button aria-label="Close cart" onClick={closeCart}><FiX size={22} /></button>
+              <h2 className="text-lg font-bold flex items-center gap-2"><FiShoppingBag /> {t('cart.yourBag')} ({items.length})</h2>
+              <button aria-label={t('common.close')} onClick={closeCart}><FiX size={22} /></button>
             </div>
 
             <div className="flex-1 overflow-y-auto px-6 py-4">
               {items.length === 0 ? (
                 <EmptyState
                   icon={FiShoppingBag}
-                  title="Your bag is empty"
-                  description="Discover our curated collection of luxury cosmetics."
-                  actionLabel="Start Shopping"
+                  title={t('cart.bagEmpty')}
+                  description={t('cart.emptyDescription')}
+                  actionLabel={t('cart.startShopping')}
                   actionTo="/shop"
                 />
               ) : (
@@ -44,13 +49,13 @@ export default function CartDrawer() {
                       <img src={cld(product.images[0], 200)} alt={product.name} loading="lazy" decoding="async" className="w-20 h-24 object-cover rounded-xl" />
                       <div className="flex-1 flex flex-col justify-between">
                         <div>
-                          <p className="text-xs" style={{ color: 'var(--color-muted)' }}>{product.isDeal ? 'Special Offer' : product.brand}</p>
+                          <p className="text-xs" style={{ color: 'var(--color-muted)' }}>{product.isDeal ? t('cart.specialOffer') : product.brand}</p>
                           <p className="font-semibold text-sm">{product.name}</p>
                           <p className="text-sm font-medium mt-1">{product.price.toLocaleString('en-US')} {product.currency}</p>
                         </div>
                         <div className="flex items-center justify-between mt-2">
                           <QuantityStepper value={quantity} onChange={(q) => updateQuantity(product.id, q)} max={orderCapFor(product) ?? 99} />
-                          <button aria-label="Remove item" onClick={() => removeItem(product.id)} className="text-gray-400 hover:text-red-500 transition-colors">
+                          <button aria-label={t('cart.removeItem')} onClick={() => removeItem(product.id)} className="text-gray-400 hover:text-red-500 transition-colors">
                             <FiTrash2 size={16} />
                           </button>
                         </div>
@@ -64,24 +69,24 @@ export default function CartDrawer() {
             {items.length > 0 && (
               <div className="px-6 py-5 border-t space-y-3" style={{ borderColor: 'var(--color-border)' }}>
                 <div className="flex justify-between text-sm">
-                  <span style={{ color: 'var(--color-muted)' }}>Subtotal</span>
+                  <span style={{ color: 'var(--color-muted)' }}>{t('cart.subtotal')}</span>
                   <span className="font-semibold">{subtotal.toLocaleString('en-US')} EGP</span>
                 </div>
                 {discount > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span style={{ color: 'var(--color-muted)' }}>Discount</span>
+                    <span style={{ color: 'var(--color-muted)' }}>{t('cart.discount')}</span>
                     <span className="font-semibold" style={{ color: 'var(--color-gold)' }}>-{discount.toLocaleString('en-US')} EGP</span>
                   </div>
                 )}
                 <div className="flex justify-between text-base font-bold pt-1">
-                  <span>Total</span>
+                  <span>{t('cart.total')}</span>
                   <span>{(subtotal - discount).toLocaleString('en-US')} EGP</span>
                 </div>
                 <Link to="/checkout" onClick={closeCart}>
-                  <Button variant="primary" fullWidth className="mt-2">Proceed to Checkout</Button>
+                  <Button variant="primary" fullWidth className="mt-2">{t('cart.proceedCheckout')}</Button>
                 </Link>
                 <Link to="/cart" onClick={closeCart} className="block text-center text-sm font-medium mt-1 hover:text-[var(--color-gold)] transition-colors">
-                  View Bag Details
+                  {t('cart.shoppingCart')}
                 </Link>
               </div>
             )}

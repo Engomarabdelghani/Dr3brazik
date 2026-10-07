@@ -17,8 +17,11 @@
     "@fontsource/plus-jakarta-sans": "^5.3.0",
     "@tanstack/react-query": "^5.101.4",
     "framer-motion": "^12.42.2",
+    "i18next": "^26.4.2",
+    "i18next-browser-languagedetector": "^8.2.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "react-i18next": "^17.0.16",
     "react-icons": "^5.7.0",
     "react-router-dom": "^7.18.1"
   },

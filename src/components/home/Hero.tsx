@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { FiArrowRight } from 'react-icons/fi';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Compact brand strip — intentionally text-only (no competing photo) since the
@@ -8,6 +9,7 @@ import { FiArrowRight } from 'react-icons/fi';
  * "overlapping feature bar" treatment via the gradient block below.
  */
 export default function Hero() {
+  const { t, i18n } = useTranslation();
   return (
     <section className="relative overflow-hidden pb-16 md:pb-20">
       <div
@@ -33,15 +35,15 @@ export default function Hero() {
                 color: 'var(--color-heading)',
               }}
             >
-              Radiance, redefined by <span style={{ color: 'var(--color-gold)' }}>gold.</span>
+              {t('home.heroTitle')} <span style={{ color: 'var(--color-gold)' }}>{t('home.heroGold')}</span>
             </h1>
 
-            <p className="mt-3 text-sm" dir="rtl" style={{ color: 'var(--color-gold)', fontWeight: 600 }}>
-              كل اللي يكمل جمالك
+            <p className="mt-3 text-sm" dir={i18n.language.startsWith('ar') ? 'rtl' : 'ltr'} style={{ color: 'var(--color-gold)', fontWeight: 600 }}>
+              {t('home.tagline')}
             </p>
 
             <p className="mt-4 text-sm md:text-base max-w-md mx-auto" style={{ color: 'var(--color-heading)', opacity: 0.65 }}>
-              Luxury cosmetics crafted to illuminate your natural beauty every day.
+              {t('home.heroDescription')}
             </p>
 
             <div className="mt-7 flex flex-wrap items-center justify-center gap-4">
@@ -50,7 +52,7 @@ export default function Hero() {
                   className="inline-flex items-center gap-2 rounded-full px-8 py-[0.9rem] text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
                   style={{ background: 'linear-gradient(135deg, var(--color-gold), var(--color-gold-light))', boxShadow: 'var(--shadow-gold)' }}
                 >
-                  Shop Collection <FiArrowRight />
+                  {t('home.shopCollection')} <FiArrowRight className="rtl-flip" />
                 </button>
               </Link>
             </div>

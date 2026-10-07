@@ -11,6 +11,7 @@ import EmptyState from '../components/ui/EmptyState';
 import OfferBanner from '../components/shop/OfferBanner';
 import SectionHeading from '../components/common/SectionHeading';
 import { useSeo } from '../hooks/useSeo';
+import { useTranslation } from 'react-i18next';
 
 function discountPercentOf(p: Product) {
   if (p.oldPrice) return Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
@@ -18,6 +19,7 @@ function discountPercentOf(p: Product) {
 }
 
 export default function Offers() {
+  const { t } = useTranslation();
   const { data: products = [], isLoading } = useProducts();
   useSeo({ title: 'Offers & Promotions', description: 'Every active discount, bundle, and BOGO deal in one place.', path: '/offers' });
   const { data: offers = [] } = useOffers();
@@ -39,7 +41,7 @@ export default function Offers() {
 
       {activeOffers.length > 0 && (
         <div className="container-luxe pt-16 md:pt-20">
-          <SectionHeading eyebrow="Active Promotions" title="Current Offers" description="Every deal running right now — tap one to shop it." />
+          <SectionHeading eyebrow={t('offers.activePromotions')} title={t('offers.currentOffers')} description={t('offers.everyDeal')} />
           <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {activeOffers.map((offer, i) => {
               const href = `/offer/${offer.id}`;
@@ -84,10 +86,10 @@ export default function Offers() {
       )}
 
       <div className="container-luxe py-16 md:py-20">
-        <SectionHeading
-          eyebrow="Biggest Savings First"
-          title="Discounted Products"
-          description="Every product below is marked down for a limited time — sorted by the deepest discount."
+          <SectionHeading
+          eyebrow={t('offers.biggestSavings')}
+          title={t('offers.discountedProducts')}
+          description={t('offers.discountDescription')}
         />
 
         {isLoading ? (
@@ -96,7 +98,7 @@ export default function Offers() {
           </div>
         ) : discounted.length === 0 ? (
           <div className="mt-10">
-            <EmptyState icon={FiTag} title="No active offers" description="Check back soon for new promotions." actionLabel="Browse Shop" actionTo="/shop" />
+            <EmptyState icon={FiTag} title={t('offers.noActiveOffers')} description={t('offers.checkBack')} actionLabel={t('offers.browseShop')} actionTo="/shop" />
           </div>
         ) : (
           <div className="mt-12 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-7">

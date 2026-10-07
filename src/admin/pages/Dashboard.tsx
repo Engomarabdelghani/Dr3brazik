@@ -4,26 +4,28 @@ import { motion } from 'framer-motion';
 import { FiBox, FiTag, FiPercent, FiImage, FiPlus, FiAlertTriangle, FiArrowRight, FiShoppingBag } from 'react-icons/fi';
 import { fetchDashboardStats } from '../../lib/api/dashboard';
 import { cld } from '../../utils/cloudinary';
+import { useTranslation } from 'react-i18next';
 
 const statCards = [
-  { key: 'productCount' as const, label: 'Products', icon: FiBox, tone: 'ink' },
-  { key: 'categoryCount' as const, label: 'Categories', icon: FiTag, tone: 'gold' },
-  { key: 'activeOfferCount' as const, label: 'Active Offers', icon: FiPercent, tone: 'gold' },
-  { key: 'totalImages' as const, label: 'Total Images', icon: FiImage, tone: 'ink' },
+  { key: 'productCount' as const, label: 'nav.products', icon: FiBox, tone: 'ink' },
+  { key: 'categoryCount' as const, label: 'nav.categories', icon: FiTag, tone: 'gold' },
+  { key: 'activeOfferCount' as const, label: 'activeOffers', icon: FiPercent, tone: 'gold' },
+  { key: 'totalImages' as const, label: 'totalImages', icon: FiImage, tone: 'ink' },
 ];
 
 export default function AdminDashboard() {
+  const { t } = useTranslation();
   const { data, isLoading } = useQuery({ queryKey: ['admin', 'dashboard'], queryFn: fetchDashboardStats });
 
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--color-muted)' }}>Welcome back — here's what's happening in your store.</p>
+          <h1 className="text-2xl font-bold">{t('admin.nav.dashboard')}</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--color-muted)' }}>{t('admin.welcome')}</p>
         </div>
         <Link to="/admin/products/new" className="btn-primary">
-          <FiPlus /> Add Product
+          <FiPlus /> {t('admin.addProduct')}
         </Link>
       </div>
 
@@ -43,7 +45,7 @@ export default function AdminDashboard() {
               <card.icon size={18} style={{ color: card.tone === 'gold' ? 'var(--color-gold)' : 'var(--color-coffee)' }} />
             </div>
             <p className="text-2xl font-extrabold">{isLoading ? '—' : data?.[card.key]?.toLocaleString('en-US')}</p>
-            <p className="text-xs mt-1" style={{ color: 'var(--color-muted)' }}>{card.label}</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--color-muted)' }}>{t(`admin.${card.label}`)}</p>
           </motion.div>
         ))}
       </div>
@@ -52,10 +54,10 @@ export default function AdminDashboard() {
         <div className="flex items-center gap-3 p-4 rounded-2xl mb-4" style={{ backgroundColor: 'rgba(201,162,39,0.1)' }}>
           <FiShoppingBag style={{ color: 'var(--color-gold)' }} />
           <p className="text-sm" style={{ color: 'var(--color-coffee)' }}>
-            <strong>{data.newOrderCount}</strong> new order{data.newOrderCount > 1 ? 's are' : ' is'} waiting to be confirmed.
+            {t('admin.newOrder', { count: data.newOrderCount })}
           </p>
-          <Link to="/admin/orders?status=new" className="text-sm font-semibold ml-auto flex items-center gap-1" style={{ color: 'var(--color-gold)' }}>
-            View <FiArrowRight size={14} />
+          <Link to="/admin/orders?status=new" className="text-sm font-semibold ms-auto flex items-center gap-1" style={{ color: 'var(--color-gold)' }}>
+            {t('admin.view')} <FiArrowRight size={14} className="rtl-flip" />
           </Link>
         </div>
       )}
@@ -64,10 +66,10 @@ export default function AdminDashboard() {
         <div className="flex items-center gap-3 p-4 rounded-2xl mb-8" style={{ backgroundColor: 'rgba(220,38,38,0.06)' }}>
           <FiAlertTriangle style={{ color: '#dc2626' }} />
           <p className="text-sm" style={{ color: 'var(--color-coffee)' }}>
-            <strong>{data.outOfStockCount}</strong> product{data.outOfStockCount > 1 ? 's are' : ' is'} out of stock.
+            {t('admin.outOfStock', { count: data.outOfStockCount })}
           </p>
-          <Link to="/admin/products?status=out-of-stock" className="text-sm font-semibold ml-auto flex items-center gap-1" style={{ color: '#dc2626' }}>
-            Review <FiArrowRight size={14} />
+          <Link to="/admin/products?status=out-of-stock" className="text-sm font-semibold ms-auto flex items-center gap-1" style={{ color: '#dc2626' }}>
+            {t('admin.review')} <FiArrowRight size={14} className="rtl-flip" />
           </Link>
         </div>
       )}
@@ -75,15 +77,15 @@ export default function AdminDashboard() {
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 card-luxe p-6">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="font-bold">Recent Products</h2>
+            <h2 className="font-bold">{t('admin.recentProducts')}</h2>
             <Link to="/admin/products" className="text-sm font-semibold flex items-center gap-1" style={{ color: 'var(--color-gold)' }}>
-              View All <FiArrowRight size={14} />
+              {t('admin.viewAll')} <FiArrowRight size={14} className="rtl-flip" />
             </Link>
           </div>
           <div className="space-y-3">
-            {isLoading && <p className="text-sm" style={{ color: 'var(--color-muted)' }}>Loading…</p>}
+            {isLoading && <p className="text-sm" style={{ color: 'var(--color-muted)' }}>{t('common.loading')}</p>}
             {!isLoading && data?.recentProducts.length === 0 && (
-              <p className="text-sm" style={{ color: 'var(--color-muted)' }}>No products yet.</p>
+              <p className="text-sm" style={{ color: 'var(--color-muted)' }}>{t('admin.noProductsYet')}</p>
             )}
             {data?.recentProducts.map((p) => (
               <Link
@@ -107,16 +109,16 @@ export default function AdminDashboard() {
         </div>
 
         <div className="card-luxe p-6">
-          <h2 className="font-bold mb-5">Quick Actions</h2>
+          <h2 className="font-bold mb-5">{t('admin.quickActions')}</h2>
           <div className="space-y-2">
             <Link to="/admin/products/new" className="flex items-center gap-3 p-3 rounded-xl hover:bg-black/5 transition-colors text-sm font-medium">
-              <FiBox size={16} style={{ color: 'var(--color-gold)' }} /> Add a Product
+              <FiBox size={16} style={{ color: 'var(--color-gold)' }} /> {t('admin.addAProduct')}
             </Link>
             <Link to="/admin/categories" className="flex items-center gap-3 p-3 rounded-xl hover:bg-black/5 transition-colors text-sm font-medium">
-              <FiTag size={16} style={{ color: 'var(--color-gold)' }} /> Manage Categories
+              <FiTag size={16} style={{ color: 'var(--color-gold)' }} /> {t('admin.manageCategories')}
             </Link>
             <Link to="/admin/offers/new" className="flex items-center gap-3 p-3 rounded-xl hover:bg-black/5 transition-colors text-sm font-medium">
-              <FiPercent size={16} style={{ color: 'var(--color-gold)' }} /> Create an Offer
+              <FiPercent size={16} style={{ color: 'var(--color-gold)' }} /> {t('admin.createOffer')}
             </Link>
           </div>
         </div>

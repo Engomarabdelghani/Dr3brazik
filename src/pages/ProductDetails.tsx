@@ -21,8 +21,10 @@ import ProductCard from '../components/product/ProductCard';
 import SectionHeading from '../components/common/SectionHeading';
 import { useSeo } from '../hooks/useSeo';
 import { SITE_URL } from '../data/constants';
+import { useTranslation } from 'react-i18next';
 
 export default function ProductDetails() {
+  const { t } = useTranslation();
   const { slug } = useParams();
   const { data: product, isLoading, isFetched } = useProduct(slug);
   const { data: allProducts = [] } = useProducts();
@@ -48,7 +50,7 @@ export default function ProductDetails() {
 
   if (isFetched && !product) return <Navigate to="/404" replace />;
   if (isLoading || !product) {
-    return <div className="container-luxe py-24 text-center" style={{ color: 'var(--color-muted)' }}>Loading…</div>;
+    return <div className="container-luxe py-24 text-center" style={{ color: 'var(--color-muted)' }}>{t('productDetails.loading')}</div>;
   }
 
   const wished = isInWishlist(product.id);
@@ -91,7 +93,7 @@ export default function ProductDetails() {
         }}
       />
       <p className="text-sm mb-8" style={{ color: 'var(--color-muted)' }}>
-        <Link to="/">Home</Link> / <Link to="/shop">Shop</Link>
+        <Link to="/">{t('productDetails.home')}</Link> / <Link to="/shop">{t('productDetails.shop')}</Link>
         {productCategory && (
           <> / <Link to={`/shop?category=${productCategory.id}`}>{productCategory.name}</Link></>
         )}
@@ -105,13 +107,13 @@ export default function ProductDetails() {
         {product.variants && product.variants.length > 0 && (
           <div className="mt-4">
             <p className="text-xs font-semibold mb-2" style={{ color: 'var(--color-muted)' }}>
-              Color{selectedVariant ? `: ${selectedVariant.colorName}` : ''}
+              {t('productDetails.color')}{selectedVariant ? `: ${selectedVariant.colorName}` : ''}
             </p>
             <div className="flex items-center gap-2.5">
               <button
                 type="button"
                 onClick={() => setSelectedVariantId(null)}
-                aria-label="Default color"
+                aria-label={t('productDetails.defaultColor')}
                 className="w-9 h-9 rounded-full overflow-hidden border-2 transition-colors"
                 style={{ borderColor: !selectedVariant ? 'var(--color-gold)' : 'var(--color-border)' }}
               >
@@ -144,7 +146,7 @@ export default function ProductDetails() {
 
           <div className="flex items-center gap-3 mt-3">
             <RatingStars rating={product.rating} showValue reviewCount={product.reviewCount} />
-            {product.isNew && <Badge tone="ink">New</Badge>}
+            {product.isNew && <Badge tone="ink">{t('productDetails.new')}</Badge>}
           </div>
 
           <div className="mt-5">
@@ -158,15 +160,15 @@ export default function ProductDetails() {
           <p className="mt-5 text-sm leading-relaxed" style={{ color: 'var(--color-muted)' }}>{product.shortDescription}</p>
 
           <div className="mt-4 flex items-center gap-2">
-            {product.inStock ? <Badge tone="success">In Stock</Badge> : <Badge tone="muted">Out of Stock</Badge>}
+            {product.inStock ? <Badge tone="success">{t('productDetails.inStock')}</Badge> : <Badge tone="muted">{t('productDetails.outOfStock')}</Badge>}
             {bogoOffer && <Badge tone="bogo">{getBogoLabel(bogoOffer)}</Badge>}
           </div>
           {orderCap != null && (
             <p className="text-xs mt-2" style={{ color: 'var(--color-muted)' }}>
               {product.maxOrderQuantity != null && product.maxOrderQuantity <= (product.stock ?? Infinity)
-                ? `Limited to ${orderCap} per order`
-                : `Only ${orderCap} left in stock`}
-              {cartQtyForProduct > 0 && ` — you already have ${cartQtyForProduct} in your cart`}
+                ? t('productDetails.limitedTo', { count: orderCap })
+                : t('productDetails.onlyLeft', { count: orderCap })}
+              {cartQtyForProduct > 0 && ` — ${t('productDetails.alreadyInCart', { count: cartQtyForProduct })}`}
             </p>
           )}
 
@@ -177,10 +179,10 @@ export default function ProductDetails() {
               disabled={!product.inStock || remainingAllowed === 0}
               onClick={() => addItem(product, Math.min(quantity, remainingAllowed))}
             >
-              <FiShoppingBag /> {remainingAllowed === 0 ? 'Limit Reached' : 'Add to Cart'}
+              <FiShoppingBag /> {remainingAllowed === 0 ? t('productDetails.limitReached') : t('productDetails.addToCart')}
             </Button>
             <button
-              aria-label="Toggle wishlist"
+              aria-label={t('productDetails.toggleWishlist')}
               onClick={() => toggle(product)}
               className="w-12 h-12 rounded-full border flex items-center justify-center shrink-0"
               style={{ borderColor: 'var(--color-border)' }}
@@ -192,15 +194,15 @@ export default function ProductDetails() {
           <div className="grid grid-cols-3 gap-4 mt-10 pt-8 border-t" style={{ borderColor: 'var(--color-border)' }}>
             <div className="text-center">
               <FiTruck className="mx-auto mb-2" style={{ color: 'var(--color-gold)' }} />
-              <p className="text-xs" style={{ color: 'var(--color-muted)' }}>Fast Delivery</p>
+              <p className="text-xs" style={{ color: 'var(--color-muted)' }}>{t('productDetails.fastDelivery')}</p>
             </div>
             <div className="text-center">
               <FiShield className="mx-auto mb-2" style={{ color: 'var(--color-gold)' }} />
-              <p className="text-xs" style={{ color: 'var(--color-muted)' }}>Authentic Products</p>
+              <p className="text-xs" style={{ color: 'var(--color-muted)' }}>{t('productDetails.authenticProducts')}</p>
             </div>
             <div className="text-center">
               <FiRotateCcw className="mx-auto mb-2" style={{ color: 'var(--color-gold)' }} />
-              <p className="text-xs" style={{ color: 'var(--color-muted)' }}>14-Day Returns</p>
+              <p className="text-xs" style={{ color: 'var(--color-muted)' }}>{t('productDetails.returns')}</p>
             </div>
           </div>
         </motion.div>
@@ -210,7 +212,7 @@ export default function ProductDetails() {
 
       {related.length > 0 && (
         <section className="mt-20">
-          <SectionHeading eyebrow="You May Also Like" title="Related Products" />
+          <SectionHeading eyebrow={t('productDetails.youMayLike')} title={t('productDetails.relatedProducts')} />
           <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-5 md:gap-7">
             {related.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>

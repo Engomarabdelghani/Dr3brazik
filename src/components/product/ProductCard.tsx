@@ -11,8 +11,10 @@ import { cld } from '../../utils/cloudinary';
 import RatingStars from '../ui/RatingStars';
 import PriceTag from '../ui/PriceTag';
 import Badge from '../ui/Badge';
+import { useTranslation } from 'react-i18next';
 
 export default function ProductCard({ product, onQuickView }: { product: Product; onQuickView?: (p: Product) => void }) {
+  const { t } = useTranslation();
   const { addItem } = useCart();
   const { toggle, isInWishlist } = useWishlist();
   const { data: offers = [] } = useOffers();
@@ -49,10 +51,10 @@ export default function ProductCard({ product, onQuickView }: { product: Product
           />
         </Link>
 
-        <div className="absolute top-3 left-3 flex flex-col gap-2">
+        <div className="absolute top-3 start-3 flex flex-col gap-2">
           {product.inStock && (
             <>
-              {product.isNew && <Badge tone="ink">New</Badge>}
+              {product.isNew && <Badge tone="ink">{t('products.new')}</Badge>}
               {discount ? (
                 <span
                   className="text-[9px] sm:text-[12px] md:text-[17px] font-black leading-none"
@@ -64,7 +66,7 @@ export default function ProductCard({ product, onQuickView }: { product: Product
                     textShadow: '0 0 0 rgba(0,0,0,0)',
                   }}
                 >
-                  SALE {discount}% OFF
+                  {t('products.sale', { discount })}
                 </span>
               ) : null}
               {bogoOffer && <Badge tone="bogo">{getBogoLabel(bogoOffer)}</Badge>}
@@ -73,9 +75,9 @@ export default function ProductCard({ product, onQuickView }: { product: Product
         </div>
 
         <button
-          aria-label="Toggle wishlist"
+          aria-label={t('products.toggleWishlist')}
           onClick={() => toggle(product)}
-          className="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center glass shadow-sm transition-transform hover:scale-110"
+          className="absolute top-4 end-4 w-9 h-9 rounded-full flex items-center justify-center glass shadow-sm transition-transform hover:scale-110"
         >
           <FiHeart size={16} fill={wished ? 'var(--color-gold)' : 'none'} color={wished ? 'var(--color-gold)' : 'var(--color-ink)'} />
         </button>
@@ -83,8 +85,8 @@ export default function ProductCard({ product, onQuickView }: { product: Product
         {onQuickView && (
           <button
             onClick={() => onQuickView(product)}
-            aria-label="Quick view"
-            className="absolute bottom-3 right-3 w-9 h-9 rounded-full glass shadow-sm items-center justify-center hidden md:flex opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-label={t('products.quickView')}
+            className="absolute bottom-3 end-3 w-9 h-9 rounded-full glass shadow-sm items-center justify-center hidden md:flex opacity-0 group-hover:opacity-100 transition-opacity"
           >
             <FiEye size={16} />
           </button>
@@ -100,7 +102,7 @@ export default function ProductCard({ product, onQuickView }: { product: Product
               : 'bg-[var(--color-border)] text-[var(--color-muted)] cursor-not-allowed'
             }`}
         >
-          <FiShoppingBag size={15} /> {product.inStock ? 'Add to Cart' : 'Out of Stock'}
+          <FiShoppingBag size={15} /> {product.inStock ? t('products.addToCart') : t('products.outOfStock')}
         </button>
       </div>
 

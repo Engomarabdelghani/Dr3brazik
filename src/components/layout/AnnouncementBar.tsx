@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { FiCopy, FiCheck } from 'react-icons/fi';
 import type { CouponAnnouncement } from '../../api/types';
+import { useTranslation } from 'react-i18next';
 
 export const ANNOUNCEMENT_BAR_HEIGHT = 36; // px — kept in sync with Navbar's top offset and Layout's main padding
 
@@ -10,6 +11,7 @@ export const ANNOUNCEMENT_BAR_HEIGHT = 36; // px — kept in sync with Navbar's 
  * code would be misleading shown on every page regardless of what's in view.
  */
 export default function AnnouncementBar({ coupon }: { coupon: CouponAnnouncement }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
 
@@ -29,7 +31,7 @@ export default function AnnouncementBar({ coupon }: { coupon: CouponAnnouncement
       style={{ height: ANNOUNCEMENT_BAR_HEIGHT, backgroundColor: 'var(--color-coffee)' }}
     >
       <span className="truncate">
-        Use code <strong style={{ color: 'var(--color-gold-light)' }}>{coupon.code}</strong> at checkout
+        {t('announcement.useCode', { code: coupon.code })}
       </span>
       <button
         type="button"
@@ -38,7 +40,7 @@ export default function AnnouncementBar({ coupon }: { coupon: CouponAnnouncement
         style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
       >
         {copied ? <FiCheck size={11} /> : <FiCopy size={11} />}
-        {copied ? 'Copied' : 'Copy'}
+        {copied ? t('announcement.copied') : t('announcement.copy')}
       </button>
     </div>
   );

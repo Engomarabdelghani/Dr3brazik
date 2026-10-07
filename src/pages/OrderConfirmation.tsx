@@ -5,6 +5,7 @@ import { FiCopy, FiCheck, FiPhoneCall, FiTruck, FiClipboard, FiArrowRight, FiSho
 import { cld } from '../utils/cloudinary';
 import { readLastOrder, type ConfirmedOrder } from '../utils/lastOrder';
 import { useSeo } from '../hooks/useSeo';
+import { useTranslation } from 'react-i18next';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -74,7 +75,7 @@ function SuccessBadge() {
   );
 }
 
-function OrderNumber({ value }: { value: string }) {
+function OrderNumber({ value, t }: { value: string; t: (key: string) => string }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
@@ -87,7 +88,7 @@ function OrderNumber({ value }: { value: string }) {
   };
   return (
     <div className="inline-flex items-center gap-3 px-5 py-3 rounded-2xl bg-white shadow-sm" style={{ border: '1px solid var(--color-border)' }}>
-      <span className="text-xs uppercase tracking-[0.18em]" style={{ color: 'var(--color-muted)' }}>Order</span>
+      <span className="text-xs uppercase tracking-[0.18em]" style={{ color: 'var(--color-muted)' }}>{t('orderConfirmation.order')}</span>
       <span className="text-2xl md:text-3xl font-extrabold tabular-nums tracking-wide" style={{ color: 'var(--color-coffee)' }} dir="ltr">{value}</span>
       <motion.button
         type="button"
@@ -95,8 +96,8 @@ function OrderNumber({ value }: { value: string }) {
         whileTap={{ scale: 0.9 }}
         className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
         style={{ backgroundColor: copied ? 'rgba(34,197,94,0.12)' : 'var(--color-cream)', color: copied ? '#16a34a' : 'var(--color-coffee)' }}
-        aria-label={copied ? 'Copied' : 'Copy order number'}
-        title={copied ? 'Copied' : 'Copy order number'}
+        aria-label={copied ? t('orderConfirmation.copied') : t('orderConfirmation.copyOrderNumber')}
+        title={copied ? t('orderConfirmation.copied') : t('orderConfirmation.copyOrderNumber')}
       >
         {copied ? <FiCheck size={16} /> : <FiCopy size={15} />}
       </motion.button>
@@ -105,22 +106,23 @@ function OrderNumber({ value }: { value: string }) {
 }
 
 export default function OrderConfirmation() {
+  const { t } = useTranslation();
   useSeo({ title: 'Order Confirmed', path: '/order-confirmed', noindex: true });
   const location = useLocation();
   const order = (location.state as ConfirmedOrder | null) ?? readLastOrder();
 
   if (!order) return <Navigate to="/" replace />;
 
-  const firstName = order.customerName.trim().split(/\s+/)[0] || 'there';
+  const firstName = order.customerName.trim().split(/\s+/)[0] || t('common.home');
   // Confirmations saved by an older version of this page only have the number.
   const orderCode = order.orderCode ?? `#${order.orderNumber}`;
   const steps = [
-    { icon: FiClipboard, title: 'Order received', text: `Your order ${orderCode} is saved and our team is preparing it.` },
-    { icon: FiPhoneCall, title: 'We call to confirm', text: `Our team will contact you on ${order.phone} to confirm the delivery time.` },
+    { icon: FiClipboard, title: t('orderConfirmation.receivedTitle'), text: t('orderConfirmation.receivedText', { orderCode }) },
+    { icon: FiPhoneCall, title: t('orderConfirmation.confirmTitle'), text: t('orderConfirmation.confirmText', { phone: order.phone }) },
     {
       icon: FiTruck,
-      title: 'Delivered to your door',
-      text: `${order.delivery}. ${order.paymentMethod === 'cod' ? 'Pay in cash when it arrives.' : 'Pay by Instapay / Vodafone Cash.'}`,
+      title: t('orderConfirmation.deliveredTitle'),
+      text: t('orderConfirmation.deliveryText', { delivery: order.delivery, paymentText: t(order.paymentMethod === 'cod' ? 'orderConfirmation.cashPayment' : 'orderConfirmation.walletPayment') }),
     },
   ];
 
@@ -130,15 +132,15 @@ export default function OrderConfirmation() {
         <SuccessBadge />
 
         <motion.div variants={container} initial="hidden" animate="show" className="text-center mt-8">
-          <motion.span variants={rise} className="eyebrow block">Order Confirmed</motion.span>
-          <motion.h1 variants={rise} className="section-title mt-3">Thank you, {firstName}!</motion.h1>
+          <motion.span variants={rise} className="eyebrow block">{t('orderConfirmation.orderConfirmed')}</motion.span>
+          <motion.h1 variants={rise} className="section-title mt-3">{t('orderConfirmation.thankYou', { name: firstName })}</motion.h1>
           <motion.p variants={rise} className="mt-3 text-sm md:text-base max-w-md mx-auto" style={{ color: 'var(--color-muted)' }}>
-            Your order has been received and saved. Keep your order number. You'll need it if you contact us.
+            {t('orderConfirmation.description')}
           </motion.p>
           <motion.div variants={rise} className="mt-7">
-            <OrderNumber value={orderCode} />
+            <OrderNumber value={orderCode} t={t} />
             <p className="text-xs mt-2" style={{ color: 'var(--color-muted)' }}>
-              Placed {new Date(order.createdAt).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}
+              {t('orderConfirmation.placed', { date: new Date(order.createdAt).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) })}
             </p>
           </motion.div>
         </motion.div>
@@ -146,7 +148,7 @@ export default function OrderConfirmation() {
         <motion.div variants={container} initial="hidden" animate="show" className="mt-12 grid md:grid-cols-5 gap-6">
           {/* What happens next */}
           <motion.div variants={rise} className="md:col-span-3 rounded-3xl bg-white p-6 md:p-7 shadow-sm" style={{ border: '1px solid var(--color-border)' }}>
-            <h2 className="font-bold mb-5">What happens next</h2>
+            <h2 className="font-bold mb-5">{t('orderConfirmation.whatNext')}</h2>
             <ol className="space-y-5">
               {steps.map((step, i) => (
                 <motion.li key={step.title} variants={rise} className="flex gap-4">
@@ -171,15 +173,15 @@ export default function OrderConfirmation() {
                 <FaWhatsapp size={17} /> Open WhatsApp again
               </motion.a> */}
               <Link to="/shop" className="btn-primary">
-                <FiShoppingBag /> Continue Shopping
+                <FiShoppingBag /> {t('orderConfirmation.continueShopping')}
               </Link>
             </div>
           </motion.div>
 
           {/* Summary */}
           <motion.div variants={rise} className="md:col-span-2 rounded-3xl bg-white p-6 shadow-sm h-fit" style={{ border: '1px solid var(--color-border)' }}>
-            <h2 className="font-bold mb-4">Order Summary</h2>
-            <ul className="space-y-3 max-h-72 overflow-y-auto pr-1">
+            <h2 className="font-bold mb-4">{t('orderConfirmation.orderSummary')}</h2>
+            <ul className="space-y-3 max-h-72 overflow-y-auto pe-1">
               {order.items.map((item, i) => (
                 <motion.li key={`${item.name}-${i}`} variants={rise} className="flex items-center gap-3 text-sm">
                   {item.image ? (
@@ -189,7 +191,7 @@ export default function OrderConfirmation() {
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium line-clamp-2">{item.name}</p>
-                    <p className="text-xs" style={{ color: 'var(--color-muted)' }}>Qty {item.quantity} × {money(item.price)}</p>
+                    <p className="text-xs" style={{ color: 'var(--color-muted)' }}>{t('orderConfirmation.quantityPrice', { quantity: item.quantity, price: money(item.price) })}</p>
                   </div>
                   <p className="font-semibold whitespace-nowrap">{money(item.lineTotal)}</p>
                 </motion.li>
@@ -197,16 +199,16 @@ export default function OrderConfirmation() {
             </ul>
             <div className="h-px my-4" style={{ backgroundColor: 'var(--color-border)' }} />
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span style={{ color: 'var(--color-muted)' }}>Subtotal</span><span>{money(order.subtotal)}</span></div>
+              <div className="flex justify-between"><span style={{ color: 'var(--color-muted)' }}>{t('orderConfirmation.subtotal')}</span><span>{money(order.subtotal)}</span></div>
               {order.discount > 0 && (
-                <div className="flex justify-between" style={{ color: '#16a34a' }}><span>Discount</span><span>-{money(order.discount)}</span></div>
+                <div className="flex justify-between" style={{ color: '#16a34a' }}><span>{t('orderConfirmation.discount')}</span><span>-{money(order.discount)}</span></div>
               )}
-              <div className="flex justify-between"><span style={{ color: 'var(--color-muted)' }}>Shipping</span><span>{money(order.shippingPrice)}</span></div>
+              <div className="flex justify-between"><span style={{ color: 'var(--color-muted)' }}>{t('orderConfirmation.shipping')}</span><span>{money(order.shippingPrice)}</span></div>
             </div>
             <div className="h-px my-4" style={{ backgroundColor: 'var(--color-border)' }} />
-            <div className="flex justify-between font-bold text-lg"><span>Total</span><span>{money(order.total)}</span></div>
+            <div className="flex justify-between font-bold text-lg"><span>{t('orderConfirmation.total')}</span><span>{money(order.total)}</span></div>
             <Link to="/" className="mt-5 text-xs font-semibold inline-flex items-center gap-1" style={{ color: 'var(--color-gold)' }}>
-              Back to home <FiArrowRight size={12} />
+              {t('orderConfirmation.backHome')} <FiArrowRight size={12} className="rtl-flip" />
             </Link>
           </motion.div>
         </motion.div>

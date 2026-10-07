@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { FiInstagram, FiPlay } from 'react-icons/fi';
 import SectionHeading from '../common/SectionHeading';
 import { useSocialPosts } from '../../hooks/useCatalog';
+import { useTranslation } from 'react-i18next';
 
 const INSTAGRAM_URL = 'https://www.instagram.com/drkaram.abdelrazek';
 
@@ -14,6 +15,7 @@ const INSTAGRAM_URL = 'https://www.instagram.com/drkaram.abdelrazek';
  * shown on the storefront.
  */
 export default function InstagramGallery() {
+  const { t } = useTranslation();
   const { data: posts = [], isLoading } = useSocialPosts();
   const active = posts.filter((p) => p.isEnabled && p.image);
 
@@ -21,7 +23,7 @@ export default function InstagramGallery() {
 
   return (
     <section className="container-luxe py-16 md:py-20">
-      <SectionHeading eyebrow="@drkaram.abdelrazek" title="Follow the Ritual" align="center" />
+      <SectionHeading eyebrow="@drkaram.abdelrazek" title={t('home.followRitual')} align="center" />
 
       <div className="mt-12 grid grid-cols-3 md:grid-cols-6 gap-3">
         {isLoading
@@ -40,7 +42,7 @@ export default function InstagramGallery() {
               >
                 <img
                   src={post.image}
-                  alt="Social media content"
+                  alt={t('home.socialContent')}
                   loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />

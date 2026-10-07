@@ -2,13 +2,17 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { FiSearch, FiHeart, FiShoppingBag, FiMenu, FiX } from 'react-icons/fi';
+import { useTranslation } from 'react-i18next';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { NAV_LINKS, SITE_NAME } from '../../data/constants';
 import { useProducts } from '../../hooks/useCatalog';
 import { cld } from '../../utils/cloudinary';
+import LanguageSwitcher from '../common/LanguageSwitcher';
 
 export default function Navbar({ topOffset = 0 }: { topOffset?: number }) {
+  const { t, i18n } = useTranslation();
+  const isArabic = i18n.language.startsWith('ar');
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -67,16 +71,17 @@ export default function Navbar({ topOffset = 0 }: { topOffset?: number }) {
                 }
                 style={({ isActive }) => ({ color: isActive ? 'var(--color-gold)' : 'var(--color-coffee)' })}
               >
-                {link.label}
+                {t(`common.${link.path === '/' ? 'home' : link.path.slice(1)}`)}
               </NavLink>
             ))}
           </nav>
 
           <div className="flex items-center gap-1.5 md:gap-3">
-            <button aria-label="Search" onClick={() => setSearchOpen(true)} className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors">
+            <LanguageSwitcher />
+            <button aria-label={t('navbar.search')} onClick={() => setSearchOpen(true)} className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors">
               <FiSearch size={18} />
             </button>
-            <Link to="/wishlist" className="relative w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors">
+            <Link to="/wishlist" aria-label={t('navbar.wishlist')} className="relative w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors">
               <FiHeart size={18} />
               {wishlistItems.length > 0 && (
                 <span className="absolute top-1 right-1 w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center text-white" style={{ backgroundColor: 'var(--color-gold)' }}>
@@ -84,7 +89,7 @@ export default function Navbar({ topOffset = 0 }: { topOffset?: number }) {
                 </span>
               )}
             </Link>
-            <button aria-label="Open cart" onClick={openCart} className="relative w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors">
+            <button aria-label={t('navbar.openCart')} onClick={openCart} className="relative w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors">
               <FiShoppingBag size={18} />
               {itemCount > 0 && (
                 <span className="absolute top-1 right-1 w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center text-white" style={{ backgroundColor: 'var(--color-coffee)' }}>
@@ -92,7 +97,7 @@ export default function Navbar({ topOffset = 0 }: { topOffset?: number }) {
                 </span>
               )}
             </button>
-            <button aria-label="Open menu" onClick={() => setMobileOpen(true)} className="lg:hidden w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors">
+            <button aria-label={t('navbar.openMenu')} onClick={() => setMobileOpen(true)} className="lg:hidden w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors">
               <FiMenu size={20} />
             </button>
           </div>
@@ -108,13 +113,14 @@ export default function Navbar({ topOffset = 0 }: { topOffset?: number }) {
               className="fixed inset-0 bg-black/40 z-50" onClick={() => setMobileOpen(false)}
             />
             <motion.aside
-              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+              initial={{ x: isArabic ? '-100%' : '100%' }} animate={{ x: 0 }} exit={{ x: isArabic ? '-100%' : '100%' }}
               transition={{ type: 'tween', duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-              className="fixed top-0 right-0 bottom-0 w-[82%] max-w-sm bg-white z-50 p-6 shadow-2xl flex flex-col"
+              className="fixed top-0 bottom-0 w-[82%] max-w-sm bg-white z-50 p-6 shadow-2xl flex flex-col"
+              style={{ insetInlineEnd: 0 }}
             >
               <div className="flex items-center justify-between mb-8">
                 <img src="/images/logo.png" alt={SITE_NAME} className="h-9 w-auto object-contain" />
-                <button onClick={() => setMobileOpen(false)} aria-label="Close menu">
+                <button onClick={() => setMobileOpen(false)} aria-label={t('navbar.closeMenu')}>
                   <FiX size={22} />
                 </button>
               </div>
@@ -127,10 +133,11 @@ export default function Navbar({ topOffset = 0 }: { topOffset?: number }) {
                     className="py-3 text-base font-medium border-b"
                     style={{ borderColor: 'var(--color-border)' }}
                   >
-                    {link.label}
+                    {t(`common.${link.path === '/' ? 'home' : link.path.slice(1)}`)}
                   </NavLink>
                 ))}
               </nav>
+              <div className="mt-5"><LanguageSwitcher /></div>
             </motion.aside>
           </>
         )}
@@ -143,7 +150,7 @@ export default function Navbar({ topOffset = 0 }: { topOffset?: number }) {
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 glass flex flex-col items-center pt-28 px-6"
           >
-            <button aria-label="Close search" onClick={() => setSearchOpen(false)} className="absolute top-6 right-6">
+            <button aria-label={t('common.close')} onClick={() => setSearchOpen(false)} className="absolute top-6" style={{ insetInlineEnd: '1.5rem' }}>
               <FiX size={26} />
             </button>
             <form onSubmit={submitSearch} className="w-full max-w-xl">
@@ -153,7 +160,7 @@ export default function Navbar({ topOffset = 0 }: { topOffset?: number }) {
                   autoFocus
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search for products..."
+                  placeholder={t('navbar.searchPlaceholder')}
                   className="w-full bg-transparent outline-none text-xl"
                 />
               </div>

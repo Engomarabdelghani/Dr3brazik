@@ -7,6 +7,7 @@ import ProductCard from '../components/product/ProductCard';
 import { ProductCardSkeleton } from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
 import { useSeo } from '../hooks/useSeo';
+import { useTranslation } from 'react-i18next';
 
 /**
  * A dedicated page for a "bundle" promo banner — the products the admin
@@ -14,6 +15,7 @@ import { useSeo } from '../hooks/useSeo';
  * automatically). Each product keeps its own real price/discount.
  */
 export default function BannerCollection() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const { data: banners = [], isLoading: bannersLoading } = usePromoBanners();
   const { data: products = [], isLoading: productsLoading } = useProducts();
@@ -32,7 +34,7 @@ export default function BannerCollection() {
   if (!isLoading && !banner) {
     return (
       <div className="container-luxe py-20">
-        <EmptyState icon={FiPackage} title="Collection not found" description="This collection may have been removed." actionLabel="Browse Shop" actionTo="/shop" />
+        <EmptyState icon={FiPackage} title={t('offers.collectionNotFound')} description={t('offers.collectionRemoved')} actionLabel={t('offers.browseShop')} actionTo="/shop" />
       </div>
     );
   }
@@ -51,7 +53,7 @@ export default function BannerCollection() {
         )}
         <div className="relative container-luxe text-center">
           <Link to="/" className="inline-flex items-center gap-2 text-sm font-medium mb-6 text-white/70 hover:text-white transition-colors">
-            <FiArrowLeft /> Back to Home
+            <FiArrowLeft className="rtl-flip" /> {t('offers.backToHome')}
           </Link>
           {isLoading ? (
             <div className="skeleton h-10 w-64 mx-auto rounded-lg" />
@@ -67,7 +69,7 @@ export default function BannerCollection() {
             {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
           </div>
         ) : matchedProducts.length === 0 ? (
-          <EmptyState icon={FiPackage} title="No products in this collection" description="Check back soon." actionLabel="Browse Shop" actionTo="/shop" />
+          <EmptyState icon={FiPackage} title={t('offers.noCollectionProducts')} description={t('offers.checkBack')} actionLabel={t('offers.browseShop')} actionTo="/shop" />
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-7">
             {matchedProducts.map((p) => <ProductCard key={p.id} product={p} />)}

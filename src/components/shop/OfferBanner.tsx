@@ -1,14 +1,16 @@
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 // import { useCountdown } from '../../hooks/useCountdown';
 
 export default function OfferBanner() {
+  const { t } = useTranslation();
   // const { h, m, s } = useCountdown(18);
 
   return (
     <section className="relative h-[260px] md:h-[320px] overflow-hidden">
       <img
         src="/images/hero-banner.jpg"
-        alt="Dr. Karam AbdelRazek exclusive offers"
+        alt={t('offers.bannerAlt')}
         className="absolute inset-0 w-full h-full object-cover"
       />
       <div
@@ -23,11 +25,11 @@ export default function OfferBanner() {
         className="relative h-full flex flex-col items-center justify-center text-center px-6"
       >
         <span className="text-xs font-bold tracking-[0.28em] uppercase" style={{ color: 'var(--color-gold-light)' }}>
-          Limited Time Only
+          {t('offers.limitedTime')}
         </span>
-        <h1 className="mt-3 text-3xl md:text-5xl font-extrabold text-white tracking-tight">Exclusive Offers</h1>
+        <h1 className="mt-3 text-3xl md:text-5xl font-extrabold text-white tracking-tight">{t('offers.exclusive')}</h1>
         <p className="mt-3 max-w-sm text-sm" style={{ color: 'rgba(255,255,255,0.75)' }}>
-          Special savings on a curated selection of best-selling formulas, while supplies last.
+          {t('offers.bannerDescription')}
         </p>
 
         {/* <div className="flex items-center gap-2 mt-7">
