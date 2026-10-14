@@ -1,6 +1,5 @@
-import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout';
-import MaintenancePage from './components/common/MaintenancePage';
 import Home from './pages/Home';
 import Shop from './pages/Shop';
 import ProductDetails from './pages/ProductDetails';
@@ -35,14 +34,6 @@ import AdminOrders from './admin/pages/Orders';
 import PromotionsList from './admin/pages/promotions/PromotionsList';
 import PromotionBuilder from './admin/pages/promotions/PromotionBuilder';
 
-function StorefrontMaintenanceGuard() {
-  if (import.meta.env.VITE_MAINTENANCE_MODE === 'true') {
-    return <MaintenancePage />;
-  }
-
-  return <Outlet />;
-}
-
 export default function App() {
   return (
     <AdminAuthProvider>
@@ -51,23 +42,21 @@ export default function App() {
           <RecentlyViewedProvider>
             <BrowserRouter>
               <Routes>
-                <Route element={<StorefrontMaintenanceGuard />}>
-                  <Route element={<Layout />}>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/shop" element={<Shop />} />
-                    <Route path="/product/:slug" element={<ProductDetails />} />
-                    <Route path="/offers" element={<Offers />} />
-                    <Route path="/offer/:id" element={<OfferCollection />} />
-                    <Route path="/collection/:id" element={<BannerCollection />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/contact" element={<Contact />} />
-                    <Route path="/cart" element={<Cart />} />
-                    <Route path="/checkout" element={<Checkout />} />
-                    <Route path="/order-confirmed" element={<OrderConfirmation />} />
-                    <Route path="/wishlist" element={<Wishlist />} />
-                    <Route path="/404" element={<NotFound />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Route>
+                <Route element={<Layout />}>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/shop" element={<Shop />} />
+                  <Route path="/product/:slug" element={<ProductDetails />} />
+                  <Route path="/offers" element={<Offers />} />
+                  <Route path="/offer/:id" element={<OfferCollection />} />
+                  <Route path="/collection/:id" element={<BannerCollection />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/cart" element={<Cart />} />
+                  <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/order-confirmed" element={<OrderConfirmation />} />
+                  <Route path="/wishlist" element={<Wishlist />} />
+                  <Route path="/404" element={<NotFound />} />
+                  <Route path="*" element={<NotFound />} />
                 </Route>
 
                 <Route path="/admin/login" element={<AdminLogin />} />
@@ -95,7 +84,6 @@ export default function App() {
                   <Route path="coupons" element={<AdminCoupons />} />
                   <Route path="team" element={<AdminTeam />} />
                 </Route>
-                <Route path="/admin/*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
           </RecentlyViewedProvider>
