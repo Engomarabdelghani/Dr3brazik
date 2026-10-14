@@ -198,7 +198,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     isOpen, openCart: () => setIsOpen(true), closeCart: () => setIsOpen(false),
     subtotal, itemCount, coupon: couponOk ? coupon : null, couponDiscount, discount, applyCoupon, removeCoupon,
     promotionDiscount,
-    promotions: hasItems && quote ? quote.promotions : NO_PROMOTIONS,
+    // An API still on an older version (mid-deploy) sends a quote without promotions; the page must not crash on it.
+    promotions: (hasItems && quote?.promotions) || NO_PROMOTIONS,
     giftSelections,
     selectGifts,
     quote: hasItems ? quote : null,

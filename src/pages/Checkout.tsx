@@ -180,7 +180,7 @@ export default function Checkout() {
         // Free gifts come after the cart's own lines; their pictures are in the quote.
         items: order.items.map((line, i) => ({
           ...line,
-          image: line.isGift ? (quote?.promotions.gifts.find((g) => g.name === line.name)?.image ?? undefined) : items[i]?.product.images[0],
+          image: line.isGift ? (quote?.promotions?.gifts.find((g) => g.name === line.name)?.image ?? undefined) : items[i]?.product.images[0],
         })),
         promotions: order.promotions,
         subtotal: order.subtotal,
