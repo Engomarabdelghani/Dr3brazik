@@ -1,5 +1,6 @@
 import type { IconType } from 'react-icons';
 import { FiInbox, FiCheckCircle, FiTruck, FiPackage, FiXCircle } from 'react-icons/fi';
+import type { OrderPaymentMethod } from '../../../api/types';
 import type { OrderStatus } from '../../../types';
 
 export interface StatusMeta {
@@ -48,7 +49,9 @@ export function timeAgo(iso: string): string {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-export const paymentLabel = (m: 'cod' | 'wallet' | null) => (m === 'wallet' ? 'Instapay / Wallet' : m === 'cod' ? 'Cash on delivery' : '—');
+const PAYMENT_LABELS: Record<OrderPaymentMethod, string> = { cod: 'Cash on delivery', wallet: 'Vodafone Cash', instapay: 'InstaPay' };
+
+export const paymentLabel = (m: OrderPaymentMethod | null) => (m ? PAYMENT_LABELS[m] : '—');
 
 /** Egyptian numbers as typed at checkout (01…, +20…, 0020…) → wa.me format (201…). */
 export function whatsappNumber(phone: string): string | null {

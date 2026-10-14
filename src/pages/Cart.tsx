@@ -6,13 +6,15 @@ import { cld } from '../utils/cloudinary';
 import QuantityStepper from '../components/ui/QuantityStepper';
 import Button from '../components/ui/Button';
 import EmptyState from '../components/ui/EmptyState';
+import PromoBadge from '../components/product/PromoBadge';
+import { AppliedGiftRows, CartGiftChoices, CartGiftLines, CartOfferMessages, DiscountRows } from '../components/cart/CartPromotions';
 import { useSeo } from '../hooks/useSeo';
 import { useTranslation } from 'react-i18next';
 
 export default function Cart() {
   const { t } = useTranslation();
   useSeo({ title: 'Shopping Cart', path: '/cart', noindex: true });
-  const { items, updateQuantity, removeItem, subtotal, coupon, discount, applyCoupon, removeCoupon } = useCart();
+  const { items, updateQuantity, removeItem, subtotal, coupon, discount, applyCoupon, removeCoupon, quote, promotions, isPricing } = useCart();
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [applying, setApplying] = useState(false);
@@ -52,7 +54,16 @@ export default function Cart() {
 
       <div className="grid lg:grid-cols-3 gap-10">
         <div className="lg:col-span-2 space-y-4">
-          {items.map(({ product, quantity }) => (
+          {items.map(({ product, quantity }) => {
+            // What the server's promotions did to this line: which offers it is part of, and what they took off.
+            const priced = quote?.lines.find((l) => l.key === product.id);
+            const lineOffers = (priced?.promotions ?? []).flatMap((p) => {
+              const applied = promotions.applied.find((a) => a.id === p.id);
+              return applied ? [applied] : [];
+            });
+            const lineTotal = (product.effectivePrice ?? product.price) * quantity;
+            const finalTotal = priced && priced.promotionDiscount > 0 ? priced.finalTotal : null;
+            return (
             <div key={product.id} className="card-luxe p-4 md:p-5 flex gap-4 md:gap-6">
               <img src={cld(product.images[0], 260)} alt={product.name} loading="lazy" decoding="async" className="w-24 h-28 md:w-28 md:h-32 object-cover rounded-2xl shrink-0" />
               <div className="flex-1 flex flex-col justify-between">
@@ -74,6 +85,13 @@ export default function Cart() {
                     ) : (
                       <p className="text-sm font-medium mt-1">{product.price.toLocaleString('en-US')} {product.currency}</p>
                     )}
+                    {lineOffers.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {lineOffers.slice(0, 2).map((offer) => (
+                          <PromoBadge key={offer.id} kind={offer.kind} label={offer.badge} size="sm" />
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <button aria-label={t('cart.removeItem')} onClick={() => removeItem(product.id)} className="text-gray-400 hover:text-red-500 transition-colors h-fit">
                     <FiTrash2 size={18} />
@@ -81,11 +99,23 @@ export default function Cart() {
                 </div>
                 <div className="flex items-center justify-between mt-4">
                   <QuantityStepper value={quantity} onChange={(q) => updateQuantity(product.id, q)} max={orderCapFor(product) ?? 99} />
-                  <p className="font-bold">{((product.effectivePrice ?? product.price) * quantity).toLocaleString('en-US')} {product.currency}</p>
+                  {finalTotal !== null ? (
+                    <p className="font-bold text-end whitespace-nowrap">
+                      {/* <bdi>: each amount keeps its own direction, so the two never run together in Arabic. */}
+                      <bdi className="line-through font-normal text-xs me-2" style={{ color: 'var(--color-muted)' }}>{lineTotal.toLocaleString('en-US')}</bdi>
+                      <bdi>{finalTotal === 0 ? t('promotions.free') : `${finalTotal.toLocaleString('en-US')} ${product.currency}`}</bdi>
+                    </p>
+                  ) : (
+                    <p className="font-bold">{lineTotal.toLocaleString('en-US')} {product.currency}</p>
+                  )}
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
+          <CartGiftLines />
+          <CartGiftChoices />
+          <CartOfferMessages />
           <Link to="/shop" className="inline-flex items-center gap-2 text-sm font-semibold mt-2 hover:text-[var(--color-gold)] transition-colors">
             {t('cart.continueShopping')} <FiArrowRight className="rtl-flip" />
           </Link>
@@ -119,12 +149,8 @@ export default function Cart() {
               <span style={{ color: 'var(--color-muted)' }}>{t('cart.subtotal')}</span>
               <span className="font-semibold">{subtotal.toLocaleString('en-US')} EGP</span>
             </div>
-            {discount > 0 && (
-              <div className="flex justify-between">
-                <span style={{ color: 'var(--color-muted)' }}>{t('cart.discount')}</span>
-                <span className="font-semibold" style={{ color: 'var(--color-gold)' }}>-{discount.toLocaleString('en-US')} EGP</span>
-              </div>
-            )}
+            <DiscountRows />
+            <AppliedGiftRows />
             <div className="flex justify-between">
               <span style={{ color: 'var(--color-muted)' }}>{t('cart.shipping')}</span>
               <span className="font-semibold">{t('cart.calculatedCheckout')}</span>
@@ -132,9 +158,9 @@ export default function Cart() {
           </div>
 
           <div className="h-px my-5" style={{ backgroundColor: 'var(--color-border)' }} />
-          <div className="flex justify-between font-bold text-lg mb-6">
+          <div className="flex justify-between font-bold text-lg mb-6" aria-live="polite" aria-busy={isPricing}>
             <span>{t('cart.total')}</span>
-            <span>{(subtotal - discount).toLocaleString('en-US')} EGP</span>
+            <span style={{ opacity: isPricing ? 0.5 : 1 }}>{Math.max(subtotal - discount, 0).toLocaleString('en-US')} EGP</span>
           </div>
 
           <Link to="/checkout">

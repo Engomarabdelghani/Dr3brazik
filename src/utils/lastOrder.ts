@@ -12,8 +12,10 @@ export interface ConfirmedOrder {
   phone: string;
   address: string;
   delivery: string;
-  paymentMethod: 'cod' | 'card';
-  items: { name: string; quantity: number; price: number; lineTotal: number; image?: string }[];
+  paymentMethod: 'cod' | 'card' | 'instapay';
+  items: { name: string; quantity: number; price: number; lineTotal: number; image?: string; isGift?: boolean }[];
+  /** Offers applied to the order, as the server saved them. Missing on orders saved by an older version of the page. */
+  promotions?: { title: string; titleAr: string; discount: number }[];
   subtotal: number;
   discount: number;
   shippingPrice: number;

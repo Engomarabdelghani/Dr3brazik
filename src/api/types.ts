@@ -3,6 +3,7 @@
  * (the UI/domain types the components use).
  */
 import type { Coupon, OrderStatus } from '../types';
+import type { CartPromotions, GiftSelection } from './promotionTypes';
 
 export type AdminRole = 'owner' | 'admin';
 
@@ -34,7 +35,8 @@ export interface CartItemRef {
 }
 
 export type CouponCheck =
-  | { ok: true; code: string; discount: number }
+  /** kind 'promotion': the code belongs to a promotion, whose saving is listed with the promotions. */
+  | { ok: true; code: string; discount: number; kind?: 'coupon' | 'promotion' }
   | { ok: false; code: string; errorCode: string; message: string };
 
 export interface CartQuote {
@@ -46,18 +48,24 @@ export interface CartQuote {
     quantity: number;
     available: boolean;
     problem: 'PRODUCT_UNAVAILABLE' | 'DEAL_UNAVAILABLE' | 'LIMIT_EXCEEDED' | null;
+    /** Catalog price of one unit. */
     price: number;
-    effectivePrice: number;
     lineTotal: number;
+    /** Promotion discount on this line, and the line's total after it. */
+    promotionDiscount: number;
+    finalTotal: number;
+    promotions: { id: string; qualifyingUnits: number; rewardedUnits: number; discount: number }[];
     stock: number | null;
     maxOrderQuantity: number | null;
     cap: number | null;
   }[];
   subtotal: number;
-  bogoDiscount: number;
-  bogoLabel: string | null;
   coupon: CouponCheck | null;
   couponDiscount: number;
+  promotionDiscount: number;
+  /** Applied promotions, free gifts, gift choices and "almost there" hints. */
+  promotions: CartPromotions;
+  /** Promotions + coupon. */
   discount: number;
   shipping: { ok: true; zoneId: string; cityId: string | null; price: number } | { ok: false; reason: string } | null;
   total: number;
@@ -67,9 +75,16 @@ export interface PlaceOrderInput {
   customer: { name: string; phone: string; address: string; notes?: string };
   zoneId: string;
   cityId?: string | null;
-  paymentMethod: 'cod' | 'card';
+  /** card: Vodafone Cash (the server stores it as "wallet"). */
+  paymentMethod: 'cod' | 'card' | 'instapay';
+  /** InstaPay only: the number the customer transferred from, and the key of the uploaded transfer screenshot. */
+  payerNumber?: string;
+  paymentProof?: string;
   couponCode?: string | null;
   items: CartItemRef[];
+  giftSelections?: GiftSelection[];
+  /** The total shown to the customer. If the server's differs, it refuses the order (PRICE_CHANGED). */
+  expectedTotal?: number;
 }
 
 /** POST /orders response: what was saved, used to build the WhatsApp message. */
@@ -78,7 +93,8 @@ export interface PlacedOrder {
   orderNumber: number;
   /** Shown to the customer and the admin, e.g. S-0513 (category letter, day, order number). */
   orderCode: string;
-  items: { name: string; quantity: number; price: number; lineTotal: number }[];
+  items: { name: string; quantity: number; price: number; lineTotal: number; isGift?: boolean }[];
+  promotions: { title: string; titleAr: string; discount: number }[];
   subtotal: number;
   discount: number;
   shippingPrice: number;
@@ -97,6 +113,9 @@ export interface AdminOrderStats {
 
 export type AdminOrderSort = 'newest' | 'oldest' | 'total_desc' | 'total_asc';
 
+/** wallet: Vodafone Cash (and, on older orders, "Instapay / wallet"). */
+export type OrderPaymentMethod = 'cod' | 'wallet' | 'instapay';
+
 export interface AdminOrderSummary {
   id: string;
   orderNumber: number;
@@ -107,7 +126,7 @@ export interface AdminOrderSummary {
   customerPhone: string;
   governorate: string;
   city: string | null;
-  paymentMethod: 'cod' | 'wallet' | null;
+  paymentMethod: OrderPaymentMethod | null;
   itemCount: number;
   shortfallUnits: number;
   total: number;
@@ -134,10 +153,15 @@ export interface AdminOrder {
   customer: { name: string; phone: string; address: string; notes: string | null };
   governorate: string;
   city: string | null;
-  paymentMethod: 'cod' | 'wallet' | null;
+  paymentMethod: OrderPaymentMethod | null;
+  /** InstaPay orders: the number the transfer came from. */
+  payerNumber: string | null;
+  /** InstaPay orders: whether the transfer screenshot is stored (see fetchAdminPaymentProof). */
+  hasPaymentProof: boolean;
   lines: {
     id: string;
-    itemType: 'product' | 'deal';
+    /** gift: a free item a promotion added (unitPrice 0; unitBasePrice is its value). */
+    itemType: 'product' | 'deal' | 'gift';
     productId: string | null;
     promoBannerId: string | null;
     name: string;
@@ -146,12 +170,29 @@ export interface AdminOrder {
     unitPrice: number;
     quantity: number;
     lineTotal: number;
+    promotionDiscount: number;
     stockShortfall: number;
   }[];
+  /** As applied when the order was placed; later edits to a promotion do not change this. */
+  promotions: {
+    id: string;
+    promotionId: string | null;
+    name: string;
+    title: string;
+    titleAr: string;
+    couponCode: string | null;
+    kind: string;
+    applications: number;
+    discount: number;
+    giftValue: number;
+    lines: { orderItemId: string; qualifyingUnits: number; rewardedUnits: number; discount: number }[];
+  }[];
   subtotal: number;
+  /** Only on orders placed before Offers were merged into Promotions. */
   bogoDiscount: number;
   couponCode: string | null;
   couponDiscount: number;
+  promotionDiscount: number;
   discount: number;
   shippingPrice: number;
   total: number;

@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import { FiSliders, FiX, FiSearch, FiChevronDown } from 'react-icons/fi';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useProducts, useCategories } from '../hooks/useCatalog';
+import { useGroupOffers } from '../hooks/usePromotions';
+import { CategoryOfferStrip, GroupOfferMark } from '../components/shop/CategoryOffers';
 import { categoryFilterConfig } from '../data/categoryFilters';
 import ProductCard from '../components/product/ProductCard';
 import { ProductCardSkeleton } from '../components/ui/Skeleton';
@@ -29,6 +31,7 @@ export default function Shop() {
   const { t, i18n } = useTranslation();
   const { data: products = [], isLoading } = useProducts();
   const { data: categories = [] } = useCategories();
+  const offers = useGroupOffers();
   useSeo({ title: 'Shop All Products', description: 'Browse the full collection of luxury skincare, makeup, and fragrance.', path: '/shop' });
 
   const MAX_PRICE = useMemo(() => Math.max(0, ...products.map((p) => p.price)), [products]);
@@ -149,7 +152,7 @@ export default function Shop() {
               <button
                 key={c.id}
                 onClick={() => setCategory(c.id)}
-                className="text-xs font-semibold px-4 py-2.5 rounded-full border transition-all duration-200"
+                className="text-xs font-semibold px-4 py-2.5 rounded-full border transition-all duration-200 inline-flex items-center gap-1.5"
                 style={{
                   borderColor: filters.category === c.id ? 'var(--color-coffee)' : 'var(--color-border)',
                   backgroundColor: filters.category === c.id ? 'var(--color-coffee)' : 'transparent',
@@ -157,6 +160,7 @@ export default function Shop() {
                 }}
               >
                 {c.name}
+                <GroupOfferMark offer={offers.category(c.id)} />
               </button>
             ))}
             <button
@@ -225,16 +229,25 @@ export default function Shop() {
               <button
                 key={sc.id}
                 onClick={() => setSubcategory(sc.id)}
-                className="text-xs font-medium px-3.5 py-2 rounded-full border whitespace-nowrap transition-all duration-200"
+                className="text-xs font-medium px-3.5 py-2 rounded-full border whitespace-nowrap transition-all duration-200 inline-flex items-center gap-1.5"
                 style={{
                   borderColor: filters.subcategory === sc.id ? 'var(--color-gold)' : 'var(--color-border)',
                   color: filters.subcategory === sc.id ? 'var(--color-gold)' : 'var(--color-muted)',
                 }}
               >
                 {sc.name}
+                <GroupOfferMark offer={offers.subcategory(activeCategory.id, sc.id)} />
               </button>
             ))}
           </div>
+        )}
+
+        {/* The offer that runs across what is being browsed: the subcategory when one is picked, else the category. */}
+        {activeCategory && (
+          <CategoryOfferStrip
+            offer={filters.subcategory ? offers.subcategory(activeCategory.id, filters.subcategory) : offers.category(activeCategory.id)}
+            name={activeCategory.subcategories.find((sc) => sc.id === filters.subcategory)?.name ?? activeCategory.name}
+          />
         )}
 
         <AnimatePresence>

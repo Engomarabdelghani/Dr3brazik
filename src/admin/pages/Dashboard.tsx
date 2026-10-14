@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 const statCards = [
   { key: 'productCount' as const, label: 'nav.products', icon: FiBox, tone: 'ink' },
   { key: 'categoryCount' as const, label: 'nav.categories', icon: FiTag, tone: 'gold' },
-  { key: 'activeOfferCount' as const, label: 'activeOffers', icon: FiPercent, tone: 'gold' },
+  { key: 'activePromotionCount' as const, label: 'activeOffers', icon: FiPercent, tone: 'gold' },
   { key: 'totalImages' as const, label: 'totalImages', icon: FiImage, tone: 'ink' },
 ];
 
@@ -117,7 +117,7 @@ export default function AdminDashboard() {
             <Link to="/admin/categories" className="flex items-center gap-3 p-3 rounded-xl hover:bg-black/5 transition-colors text-sm font-medium">
               <FiTag size={16} style={{ color: 'var(--color-gold)' }} /> {t('admin.manageCategories')}
             </Link>
-            <Link to="/admin/offers/new" className="flex items-center gap-3 p-3 rounded-xl hover:bg-black/5 transition-colors text-sm font-medium">
+            <Link to="/admin/promotions/new" className="flex items-center gap-3 p-3 rounded-xl hover:bg-black/5 transition-colors text-sm font-medium">
               <FiPercent size={16} style={{ color: 'var(--color-gold)' }} /> {t('admin.createOffer')}
             </Link>
           </div>

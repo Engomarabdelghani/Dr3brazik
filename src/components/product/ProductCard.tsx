@@ -1,34 +1,51 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { FiHeart, FiEye, FiShoppingBag } from 'react-icons/fi';
+import { FiHeart, FiEye, FiShoppingBag, FiInfo } from 'react-icons/fi';
 import type { Product } from '../../types';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
-import { useOffers } from '../../hooks/useCatalog';
-import { getBogoLabel } from '../../lib/api/offers';
-import { findActiveBogoOfferFor } from '../../utils/bogo';
+import { useLocalized, useProductPromotions } from '../../hooks/usePromotions';
 import { cld } from '../../utils/cloudinary';
 import RatingStars from '../ui/RatingStars';
 import PriceTag from '../ui/PriceTag';
 import Badge from '../ui/Badge';
+import PromoBadge from './PromoBadge';
+import { PromotionDetailsModal } from './PromotionDetails';
 import { useTranslation } from 'react-i18next';
+
+/** Promotions whose whole effect is the lower price already shown on the card. */
+const PRICE_KINDS = new Set(['percent', 'fixed', 'fixed_price']);
 
 export default function ProductCard({ product, onQuickView }: { product: Product; onQuickView?: (p: Product) => void }) {
   const { t } = useTranslation();
+  const text = useLocalized();
   const { addItem } = useCart();
   const { toggle, isInWishlist } = useWishlist();
-  const { data: offers = [] } = useOffers();
+  const promotions = useProductPromotions(product);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const wished = isInWishlist(product.id);
-  // A live active Offer (effectivePrice) always wins over a static, manually-set
-  // "old price" on the product itself — the Offer is the current campaign, so it
-  // should be what customers see everywhere, not just on its dedicated page.
-  const hasActiveOfferPrice = product.effectivePrice != null && product.effectivePrice < product.price;
-  const discount = hasActiveOfferPrice
-    ? Math.round(((product.price - product.effectivePrice!) / product.price) * 100)
+
+  // The price comes from the server: what one unit costs after the automatic
+  // promotions. It always wins over a static, manually-set "old price": it is the
+  // current campaign.
+  const currentPrice = product.promoPrice ?? product.effectivePrice ?? product.price;
+  const reduced = currentPrice < product.price;
+  const discount = reduced
+    ? Math.round(((product.price - currentPrice) / product.price) * 100)
     : product.oldPrice
       ? Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)
       : product.discountPercent;
-  const bogoOffer = findActiveBogoOfferFor({ id: product.id, categoryId: product.categoryId }, offers);
+
+  // Every product on offer carries its offer at the top of its image. When there are
+  // several, the one the price does not already show (a quantity offer, a gift, a
+  // coupon offer) comes first, with a count for the rest.
+  const priceShown = product.promoPrice != null;
+  const inPrice = (p: (typeof promotions)[number]) => priceShown && PRICE_KINDS.has(p.kind) && !p.requiresCoupon;
+  const lead = promotions.find((p) => !inPrice(p)) ?? promotions[0];
+  const others = promotions.length - 1;
+  // "15% Off" on the badge and "SALE 15% OFF" beside it would say the same thing twice.
+  const badgeSaysDiscount = lead !== undefined && inPrice(lead);
 
   return (
     <motion.div
@@ -51,11 +68,23 @@ export default function ProductCard({ product, onQuickView }: { product: Product
           />
         </Link>
 
-        <div className="absolute top-3 start-3 flex flex-col gap-2">
+        <div className="absolute top-3 start-3 flex flex-col items-start gap-2 max-w-[calc(100%-4.25rem)]">
           {product.inStock && (
             <>
               {product.isNew && <Badge tone="ink">{t('products.new')}</Badge>}
-              {discount ? (
+              {lead && (
+                <button
+                  type="button"
+                  onClick={() => setDetailsOpen(true)}
+                  aria-haspopup="dialog"
+                  aria-label={`${t('promotions.viewDetails')}: ${text(lead.badge)}`}
+                  className="promo-on-image"
+                >
+                  <PromoBadge kind={lead.kind} label={lead.badge} size="auto" />
+                  {others > 0 && <span className="promo-badge promo-badge-auto">{t('promotions.moreOffers', { count: others })}</span>}
+                </button>
+              )}
+              {discount && !badgeSaysDiscount ? (
                 <span
                   className="text-[9px] sm:text-[12px] md:text-[17px] font-black leading-none"
                   style={{
@@ -69,7 +98,6 @@ export default function ProductCard({ product, onQuickView }: { product: Product
                   {t('products.sale', { discount })}
                 </span>
               ) : null}
-              {bogoOffer && <Badge tone="bogo">{getBogoLabel(bogoOffer)}</Badge>}
             </>
           )}
         </div>
@@ -116,12 +144,31 @@ export default function ProductCard({ product, onQuickView }: { product: Product
         <RatingStars rating={product.rating} reviewCount={product.reviewCount} size={12} />
         <div className="mt-2">
           <PriceTag
-            price={product.effectivePrice ?? product.price}
-            oldPrice={hasActiveOfferPrice ? product.price : product.oldPrice}
+            price={currentPrice}
+            oldPrice={reduced ? product.price : product.oldPrice}
             currency={product.currency}
           />
         </div>
+
+        {/* What the offer is, in one line. The conditions (quantity, coupon) are part of the sentence. */}
+        {lead && (
+          <button
+            type="button"
+            onClick={() => setDetailsOpen(true)}
+            aria-haspopup="dialog"
+            aria-label={`${t('promotions.viewDetails')}: ${text(lead.summary)}`}
+            className="promo-line mt-2.5"
+          >
+            <span className="promo-line-text">{text(lead.summary)}</span>
+            {others > 0 && <span className="promo-line-more" aria-hidden="true">{t('promotions.moreOffers', { count: others })}</span>}
+            <FiInfo size={13} className="shrink-0" aria-hidden="true" />
+          </button>
+        )}
       </div>
+
+      {promotions.length > 0 && (
+        <PromotionDetailsModal open={detailsOpen} onClose={() => setDetailsOpen(false)} promotions={promotions} productName={product.name} />
+      )}
     </motion.div>
   );
 }

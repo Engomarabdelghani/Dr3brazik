@@ -6,8 +6,8 @@ export interface DashboardStats {
   visibleProductCount: number;
   outOfStockCount: number;
   categoryCount: number;
-  offerCount: number;
-  activeOfferCount: number;
+  promotionCount: number;
+  activePromotionCount: number;
   totalImages: number;
   newOrderCount: number;
   recentProducts: Product[];

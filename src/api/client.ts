@@ -44,6 +44,8 @@ interface RequestOptions {
   query?: Query;
   headers?: Record<string, string>;
   signal?: AbortSignal;
+  /** For uploads on a slow connection; defaults to 15 seconds. */
+  timeoutMs?: number;
 }
 
 function buildUrl(path: string, query?: Query): string {
@@ -86,7 +88,7 @@ export function refreshSession(): Promise<AuthSession | null> {
 
 async function send(path: string, options: RequestOptions): Promise<Response> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? TIMEOUT_MS);
   options.signal?.addEventListener('abort', () => controller.abort(), { once: true });
 
   const headers: Record<string, string> = { Accept: 'application/json', ...options.headers };
@@ -116,8 +118,8 @@ async function send(path: string, options: RequestOptions): Promise<Response> {
   }
 }
 
-/** Full envelope: `{ data, meta }`. Retries once after refreshing an expired admin token. */
-export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<{ data: T; meta?: PageMeta }> {
+/** Retries once after refreshing an expired admin token. */
+async function sendWithRefresh(path: string, options: RequestOptions): Promise<Response> {
   let res = await send(path, options);
 
   if (res.status === 401 && getAccessToken() && !path.startsWith('/auth/')) {
@@ -125,6 +127,12 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     if (session) res = await send(path, options);
     else notifySessionExpired();
   }
+  return res;
+}
+
+/** Full envelope: `{ data, meta }`. */
+export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<{ data: T; meta?: PageMeta }> {
+  const res = await sendWithRefresh(path, options);
 
   if (res.status === 204) return { data: undefined as T };
 
@@ -150,6 +158,13 @@ export const api = {
   patch: async <T>(path: string, body?: unknown) => (await apiRequest<T>(path, { method: 'PATCH', body })).data,
   delete: async <T>(path: string, body?: unknown) => (await apiRequest<T>(path, { method: 'DELETE', body })).data,
 };
+
+/** A file only the API may hand out (e.g. an image admins alone can see), for showing from a blob URL. */
+export async function apiBlob(path: string): Promise<Blob> {
+  const res = await sendWithRefresh(path, { headers: { Accept: '*/*' } });
+  if (!res.ok) throw new ApiError(res.status, 'HTTP_ERROR', 'Could not load this file. Please try again.');
+  return res.blob();
+}
 
 /** For GETs that are allowed to be missing: 404 → null. */
 export async function getOrNull<T>(path: string): Promise<T | null> {

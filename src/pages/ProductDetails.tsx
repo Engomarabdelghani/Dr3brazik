@@ -2,14 +2,12 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiHeart, FiShoppingBag, FiTruck, FiShield, FiRotateCcw } from 'react-icons/fi';
-import { useProduct, useProducts, getRelated, useOffers } from '../hooks/useCatalog';
+import { useProduct, useProducts, getRelated } from '../hooks/useCatalog';
 import { useCategories } from '../hooks/useCatalog';
 import { useCart, orderCapFor } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useRecentlyViewed } from '../context/RecentlyViewedContext';
 import type { Subcategory } from '../data/taxonomy';
-import { getBogoLabel } from '../lib/api/offers';
-import { findActiveBogoOfferFor } from '../utils/bogo';
 import Gallery from '../components/product/Gallery';
 import RatingStars from '../components/ui/RatingStars';
 import PriceTag from '../components/ui/PriceTag';
@@ -18,6 +16,7 @@ import QuantityStepper from '../components/ui/QuantityStepper';
 import Button from '../components/ui/Button';
 import ProductTabs from '../components/product/ProductTabs';
 import ProductCard from '../components/product/ProductCard';
+import ProductOffers, { ProductImageBadges } from '../components/product/ProductOffers';
 import SectionHeading from '../components/common/SectionHeading';
 import { useSeo } from '../hooks/useSeo';
 import { SITE_URL } from '../data/constants';
@@ -32,7 +31,6 @@ export default function ProductDetails() {
   const { addItem, items } = useCart();
   const { toggle, isInWishlist } = useWishlist();
   const { items: recentlyViewed, addView } = useRecentlyViewed();
-  const { data: offers = [] } = useOffers();
   const [quantity, setQuantity] = useState(1);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
 
@@ -58,7 +56,6 @@ export default function ProductDetails() {
   const otherRecentlyViewed = recentlyViewed.filter((p) => p.id !== product.id);
   const productCategory = categories.find((c) => c.id === product.category);
   const productSubcategory = productCategory?.subcategories.find((s: Subcategory) => s.id === product.subcategory);
-  const bogoOffer = findActiveBogoOfferFor({ id: product.id, categoryId: product.categoryId }, offers);
   const cartQtyForProduct = items.find((i) => i.product.id === product.id)?.quantity ?? 0;
   const orderCap = orderCapFor(product);
   const remainingAllowed = orderCap != null ? Math.max(orderCap - cartQtyForProduct, 0) : 99;
@@ -83,7 +80,7 @@ export default function ProductDetails() {
               '@type': 'Offer',
               url: `${SITE_URL}/product/${product.slug}`,
               priceCurrency: product.currency,
-              price: product.effectivePrice ?? product.price,
+              price: product.promoPrice ?? product.effectivePrice ?? product.price,
               availability: product.inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
             },
             ...(product.reviewCount > 0
@@ -102,7 +99,10 @@ export default function ProductDetails() {
       </p>
 
       <div className="grid lg:grid-cols-2 gap-14">
-        <Gallery images={displayImages} name={product.name} key={selectedVariantId ?? 'default'} />
+        <div className="relative">
+          <Gallery images={displayImages} name={product.name} key={selectedVariantId ?? 'default'} />
+          <ProductImageBadges product={product} />
+        </div>
 
         {product.variants && product.variants.length > 0 && (
           <div className="mt-4">
@@ -150,18 +150,20 @@ export default function ProductDetails() {
           </div>
 
           <div className="mt-5">
+            {/* promoPrice: one unit after the automatic promotions, worked out by the server. */}
             <PriceTag
-              price={product.effectivePrice ?? product.price}
-              oldPrice={product.effectivePrice != null && product.effectivePrice < product.price ? product.price : product.oldPrice}
+              price={product.promoPrice ?? product.effectivePrice ?? product.price}
+              oldPrice={(product.promoPrice ?? product.effectivePrice ?? product.price) < product.price ? product.price : product.oldPrice}
               currency={product.currency} size="lg"
             />
           </div>
+
+          <ProductOffers product={product} />
 
           <p className="mt-5 text-sm leading-relaxed" style={{ color: 'var(--color-muted)' }}>{product.shortDescription}</p>
 
           <div className="mt-4 flex items-center gap-2">
             {product.inStock ? <Badge tone="success">{t('productDetails.inStock')}</Badge> : <Badge tone="muted">{t('productDetails.outOfStock')}</Badge>}
-            {bogoOffer && <Badge tone="bogo">{getBogoLabel(bogoOffer)}</Badge>}
           </div>
           {orderCap != null && (
             <p className="text-xs mt-2" style={{ color: 'var(--color-muted)' }}>

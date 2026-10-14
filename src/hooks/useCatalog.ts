@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchStorefrontProducts, fetchProductBySlug } from '../lib/api/products';
 import { fetchCategories } from '../lib/api/categories';
-import { fetchOffers } from '../lib/api/offers';
 import { fetchPromoBanners } from '../lib/api/promoBanners';
 import { fetchShippingZones } from '../lib/api/shippingZones';
 import { fetchSocialPosts } from '../lib/api/socialPosts';
@@ -22,10 +21,6 @@ export function useProduct(slug: string | undefined) {
     queryFn: () => fetchProductBySlug(slug!),
     enabled: Boolean(slug),
   });
-}
-
-export function useOffers() {
-  return useQuery({ queryKey: ['offers'], queryFn: fetchOffers, staleTime: 60_000 });
 }
 
 export function usePromoBanners() {

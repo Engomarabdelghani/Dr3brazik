@@ -1,3 +1,5 @@
+import type { ProductPromotionRef } from '../api/promotionTypes';
+
 export interface ProductImage {
   url: string;
   /** Storage path on the API server (products/<folder>/<file>); null for a not-yet-migrated external image. */
@@ -19,7 +21,7 @@ export interface Product {
   brand: string;
   price: number;
   oldPrice?: number;
-  effectivePrice?: number; // live price after any active offer (see products_with_effective_price view)
+  effectivePrice?: number; // price of one unit after the automatic promotions (the server works it out)
   currency: string;
   rating: number;
   reviewCount: number;
@@ -48,6 +50,8 @@ export interface Product {
   isDeal?: boolean; // true for synthetic "cart items" built from a shoppable promo banner — not a real catalog product
   maxOrderQuantity?: number; // admin-set cap on how many units of this product a customer can order at once
   variants?: ProductVariant[]; // color options — same product, different photo; price/stock stay shared
+  promotions?: ProductPromotionRef[]; // running promotions this product takes part in (ids of GET /promotions), most important first
+  promoPrice?: number; // same as effectivePrice, sent only when a promotion lowers the price of one unit
 }
 
 export interface ProductVariant {
@@ -78,27 +82,6 @@ export interface FAQ {
 }
 
 export type SortOption = 'featured' | 'price-asc' | 'price-desc' | 'newest' | 'rating';
-
-export type DiscountType = 'percent' | 'fixed' | 'bogo';
-export type OfferTargetType = 'products' | 'category';
-
-export interface Offer {
-  id: string;
-  title: string;
-  discountType: DiscountType;
-  discountValue: number;
-  targetType: OfferTargetType;
-  categoryId?: string;
-  productIds?: string[];
-  bannerImage?: string;
-  startDate: string;
-  endDate: string;
-  isEnabled: boolean;
-  // BOGO ("buy X get Y at Z% off") — only meaningful when discountType === 'bogo'
-  bogoBuyQty: number;
-  bogoGetQty: number;
-  bogoGetDiscountPercent: number;
-}
 
 export type PromoBannerAction = 'link' | 'deal' | 'bundle';
 

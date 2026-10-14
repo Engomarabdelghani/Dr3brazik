@@ -2,11 +2,14 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import SectionHeading from '../common/SectionHeading';
 import { useCategories } from '../../hooks/useCatalog';
+import { useGroupOffers } from '../../hooks/usePromotions';
+import { GroupOfferBadge } from '../shop/CategoryOffers';
 import { useTranslation } from 'react-i18next';
 
 export default function Categories() {
   const { t } = useTranslation();
   const { data: categories = [], isLoading } = useCategories();
+  const offers = useGroupOffers();
 
   if (!isLoading && categories.length === 0) return null;
 
@@ -34,6 +37,10 @@ export default function Categories() {
                   className="group flex flex-col w-full overflow-hidden rounded-[12px] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_6px_24px_rgba(0,0,0,0.08)]"
                 >
                   <div className="overflow-hidden relative w-full">
+                    {/* The offer running across this category, at the top of its picture. */}
+                    <div className="absolute top-3 start-3 z-10 max-w-[calc(100%-1.5rem)] promo-on-image">
+                      <GroupOfferBadge offer={offers.category(cat.id)} size="md" />
+                    </div>
                     <img
                       src={cat.image}
                       alt={cat.name}

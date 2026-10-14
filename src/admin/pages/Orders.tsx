@@ -8,7 +8,7 @@ import {
   FiClock, FiTrendingUp, FiInbox, FiCalendar, FiArrowRight, FiCheck, FiSliders,
 } from 'react-icons/fi';
 import { fetchAdminOrderStats, fetchAdminOrders, setOrderStatus } from '../../lib/api/orders';
-import type { AdminOrderSort, AdminOrderSummary } from '../../api/types';
+import type { AdminOrderSort, AdminOrderSummary, OrderPaymentMethod } from '../../api/types';
 import type { OrderStatus } from '../../types';
 import OrderDrawer from '../components/orders/OrderDrawer';
 import { STATUS_META, STATUS_ORDER, orderLabel, fullDate, money, nextStep, paymentLabel, timeAgo, whatsappLink } from '../components/orders/orderUi';
@@ -186,7 +186,7 @@ export default function AdminOrders() {
 
   const status = (params.get('status') ?? '') as OrderStatus | '';
   const search = params.get('q') ?? '';
-  const payment = (params.get('pay') ?? '') as 'cod' | 'wallet' | '';
+  const payment = (params.get('pay') ?? '') as OrderPaymentMethod | '';
   const sort = (params.get('sort') ?? 'newest') as AdminOrderSort;
   const range = (params.get('range') ?? 'all') as Range;
   const customFrom = params.get('from') ?? '';
@@ -428,7 +428,8 @@ export default function AdminOrders() {
                     <select value={payment} onChange={(e) => setParam({ pay: e.target.value || null })} className="input-luxe w-auto py-2 text-sm" aria-label="Payment method">
                       <option value="">Any payment</option>
                       <option value="cod">Cash on delivery</option>
-                      <option value="wallet">Instapay / Wallet</option>
+                      <option value="instapay">InstaPay</option>
+                      <option value="wallet">Vodafone Cash</option>
                     </select>
                     <select value={sort} onChange={(e) => setParam({ sort: e.target.value === 'newest' ? null : e.target.value })} className="input-luxe w-auto py-2 text-sm" aria-label="Sort">
                       {SORTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}

@@ -5,7 +5,7 @@ import { FiPlus, FiEdit2, FiTrash2, FiX, FiImage, FiShoppingBag, FiSearch, FiPac
 import {
   fetchAdminPromoBanners, createPromoBanner, updatePromoBanner, deletePromoBanner, type PromoBannerInput,
 } from '../../lib/api/promoBanners';
-import { fetchAdminOffers, isOfferActive, getBogoLabel } from '../../lib/api/offers';
+import { fetchAdminPromotions } from '../../lib/api/promotions';
 import { fetchAdminProducts, fetchProductsByIds } from '../../lib/api/products';
 import { cld } from '../../utils/cloudinary';
 import type { PromoBanner, PromoBannerAction } from '../../types';
@@ -102,8 +102,9 @@ export default function AdminPromoBanners() {
 function BannerModal({ banner, nextSortOrder, onClose, onSaved }: {
   banner: PromoBanner | null; nextSortOrder: number; onClose: () => void; onSaved: () => void;
 }) {
-  const { data: offers = [] } = useQuery({ queryKey: ['admin', 'offers'], queryFn: fetchAdminOffers });
-  const activeOffers = offers.filter(isOfferActive);
+  const { data: promotions = [] } = useQuery({ queryKey: ['admin', 'promotions'], queryFn: () => fetchAdminPromotions() });
+  // A banner can point at a promotion that is running, or one scheduled to start.
+  const linkable = promotions.filter((p) => p.effectiveStatus === 'active' || p.effectiveStatus === 'scheduled');
 
   const [title, setTitle] = useState(banner?.title ?? '');
   const [image, setImage] = useState(banner?.image ?? '');
@@ -126,12 +127,8 @@ function BannerModal({ banner, nextSortOrder, onClose, onSaved }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Pre-select the matching offer in the dropdown when editing a link banner that already links to one.
+  // Pre-select the matching promotion in the dropdown when editing a link banner that already links to one.
   const linkedOfferId = link.startsWith('/offer/') ? link.replace('/offer/', '') : '';
-
-  const offerLabel = (offer: (typeof offers)[number]) =>
-    offer.discountType === 'bogo' ? getBogoLabel(offer)
-      : offer.discountType === 'percent' ? `${offer.discountValue}% Off` : `${offer.discountValue} EGP Off`;
 
   const { data: searchResults } = useQuery({
     queryKey: ['admin', 'banner-product-search', productSearch],
@@ -268,16 +265,16 @@ function BannerModal({ banner, nextSortOrder, onClose, onSaved }: {
             <>
               <div>
                 <label className="text-xs mb-1.5 block font-semibold" style={{ color: 'var(--color-heading)' }}>
-                  Link to an offer — easiest way
+                  Link to a promotion — easiest way
                 </label>
                 <select
                   value={linkedOfferId}
                   onChange={(e) => setLink(e.target.value ? `/offer/${e.target.value}` : '')}
                   className="input-luxe"
                 >
-                  <option value="">— Choose an active offer (optional) —</option>
-                  {activeOffers.map((o) => (
-                    <option key={o.id} value={o.id}>{o.title} — {offerLabel(o)}</option>
+                  <option value="">— Choose a promotion (optional) —</option>
+                  {linkable.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name} — {p.display.badge.en}{p.effectiveStatus === 'scheduled' ? ' (scheduled)' : ''}</option>
                   ))}
                 </select>
               </div>

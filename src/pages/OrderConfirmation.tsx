@@ -20,6 +20,12 @@ const rise: Variants = {
 
 const money = (n: number) => `${n.toLocaleString('en-US')} EGP`;
 
+const PAYMENT_TEXT: Record<ConfirmedOrder['paymentMethod'], string> = {
+  cod: 'orderConfirmation.cashPayment',
+  card: 'orderConfirmation.walletPayment',
+  instapay: 'orderConfirmation.instapayPayment',
+};
+
 /** Gold check mark that draws itself, with a soft ring pulse and a burst of sparkles. */
 function SuccessBadge() {
   const reduce = useReducedMotion();
@@ -106,7 +112,8 @@ function OrderNumber({ value, t }: { value: string; t: (key: string) => string }
 }
 
 export default function OrderConfirmation() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isArabic = i18n.language.startsWith('ar');
   useSeo({ title: 'Order Confirmed', path: '/order-confirmed', noindex: true });
   const location = useLocation();
   const order = (location.state as ConfirmedOrder | null) ?? readLastOrder();
@@ -118,11 +125,15 @@ export default function OrderConfirmation() {
   const orderCode = order.orderCode ?? `#${order.orderNumber}`;
   const steps = [
     { icon: FiClipboard, title: t('orderConfirmation.receivedTitle'), text: t('orderConfirmation.receivedText', { orderCode }) },
-    { icon: FiPhoneCall, title: t('orderConfirmation.confirmTitle'), text: t('orderConfirmation.confirmText', { phone: order.phone }) },
+    {
+      icon: FiPhoneCall,
+      title: t('orderConfirmation.confirmTitle'),
+      text: t(order.paymentMethod === 'instapay' ? 'orderConfirmation.instapayConfirmText' : 'orderConfirmation.confirmText', { phone: order.phone }),
+    },
     {
       icon: FiTruck,
       title: t('orderConfirmation.deliveredTitle'),
-      text: t('orderConfirmation.deliveryText', { delivery: order.delivery, paymentText: t(order.paymentMethod === 'cod' ? 'orderConfirmation.cashPayment' : 'orderConfirmation.walletPayment') }),
+      text: t('orderConfirmation.deliveryText', { delivery: order.delivery, paymentText: t(PAYMENT_TEXT[order.paymentMethod] ?? PAYMENT_TEXT.cod) }),
     },
   ];
 
@@ -191,9 +202,13 @@ export default function OrderConfirmation() {
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium line-clamp-2">{item.name}</p>
-                    <p className="text-xs" style={{ color: 'var(--color-muted)' }}>{t('orderConfirmation.quantityPrice', { quantity: item.quantity, price: money(item.price) })}</p>
+                    <p className="text-xs" style={{ color: 'var(--color-muted)' }}>
+                      {item.isGift
+                        ? `${t('promotions.freeGift')} · ${t('promotions.qty', { count: item.quantity })}`
+                        : t('orderConfirmation.quantityPrice', { quantity: item.quantity, price: money(item.price) })}
+                    </p>
                   </div>
-                  <p className="font-semibold whitespace-nowrap">{money(item.lineTotal)}</p>
+                  <p className="font-semibold whitespace-nowrap">{item.isGift ? t('promotions.free') : money(item.lineTotal)}</p>
                 </motion.li>
               ))}
             </ul>
@@ -202,6 +217,11 @@ export default function OrderConfirmation() {
               <div className="flex justify-between"><span style={{ color: 'var(--color-muted)' }}>{t('orderConfirmation.subtotal')}</span><span>{money(order.subtotal)}</span></div>
               {order.discount > 0 && (
                 <div className="flex justify-between" style={{ color: '#16a34a' }}><span>{t('orderConfirmation.discount')}</span><span>-{money(order.discount)}</span></div>
+              )}
+              {(order.promotions ?? []).length > 0 && (
+                <p className="text-xs" style={{ color: 'var(--color-muted)' }}>
+                  {t('promotions.applied')}: {(order.promotions ?? []).map((p) => (isArabic ? p.titleAr : p.title)).join(' · ')}
+                </p>
               )}
               <div className="flex justify-between"><span style={{ color: 'var(--color-muted)' }}>{t('orderConfirmation.shipping')}</span><span>{money(order.shippingPrice)}</span></div>
             </div>

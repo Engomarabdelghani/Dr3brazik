@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { FiCreditCard, FiTruck, FiTag, FiCheckCircle } from 'react-icons/fi';
@@ -9,24 +10,35 @@ import { fetchShippingZones } from '../lib/api/shippingZones';
 import { placeOrder, toCartRefs } from '../lib/api/orders';
 import { isApiError } from '../api/client';
 import { saveLastOrder, type ConfirmedOrder } from '../utils/lastOrder';
+import { clearCheckoutDraft, readCheckoutDraft, saveCheckoutDraft } from '../utils/checkoutDraft';
 import { cld } from '../utils/cloudinary';
 import Button from '../components/ui/Button';
+import { AppliedGiftRows, CartGiftChoices, CartGiftLines, CartOfferMessages, DiscountRows } from '../components/cart/CartPromotions';
+import InstapayPanel, { isPayerNumber, type InstapayErrors, type PaymentProof } from '../components/checkout/InstapayPanel';
 import { useSeo } from '../hooks/useSeo';
 import { useTranslation } from 'react-i18next';
 
-type PaymentMethod = 'cod' | 'card';
+/** card: Vodafone Cash (the name the wallet option has always had here). */
+type PaymentMethod = 'cod' | 'card' | 'instapay';
 
 export default function Checkout() {
   const { t } = useTranslation();
   useSeo({ title: 'Checkout', path: '/checkout', noindex: true });
-  const { items, subtotal, discount, coupon, applyCoupon, removeCoupon, bogoLabel, clearCart } = useCart();
+  const { items, subtotal, discount, coupon, applyCoupon, removeCoupon, clearCart, quote, giftSelections, isPricing, setCustomerPhone, promotions } = useCart();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   // One key per checkout visit: a double click or a retry after a network error can't create two orders.
   const idempotencyKey = useRef(crypto.randomUUID());
   const { data: shippingZones = [] } = useQuery({ queryKey: ['shipping-zones'], queryFn: fetchShippingZones });
-  const [form, setForm] = useState({ name: '', phone: '', address: '', governorateId: '', cityId: '', notes: '' });
-  const [payment, setPayment] = useState<PaymentMethod>('cod');
+  // What was typed before leaving for the InstaPay app, if the phone reloaded the page on the way back.
+  const [draft] = useState(readCheckoutDraft);
+  const [form, setForm] = useState(draft?.form ?? { name: '', phone: '', address: '', governorateId: '', cityId: '', notes: '' });
+  const [payment, setPayment] = useState<PaymentMethod>(draft?.payment ?? 'cod');
+  const [payerNumber, setPayerNumber] = useState(draft?.payerNumber ?? '');
+  const [proof, setProof] = useState<PaymentProof | null>(draft?.proof ?? null);
+  const [proofUploading, setProofUploading] = useState(false);
+  const [instapayErrors, setInstapayErrors] = useState<InstapayErrors>({});
+  const instapayOption = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState('');
   const [couponError, setCouponError] = useState('');
@@ -36,6 +48,20 @@ export default function Checkout() {
   // empty-cart redirect below would otherwise win and send the customer to /cart.
   const orderPlaced = useRef(false);
 
+  // Offers limited per customer are checked by phone number: once it is typed, the
+  // summary is priced for this customer, so the total shown is the total charged.
+  useEffect(() => {
+    const digits = form.phone.replace(/\D/g, '');
+    const timer = setTimeout(() => setCustomerPhone(digits.length >= 10 ? form.phone.trim() : ''), 500);
+    return () => clearTimeout(timer);
+  }, [form.phone, setCustomerPhone]);
+  useEffect(() => () => setCustomerPhone(''), [setCustomerPhone]);
+
+  useEffect(() => {
+    if (orderPlaced.current) return;
+    saveCheckoutDraft({ form, payment, payerNumber, proof: proof && { key: proof.key, name: proof.name } });
+  }, [form, payment, payerNumber, proof]);
+
   if (items.length === 0 && !orderPlaced.current) return <Navigate to="/cart" replace />;
 
   const enabledZones = shippingZones.filter((z) => z.isEnabled);
@@ -43,11 +69,12 @@ export default function Checkout() {
   const enabledCities = (selectedZone?.cities ?? []).filter((c) => c.isEnabled);
   const selectedCity = enabledCities.find((c) => c.id === form.cityId);
 
-  const total = subtotal - discount;
+  const total = Math.max(subtotal - discount, 0);
   const cityRequired = enabledCities.length > 0;
   const shipping = cityRequired ? (selectedCity?.price ?? 0) : (selectedZone?.price ?? 0);
   const hasValidShippingSelection = !selectedZone ? false : cityRequired ? !!selectedCity : true;
-  const grandTotal = hasValidShippingSelection ? total + shipping : total;
+  // Same formula as the server (floored at 0 after shipping), so the total on screen is the total charged.
+  const grandTotal = hasValidShippingSelection ? Math.max(subtotal - discount + shipping, 0) : total;
 
   const onChange = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm((f) => ({
@@ -78,6 +105,18 @@ export default function Checkout() {
       setError(t('checkout.chooseCityError'));
       return;
     }
+    if (payment === 'instapay') {
+      const missing: InstapayErrors = {
+        payerNumber: isPayerNumber(payerNumber) ? undefined : t('checkout.instapayNumberError'),
+        proof: proof ? undefined : t('checkout.instapayProofError'),
+      };
+      setInstapayErrors(missing);
+      if (missing.payerNumber || missing.proof) {
+        setError(t('checkout.instapayIncomplete'));
+        instapayOption.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+    }
     setError(null);
     setPlacing(true);
 
@@ -100,8 +139,13 @@ export default function Checkout() {
           zoneId: selectedZone.id,
           cityId: selectedCity?.id ?? null,
           paymentMethod: payment,
+          ...(payment === 'instapay' && proof ? { payerNumber: payerNumber.trim(), paymentProof: proof.key } : {}),
           couponCode: coupon,
           items: toCartRefs(items),
+          giftSelections,
+          // The server prices the order itself. If its total is not the one on screen
+          // (an offer ended, a price changed), it refuses rather than charge a different amount.
+          ...(quote && hasValidShippingSelection ? { expectedTotal: grandTotal } : {}),
         },
         idempotencyKey.current
       );
@@ -133,7 +177,12 @@ export default function Checkout() {
         address: form.address,
         delivery: `Delivery to ${selectedCity ? `${selectedZone.name} — ${selectedCity.name}` : selectedZone.name}`,
         paymentMethod: payment,
-        items: order.items.map((line, i) => ({ ...line, image: items[i]?.product.images[0] })),
+        // Free gifts come after the cart's own lines; their pictures are in the quote.
+        items: order.items.map((line, i) => ({
+          ...line,
+          image: line.isGift ? (quote?.promotions.gifts.find((g) => g.name === line.name)?.image ?? undefined) : items[i]?.product.images[0],
+        })),
+        promotions: order.promotions,
         subtotal: order.subtotal,
         discount: order.discount,
         shippingPrice: order.shippingPrice,
@@ -142,6 +191,7 @@ export default function Checkout() {
       };
       saveLastOrder(confirmed);
       orderPlaced.current = true;
+      clearCheckoutDraft();
       navigate('/order-confirmed', { replace: true, state: confirmed });
       clearCart();
     } catch (err) {
@@ -149,6 +199,14 @@ export default function Checkout() {
       // Prices, stock limits or the coupon changed: refresh the summary so the customer sees why.
       queryClient.invalidateQueries({ queryKey: ['cart-quote'] });
       if (isApiError(err) && err.code.startsWith('COUPON_')) removeCoupon();
+      // The uploaded screenshot is gone from the server (rare): ask for it again, in the customer's language.
+      if (isApiError(err, 'PAYMENT_PROOF_MISSING')) {
+        setProof(null);
+        setInstapayErrors({ proof: t('checkout.instapayProofLost') });
+        setError(t('checkout.instapayProofLost'));
+        setPlacing(false);
+        return;
+      }
       const details = isApiError(err) && err.errors.length ? ` ${err.errors.map((e) => e.message).join(' · ')}` : '';
       setError(`${err instanceof Error ? err.message : 'Could not place your order. Please try again.'}${details}`);
       setPlacing(false);
@@ -215,6 +273,48 @@ export default function Checkout() {
                   <p className="text-xs" style={{ color: 'var(--color-muted)' }}>{t('checkout.payWhenArrives')}</p>
                 </div>
               </label>
+              {/* The label is only the header row: the steps below it hold their own inputs. */}
+              <div ref={instapayOption} className="rounded-2xl border transition-colors" style={{ borderColor: payment === 'instapay' ? 'var(--color-gold)' : 'var(--color-border)' }}>
+                <label className="flex items-center gap-3 p-4 cursor-pointer">
+                  <input type="radio" name="payment" checked={payment === 'instapay'} onChange={() => setPayment('instapay')} className="accent-[var(--color-gold)]" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm">{t('checkout.instapay')}</p>
+                    <p className="text-xs" style={{ color: 'var(--color-muted)' }}>{t('checkout.instapayDetails')}</p>
+                  </div>
+                  <img src="/images/instapay.png" alt="" width={40} height={40} className="w-10 h-10 rounded-lg shrink-0" />
+                </label>
+                <AnimatePresence initial={false}>
+                  {payment === 'instapay' && (
+                    <motion.div
+                      key="instapay"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <InstapayPanel
+                        amount={grandTotal}
+                        amountReady={hasValidShippingSelection}
+                        pricing={isPricing}
+                        customerPhone={form.phone}
+                        payerNumber={payerNumber}
+                        onPayerNumberChange={(value) => {
+                          setPayerNumber(value);
+                          setInstapayErrors((e) => ({ ...e, payerNumber: undefined }));
+                        }}
+                        proof={proof}
+                        onProofChange={(next) => {
+                          setProof(next);
+                          if (next) setInstapayErrors((e) => ({ ...e, proof: undefined }));
+                        }}
+                        onUploadingChange={setProofUploading}
+                        errors={instapayErrors}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
               <label className="flex items-center gap-3 p-4 rounded-2xl border cursor-pointer" style={{ borderColor: payment === 'card' ? 'var(--color-gold)' : 'var(--color-border)' }}>
                 <input type="radio" name="payment" checked={payment === 'card'} onChange={() => setPayment('card')} className="accent-[var(--color-gold)]" />
                 <div>
@@ -238,6 +338,9 @@ export default function Checkout() {
               <p className="font-semibold">{((product.effectivePrice ?? product.price) * quantity).toLocaleString('en-US')}</p>
             </div>
           ))}
+          <CartGiftLines variant="compact" />
+          <CartGiftChoices />
+          <CartOfferMessages dense />
           <div className="h-px" style={{ backgroundColor: 'var(--color-border)' }} />
 
           {coupon ? (
@@ -266,14 +369,8 @@ export default function Checkout() {
           <div className="h-px" style={{ backgroundColor: 'var(--color-border)' }} />
           <div className="space-y-2 text-sm">
             <div className="flex justify-between"><span style={{ color: 'var(--color-muted)' }}>{t('checkout.subtotal')}</span><span>{subtotal.toLocaleString('en-US')} EGP</span></div>
-            {discount > 0 && (
-              <div className="flex justify-between">
-                <span style={{ color: 'var(--color-muted)' }}>
-                  {[bogoLabel, coupon ? `${t('checkout.coupon')} ${coupon}` : null].filter(Boolean).join(' + ') || t('checkout.discount')}
-                </span>
-                <span>-{discount.toLocaleString('en-US')} EGP</span>
-              </div>
-            )}
+            <DiscountRows />
+            <AppliedGiftRows />
             <div className="flex justify-between">
               <span style={{ color: 'var(--color-muted)' }}>{t('checkout.shipping')}</span>
               <span>
@@ -286,11 +383,19 @@ export default function Checkout() {
             </div>
           </div>
           <div className="h-px" style={{ backgroundColor: 'var(--color-border)' }} />
-          <div className="flex justify-between font-bold text-lg"><span>{t('checkout.total')}</span><span>{grandTotal.toLocaleString('en-US')} EGP</span></div>
+          <div className="flex justify-between font-bold text-lg" aria-live="polite" aria-busy={isPricing}>
+            <span>{t('checkout.total')}</span>
+            <span style={{ opacity: isPricing ? 0.5 : 1 }}>{grandTotal.toLocaleString('en-US')} EGP</span>
+          </div>
 
-          {error && <p className="text-xs" style={{ color: '#dc2626' }}>{error}</p>}
+          {error && <p role="alert" className="text-xs" style={{ color: '#dc2626' }}>{error}</p>}
+          {/* A reminder, not a block: a customer may not want the gift. */}
+          {promotions.giftChoices.some((choice) => choice.remaining > 0) && <p className="offer-note offer-note-hint text-xs">{t('promotions.giftNotChosen')}</p>}
 
-          <Button type="submit" variant="primary" fullWidth disabled={placing}>{placing ? t('checkout.placingOrder') : t('checkout.placeOrder')}</Button>
+          {/* Not while the total is being re-priced: the customer must see the amount they agree to. */}
+          <Button type="submit" variant="primary" fullWidth disabled={placing || isPricing || proofUploading}>
+            {placing ? t('checkout.placingOrder') : proofUploading ? t('checkout.instapayUploading') : isPricing ? t('promotions.updating') : t('checkout.placeOrder')}
+          </Button>
           <div className="flex items-center justify-center gap-2 text-xs text-center" style={{ color: 'var(--color-muted)' }}>
             <FiCheckCircle className="shrink-0" style={{ color: 'var(--color-gold)' }} /> {t('checkout.orderNumberSoon')}
           </div>

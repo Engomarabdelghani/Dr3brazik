@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { CartItem, Product } from '../types';
 import type { CartQuote } from '../api/types';
+import type { CartPromotions, GiftSelection } from '../api/promotionTypes';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { validateCoupon, type CouponValidationResult } from '../lib/api/coupons';
 import { fetchCartQuote, toCartRefs } from '../lib/api/orders';
@@ -19,17 +20,28 @@ interface CartContextValue {
   itemCount: number;
   coupon: string | null;
   couponDiscount: number;
+  /** Everything taken off the subtotal: promotions + coupon. */
   discount: number;
-  bogoDiscount: number;
-  bogoLabel: string | null;
+  promotionDiscount: number;
+  /** Applied promotions, free gifts, gift choices and hints, as priced by the server. */
+  promotions: CartPromotions;
+  /** Gifts the customer picked, sent with every quote and with the order. */
+  giftSelections: GiftSelection[];
+  selectGifts: (promotionId: string, productIds: string[]) => void;
   /** Checks the code with the server; on success it is kept and applied to every quote. */
   applyCoupon: (code: string) => Promise<CouponValidationResult>;
   removeCoupon: () => void;
   /** The latest server quote (null until the first one arrives or when the cart is empty). */
   quote: CartQuote | null;
+  /** true while the totals on screen are being re-priced (the cart just changed). */
+  isPricing: boolean;
+  /** Checkout passes the phone number so per-customer offers are right before the order is placed. */
+  setCustomerPhone: (phone: string) => void;
 }
 
 const CartContext = createContext<CartContextValue | undefined>(undefined);
+
+const NO_PROMOTIONS: CartPromotions = { applied: [], gifts: [], giftChoices: [], hints: [], notices: [] };
 
 /**
  * The most a customer may have of this product in one order: the admin's
@@ -48,14 +60,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useLocalStorage<CartItem[]>('dk-cart', []);
   const [isOpen, setIsOpen] = useState(false);
   const [coupon, setCoupon] = useLocalStorage<string | null>('dk-coupon', null);
+  const [giftSelections, setGiftSelections] = useLocalStorage<GiftSelection[]>('dk-gifts', []);
+  const [customerPhone, setCustomerPhone] = useState('');
 
   const refs = useMemo(() => toCartRefs(items), [items]);
 
-  // The server prices the cart: saved snapshots can be days old, and coupons/BOGO
-  // are evaluated there. Re-fetched whenever the items or the coupon change.
-  const { data: quote = null } = useQuery({
-    queryKey: ['cart-quote', refs, coupon],
-    queryFn: () => fetchCartQuote({ items: refs, couponCode: coupon }),
+  // The server prices the cart: saved snapshots can be days old, and coupons and
+  // promotions are evaluated there. Re-fetched whenever the items, the coupon
+  // or the chosen gifts change.
+  const { data: quote = null, isFetching, isPlaceholderData } = useQuery({
+    queryKey: ['cart-quote', refs, coupon, giftSelections, customerPhone],
+    queryFn: () => fetchCartQuote({ items: refs, couponCode: coupon, giftSelections, customerPhone: customerPhone || null }),
     enabled: refs.length > 0,
     placeholderData: keepPreviousData,
     staleTime: 30_000,
@@ -83,7 +98,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         : {
             ...product,
             price: line.price,
-            effectivePrice: line.effectivePrice,
+            // In the cart a product stands at its catalog price; promotions are shown as discounts on the line.
+            effectivePrice: line.price,
             stock: line.stock ?? product.stock,
             inStock: (line.stock ?? 0) > 0,
             maxOrderQuantity: line.maxOrderQuantity ?? undefined,
@@ -136,7 +152,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
   }, [setItems]);
 
-  const clearCart = useCallback(() => setItems([]), [setItems]);
+  const clearCart = useCallback(() => {
+    setItems([]);
+    setGiftSelections([]);
+  }, [setItems, setGiftSelections]);
+
+  const selectGifts = useCallback((promotionId: string, productIds: string[]) => {
+    setGiftSelections((prev) => [...prev.filter((s) => s.promotionId !== promotionId), { promotionId, productIds }]);
+  }, [setGiftSelections]);
 
   // While the first quote loads, show the snapshot prices.
   const localSubtotal = useMemo(
@@ -150,9 +173,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // A coupon that stops applying (disabled, expired, cart changed) silently stops discounting, as before.
   const couponOk = quote?.coupon?.ok === true;
   const couponDiscount = couponOk ? quote!.couponDiscount : 0;
-  const bogoDiscount = quote?.bogoDiscount ?? 0;
-  const bogoLabel = quote?.bogoLabel ?? null;
-  const discount = couponDiscount + bogoDiscount;
+  // Promotions are never estimated in the browser: until the server has priced them, they are 0.
+  const promotionDiscount = quote?.promotionDiscount ?? 0;
+  const discount = couponDiscount + promotionDiscount;
 
   const applyCoupon = useCallback(async (code: string): Promise<CouponValidationResult> => {
     const upper = code.trim().toUpperCase();
@@ -169,11 +192,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const removeCoupon = useCallback(() => setCoupon(null), [setCoupon]);
 
+  const hasItems = items.length > 0;
   const value: CartContextValue = {
     items, addItem, removeItem, updateQuantity, clearCart,
     isOpen, openCart: () => setIsOpen(true), closeCart: () => setIsOpen(false),
-    subtotal, itemCount, coupon: couponOk ? coupon : null, couponDiscount, discount, bogoDiscount, bogoLabel, applyCoupon, removeCoupon,
-    quote: items.length ? quote : null,
+    subtotal, itemCount, coupon: couponOk ? coupon : null, couponDiscount, discount, applyCoupon, removeCoupon,
+    promotionDiscount,
+    promotions: hasItems && quote ? quote.promotions : NO_PROMOTIONS,
+    giftSelections,
+    selectGifts,
+    quote: hasItems ? quote : null,
+    // Not `!quote`: if the quote request fails, checkout must still be possible (the server prices the order anyway).
+    isPricing: hasItems && (isFetching || isPlaceholderData),
+    setCustomerPhone,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

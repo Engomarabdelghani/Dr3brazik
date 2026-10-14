@@ -1,18 +1,19 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { FiX, FiTrash2, FiShoppingBag } from 'react-icons/fi';
+import { FiX, FiTrash2, FiShoppingBag, FiGift } from 'react-icons/fi';
 import { useCart, orderCapFor } from '../../context/CartContext';
 import { cld } from '../../utils/cloudinary';
 import QuantityStepper from '../ui/QuantityStepper';
 import Button from '../ui/Button';
 import EmptyState from '../ui/EmptyState';
+import { AppliedGiftRows, CartGiftLines, CartOfferMessages, DiscountRows } from '../cart/CartPromotions';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
 
 export default function CartDrawer() {
   const { t } = useTranslation();
   const isArabic = i18n.language.startsWith('ar');
-  const { items, isOpen, closeCart, updateQuantity, removeItem, subtotal, discount } = useCart();
+  const { items, isOpen, closeCart, updateQuantity, removeItem, subtotal, discount, promotions } = useCart();
 
   return (
     <AnimatePresence>
@@ -62,6 +63,15 @@ export default function CartDrawer() {
                       </div>
                     </div>
                   ))}
+                  <CartGiftLines variant="compact" />
+                  {/* Nothing is added for the customer: they are told a gift is waiting and choose it in the cart. */}
+                  {promotions.giftChoices.some((choice) => choice.remaining > 0) && (
+                    <Link to="/cart" onClick={closeCart} className="offer-note offer-note-hint text-xs font-semibold">
+                      <FiGift className="shrink-0 mt-0.5" aria-hidden="true" />
+                      <span>{t('promotions.giftPending')}</span>
+                    </Link>
+                  )}
+                  <CartOfferMessages dense />
                 </div>
               )}
             </div>
@@ -72,15 +82,13 @@ export default function CartDrawer() {
                   <span style={{ color: 'var(--color-muted)' }}>{t('cart.subtotal')}</span>
                   <span className="font-semibold">{subtotal.toLocaleString('en-US')} EGP</span>
                 </div>
-                {discount > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span style={{ color: 'var(--color-muted)' }}>{t('cart.discount')}</span>
-                    <span className="font-semibold" style={{ color: 'var(--color-gold)' }}>-{discount.toLocaleString('en-US')} EGP</span>
-                  </div>
-                )}
+                <div className="space-y-2 text-sm">
+                  <DiscountRows />
+                  <AppliedGiftRows />
+                </div>
                 <div className="flex justify-between text-base font-bold pt-1">
                   <span>{t('cart.total')}</span>
-                  <span>{(subtotal - discount).toLocaleString('en-US')} EGP</span>
+                  <span>{Math.max(subtotal - discount, 0).toLocaleString('en-US')} EGP</span>
                 </div>
                 <Link to="/checkout" onClick={closeCart}>
                   <Button variant="primary" fullWidth className="mt-2">{t('cart.proceedCheckout')}</Button>

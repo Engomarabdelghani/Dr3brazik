@@ -25,8 +25,6 @@ import AdminDashboard from './admin/pages/Dashboard';
 import ProductsList from './admin/pages/products/ProductsList';
 import ProductForm from './admin/pages/products/ProductForm';
 import AdminCategories from './admin/pages/Categories';
-import AdminOffers from './admin/pages/Offers';
-import OfferForm from './admin/pages/OfferForm';
 import AdminPromoBanners from './admin/pages/PromoBanners';
 import AdminShippingZones from './admin/pages/ShippingZones';
 import AdminSocialPosts from './admin/pages/SocialPosts';
@@ -34,6 +32,8 @@ import AdminTestimonials from './admin/pages/Testimonials';
 import AdminCoupons from './admin/pages/Coupons';
 import AdminTeam from './admin/pages/Team';
 import AdminOrders from './admin/pages/Orders';
+import PromotionsList from './admin/pages/promotions/PromotionsList';
+import PromotionBuilder from './admin/pages/promotions/PromotionBuilder';
 
 function StorefrontMaintenanceGuard() {
   if (import.meta.env.VITE_MAINTENANCE_MODE === 'true') {
@@ -85,9 +85,9 @@ export default function App() {
                   <Route path="products/new" element={<ProductForm />} />
                   <Route path="products/:id/edit" element={<ProductForm />} />
                   <Route path="categories" element={<AdminCategories />} />
-                  <Route path="offers" element={<AdminOffers />} />
-                  <Route path="offers/new" element={<OfferForm />} />
-                  <Route path="offers/:id/edit" element={<OfferForm />} />
+                  <Route path="promotions" element={<PromotionsList />} />
+                  <Route path="promotions/new" element={<PromotionBuilder />} />
+                  <Route path="promotions/:id/edit" element={<PromotionBuilder />} />
                   <Route path="promo-banners" element={<AdminPromoBanners />} />
                   <Route path="shipping-zones" element={<AdminShippingZones />} />
                   <Route path="social-posts" element={<AdminSocialPosts />} />

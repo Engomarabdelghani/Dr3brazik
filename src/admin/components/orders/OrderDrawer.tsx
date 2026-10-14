@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { FaWhatsapp } from 'react-icons/fa';
-import { FiX, FiPhone, FiCopy, FiCheck, FiAlertTriangle, FiMapPin, FiCreditCard, FiRotateCcw, FiArrowRight, FiClock } from 'react-icons/fi';
-import { fetchAdminOrder } from '../../../lib/api/orders';
+import { FiX, FiPhone, FiCopy, FiCheck, FiAlertTriangle, FiMapPin, FiCreditCard, FiRotateCcw, FiArrowRight, FiClock, FiExternalLink } from 'react-icons/fi';
+import { fetchAdminOrder, fetchAdminPaymentProof } from '../../../lib/api/orders';
 import type { OrderStatus } from '../../../types';
 import { FLOW, STATUS_META, orderLabel, fullDate, money, nextStep, paymentLabel, timeAgo, whatsappLink } from './orderUi';
 import StatusBadge from './StatusBadge';
@@ -31,6 +31,53 @@ function CopyButton({ value, label }: { value: string; label: string }) {
     >
       {done ? <FiCheck size={14} /> : <FiCopy size={14} />}
     </button>
+  );
+}
+
+/**
+ * The customer's InstaPay transfer screenshot. It is not a public image: it is
+ * fetched with the admin token and shown from a blob URL (so is the full-size view).
+ */
+function TransferScreenshot({ orderId, total }: { orderId: string; total: number }) {
+  const { data: blob, isLoading, isError, refetch } = useQuery({
+    queryKey: ['admin', 'order', orderId, 'payment-proof'],
+    queryFn: () => fetchAdminPaymentProof(orderId),
+    staleTime: Infinity,
+  });
+  const [url, setUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!blob) return;
+    const objectUrl = URL.createObjectURL(blob);
+    setUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [blob]);
+
+  return (
+    <section className="rounded-2xl bg-white p-5 shadow-sm" style={{ border: '1px solid var(--color-border)' }}>
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--color-muted)' }}>Transfer screenshot</p>
+        {url && (
+          <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold inline-flex items-center gap-1" style={{ color: 'var(--color-gold)' }}>
+            Open full size <FiExternalLink size={12} />
+          </a>
+        )}
+      </div>
+      {isLoading && <div className="h-64 rounded-xl bg-black/5 animate-pulse" />}
+      {isError && (
+        <p className="text-sm p-3 rounded-xl" style={{ backgroundColor: 'rgba(239,68,68,0.08)', color: '#dc2626' }}>
+          Could not load the screenshot. <button onClick={() => refetch()} className="underline font-semibold">Try again</button>
+        </p>
+      )}
+      {url && (
+        <a href={url} target="_blank" rel="noopener noreferrer" className="block rounded-xl overflow-hidden" style={{ backgroundColor: 'var(--color-cream)' }}>
+          <img src={url} alt="InstaPay transfer screenshot sent by the customer" className="w-full max-h-96 object-contain" />
+        </a>
+      )}
+      <p className="text-xs mt-3" style={{ color: 'var(--color-muted)' }}>
+        Check that it shows {money(total)} received on your InstaPay account before confirming the order.
+      </p>
+    </section>
   );
 }
 
@@ -284,13 +331,22 @@ export default function OrderDrawer({
                       </div>
                       <div className="flex gap-2.5">
                         <FiCreditCard size={15} className="shrink-0 mt-0.5" style={{ color: 'var(--color-gold)' }} />
-                        <p className="font-semibold">{paymentLabel(order.paymentMethod)}</p>
+                        <div className="min-w-0">
+                          <p className="font-semibold">{paymentLabel(order.paymentMethod)}</p>
+                          {order.payerNumber && (
+                            <p className="flex items-center gap-1 tabular-nums" style={{ color: 'var(--color-muted)' }}>
+                              From {order.payerNumber} <CopyButton value={order.payerNumber} label="Copy the number paid from" />
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
                     {order.customer.notes && (
                       <p className="mt-4 text-sm p-3 rounded-xl italic" style={{ backgroundColor: 'var(--color-cream)' }}>“{order.customer.notes}”</p>
                     )}
                   </section>
+
+                  {order.hasPaymentProof && <TransferScreenshot orderId={order.id} total={order.total} />}
 
                   {/* Items */}
                   <section className="rounded-2xl bg-white p-5 shadow-sm" style={{ border: '1px solid var(--color-border)' }}>
@@ -309,9 +365,10 @@ export default function OrderDrawer({
                           <div className="min-w-0">
                             <p className="font-medium">{l.name}</p>
                             <p className="text-xs mt-0.5" style={{ color: 'var(--color-muted)' }}>
-                              {l.quantity} × {money(l.unitPrice)}
+                              {l.quantity} × {l.itemType === 'gift' ? 'Free' : money(l.unitPrice)}
                               {l.unitPrice < l.unitBasePrice && <span className="line-through ml-1.5">{money(l.unitBasePrice)}</span>}
                               {l.itemType === 'deal' && ' · Banner deal'}
+                              {l.itemType === 'gift' && ' · Free gift'}
                               {l.sku && ` · SKU ${l.sku}`}
                             </p>
                             {l.stockShortfall > 0 && (
@@ -319,8 +376,20 @@ export default function OrderDrawer({
                                 <FiAlertTriangle size={10} /> {l.stockShortfall} beyond stock
                               </span>
                             )}
+                            {order.promotions
+                              .flatMap((p) => p.lines.filter((a) => a.orderItemId === l.id).map((a) => ({ ...a, name: p.name })))
+                              .map((a) => (
+                                <p key={`${a.name}-${a.orderItemId}`} className="text-[11px] mt-1" style={{ color: '#15803d' }}>
+                                  {a.name}
+                                  {l.itemType !== 'gift' && a.discount > 0 && `: -${money(a.discount)} on ${a.rewardedUnits || l.quantity} unit${(a.rewardedUnits || l.quantity) === 1 ? '' : 's'}`}
+                                  {l.itemType !== 'gift' && a.discount === 0 && a.qualifyingUnits > 0 && `: ${a.qualifyingUnits} qualifying unit${a.qualifyingUnits === 1 ? '' : 's'}`}
+                                </p>
+                              ))}
                           </div>
-                          <p className="font-semibold whitespace-nowrap">{money(l.lineTotal)}</p>
+                          <p className="font-semibold whitespace-nowrap">
+                            {l.promotionDiscount > 0 && <span className="line-through font-normal text-xs mr-1.5" style={{ color: 'var(--color-muted)' }}>{money(l.lineTotal)}</span>}
+                            {money(l.lineTotal - l.promotionDiscount)}
+                          </p>
                         </motion.li>
                       ))}
                     </ul>
@@ -329,6 +398,17 @@ export default function OrderDrawer({
                       <div className="flex justify-between"><span style={{ color: 'var(--color-muted)' }}>Subtotal</span><span>{money(order.subtotal)}</span></div>
                       {order.bogoDiscount > 0 && <div className="flex justify-between" style={{ color: '#16a34a' }}><span>Buy X Get Y</span><span>-{money(order.bogoDiscount)}</span></div>}
                       {order.couponDiscount > 0 && <div className="flex justify-between" style={{ color: '#16a34a' }}><span>Coupon {order.couponCode}</span><span>-{money(order.couponDiscount)}</span></div>}
+                      {/* Saved with the order: later edits to a promotion never change these lines. */}
+                      {order.promotions.map((p) => (
+                        <div key={p.id} className="flex justify-between gap-3" style={{ color: '#16a34a' }}>
+                          <span className="min-w-0 truncate" title={p.title}>
+                            {p.name}
+                            {p.couponCode ? ` (${p.couponCode})` : ''}
+                            {p.applications > 1 ? ` × ${p.applications}` : ''}
+                          </span>
+                          <span className="whitespace-nowrap">{p.discount > 0 ? `-${money(p.discount)}` : `Gift worth ${money(p.giftValue)}`}</span>
+                        </div>
+                      ))}
                       <div className="flex justify-between"><span style={{ color: 'var(--color-muted)' }}>Shipping</span><span>{money(order.shippingPrice)}</span></div>
                       <div className="flex justify-between font-extrabold text-base pt-2"><span>Total</span><span>{money(order.total)}</span></div>
                     </div>

@@ -3,6 +3,10 @@ export const SITE_URL = 'https://dr3brazik.com';
 export const WHATSAPP_NUMBER = '2001061959922'; // TODO: replace with real business number
 export const CURRENCY = 'EGP';
 
+/** Where InstaPay transfers go: the payment link opens the InstaPay app (or its web page) on this address. */
+export const INSTAPAY_LINK = 'https://ipn.eg/S/kama100m/instapay/2sY7gj';
+export const INSTAPAY_ADDRESS = 'kama100m@instapay';
+
 export const NAV_LINKS = [
   { label: 'Home', path: '/' },
   { label: 'Shop', path: '/shop' },

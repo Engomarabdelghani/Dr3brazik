@@ -13,7 +13,7 @@ const NAV_ITEMS = [
   { to: '/admin/orders', key: 'orders', icon: FiShoppingBag },
   { to: '/admin/products', key: 'products', icon: FiBox },
   { to: '/admin/categories', key: 'categories', icon: FiTag },
-  { to: '/admin/offers', key: 'offers', icon: FiPercent },
+  { to: '/admin/promotions', key: 'promotions', icon: FiPercent },
   { to: '/admin/promo-banners', key: 'promoBanners', icon: FiImage },
   { to: '/admin/shipping-zones', key: 'shippingZones', icon: FiTruck },
   { to: '/admin/social-posts', key: 'socialPosts', icon: FiInstagram },

@@ -207,6 +207,239 @@ body {
   text-transform: uppercase;
 }
 
+/* ---------------------------------------------------------------- promotions */
+
+/* The short label of an offer. Three quiet treatments, all at 4.5:1 contrast or better. */
+.promo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 100%;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.promo-badge-sm { padding: 0.24rem 0.55rem; font-size: 0.66rem; gap: 0.28rem; }
+/* Compact on phones (two cards per row), large from 640px. */
+.promo-badge-auto { padding: 0.32rem 0.65rem; font-size: 0.72rem; gap: 0.3rem; }
+@media (min-width: 640px) {
+  .promo-badge-auto { padding: 0.5rem 1rem; font-size: 0.9rem; gap: 0.4rem; }
+  .promo-badge-auto .promo-badge-icon { width: 1rem; height: 1rem; }
+}
+/* Offer badges sitting on a photo: lifted off it so they read on any picture. */
+.promo-on-image {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  max-width: 100%;
+  border-radius: 999px;
+}
+/* On a photo every offer wears the same brown badge with white text (7:1 contrast), whatever its kind. */
+.promo-on-image .promo-badge {
+  background-color: var(--color-coffee);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 6px 16px -4px rgba(58, 38, 42, 0.55);
+}
+.promo-on-image .promo-badge-icon { color: #fff; }
+/* Outside a card the regular size is used: make that one larger on a photo too. */
+.promo-on-image .promo-badge:not(.promo-badge-auto):not(.promo-badge-sm) { padding: 0.5rem 1rem; font-size: 0.9rem; }
+/* Inside a category or subcategory chip: this group has offers. */
+.offer-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 999px;
+  background-color: var(--color-gold);
+  color: #fff;
+  flex-shrink: 0;
+}
+/* The offer running across the category being browsed, above the product grid. */
+.offer-strip {
+  padding: 1rem 1.15rem;
+  border-radius: var(--radius-luxe);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg);
+}
+.promo-badge-icon { flex-shrink: 0; width: 0.8rem; height: 0.8rem; }
+.promo-badge-quantity { background-color: var(--color-coffee); color: #fff; }
+.promo-badge-quantity .promo-badge-icon { color: var(--color-gold-light); }
+.promo-badge-price { background-color: var(--color-blush); color: var(--color-plum); }
+.promo-badge-gift {
+  background-color: #fff;
+  color: var(--color-coffee);
+  box-shadow: inset 0 0 0 1px var(--color-border), var(--shadow-luxe-sm);
+}
+.promo-badge-gift .promo-badge-icon { color: var(--color-gold); }
+
+/* The one-line offer summary under a card's price; opens the details. */
+.promo-line {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  min-height: 1.75rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 10px;
+  background-color: var(--color-cream);
+  color: var(--color-plum);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-align: start;
+  transition: background-color 0.2s ease;
+}
+.promo-line:hover { background-color: var(--color-blush); }
+/* Up to two lines, so the sentence survives the narrow two-column mobile grid. */
+.promo-line-text {
+  flex: 1;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  line-height: 1.3;
+}
+.promo-line-more {
+  flex-shrink: 0;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background-color: #fff;
+  font-weight: 700;
+  color: var(--color-coffee);
+}
+
+/* Free gifts and the gift chooser in the cart: set apart from paid lines. */
+.gift-line {
+  border-radius: var(--radius-luxe);
+  border: 1.5px dashed var(--color-gold-light);
+  background-color: var(--color-bg);
+  min-inline-size: 0;
+}
+.gift-line-pending {
+  border-style: solid;
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 4px rgba(192, 138, 99, 0.14);
+}
+.gift-option {
+  position: relative;
+  display: block;
+  width: 100%;
+  text-align: start;
+  padding: 0.5rem;
+  border-radius: 14px;
+  border: 1.5px solid var(--color-border);
+  background-color: #fff;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.gift-option:hover { border-color: var(--color-gold-light); }
+.gift-options-scroll {
+  max-height: 27rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 3px;
+  margin-inline: -3px;
+}
+.gift-option-selected { border-color: var(--color-coffee); box-shadow: 0 0 0 3px rgba(111, 78, 55, 0.12); }
+.gift-option-unavailable { opacity: 0.5; cursor: not-allowed; }
+.gift-option:disabled { cursor: not-allowed; }
+.gift-option-check {
+  position: absolute;
+  top: 0.35rem;
+  inset-inline-end: 0.35rem;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-coffee);
+  color: #fff;
+}
+
+.offer-note {
+  display: flex;
+  gap: 0.55rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 12px;
+  background-color: var(--color-cream);
+  color: var(--color-plum);
+  line-height: 1.45;
+}
+.offer-note-hint { box-shadow: inset 3px 0 0 var(--color-gold); }
+[dir='rtl'] .offer-note-hint { box-shadow: inset -3px 0 0 var(--color-gold); }
+
+/* Checkout: the "tap to pay" link that opens InstaPay on the shop's account. */
+.instapay-pay {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  padding: 0.7rem 1rem 0.7rem 0.7rem;
+  border-radius: 18px;
+  background-color: var(--color-coffee);
+  color: #fff;
+  transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+[dir='rtl'] .instapay-pay { padding: 0.7rem 0.7rem 0.7rem 1rem; }
+.instapay-pay:hover { background-color: var(--color-gold); transform: translateY(-2px); box-shadow: var(--shadow-gold); }
+.instapay-pay:active { transform: scale(0.98); }
+
+/* .input-luxe is unlayered, so Tailwind padding utilities cannot override it: these do. */
+.input-luxe.input-with-icon { padding-inline-start: 2.6rem; }
+.input-luxe.input-with-suffix { padding-inline-end: 3.6rem; }
+.input-luxe.input-compact { padding-block: 0.6rem; font-size: 0.875rem; }
+
+/* Row actions on the admin promotions list. */
+.list-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background-color: var(--color-surface);
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+.list-action:hover { border-color: var(--color-coffee); }
+.list-action:disabled { opacity: 0.4; cursor: not-allowed; }
+.list-action:disabled:hover { border-color: var(--color-border); }
+.list-action-primary { background-color: var(--color-coffee); border-color: var(--color-coffee); color: #fff; }
+.list-action-danger:hover:not(:disabled) { border-color: #dc2626; color: #dc2626; }
+
+/* Native <dialog>, opened with showModal(). Tailwind's reset removes the UA centring, so it is restored here. */
+.modal-luxe {
+  margin: auto;
+  padding: 0;
+  width: min(32rem, calc(100vw - 2rem));
+  max-height: min(42rem, calc(100dvh - 2rem));
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-luxe);
+  background-color: var(--color-surface);
+  color: var(--color-coffee);
+  box-shadow: var(--shadow-luxe);
+  overscroll-behavior: contain;
+}
+.modal-luxe-lg { width: min(46rem, calc(100vw - 2rem)); }
+.modal-luxe::backdrop { background-color: rgba(58, 38, 42, 0.45); }
+.modal-luxe[open] { animation: modal-in 0.22s cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+html:has(.modal-luxe[open]) { overflow: hidden; }
+
 .skeleton {
   background: linear-gradient(90deg, #eee 25%, #f5f5f5 37%, #eee 63%);
   background-size: 400% 100%;
