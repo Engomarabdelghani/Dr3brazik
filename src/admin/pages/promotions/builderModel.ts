@@ -49,7 +49,7 @@ const config = (changes: Partial<PromotionConfig>): PromotionConfig => ({
   ...changes,
 });
 
-export function blankPromotion(): PromotionInput {
+export function blankPromotion(groupName = 'Qualifying products'): PromotionInput {
   return {
     name: '',
     internalDescription: null,
@@ -72,7 +72,7 @@ export function blankPromotion(): PromotionInput {
     stackGroup: null,
     usageLimitTotal: null,
     usageLimitPerCustomer: null,
-    groups: [newGroup('A', 'Qualifying products')],
+    groups: [newGroup('A', groupName)],
     config: config({ rewards: [newReward('percent_off')] }),
   };
 }
@@ -285,29 +285,35 @@ export function stepOfError(path: string): number {
 }
 
 /** Problems the browser can see without asking the server, by step. The server checks everything again. */
-export function localIssues(p: PromotionInput): { step: number; message: string }[] {
-  const issues: { step: number; message: string }[] = [];
+export interface LocalIssue {
+  step: number;
+  key: string;
+  values?: Record<string, string | number>;
+}
+
+export function localIssues(p: PromotionInput): LocalIssue[] {
+  const issues: LocalIssue[] = [];
   const bad = (n: number | null) => n !== null && !Number.isFinite(n);
-  if (!p.name.trim()) issues.push({ step: 0, message: 'Give the promotion a name.' });
-  if (p.couponCode !== null && !p.couponCode.trim()) issues.push({ step: 0, message: 'Enter the coupon code, or turn the code requirement off.' });
-  if (p.startsAt && p.endsAt && new Date(p.endsAt) <= new Date(p.startsAt)) issues.push({ step: 0, message: 'The end date must be after the start date.' });
+  if (!p.name.trim()) issues.push({ step: 0, key: 'nameRequired' });
+  if (p.couponCode !== null && !p.couponCode.trim()) issues.push({ step: 0, key: 'couponRequired' });
+  if (p.startsAt && p.endsAt && new Date(p.endsAt) <= new Date(p.startsAt)) issues.push({ step: 0, key: 'endDateOrder' });
   p.groups.forEach((g) => {
-    if (!g.name.trim()) issues.push({ step: 1, message: `Name product group ${g.key}.` });
+    if (!g.name.trim()) issues.push({ step: 1, key: 'groupNameRequired', values: { key: g.key } });
   });
-  if (p.config.trigger && bad(p.config.trigger.quantity)) issues.push({ step: 2, message: 'Enter the buy quantity.' });
+  if (p.config.trigger && bad(p.config.trigger.quantity)) issues.push({ step: 2, key: 'buyQuantityRequired' });
   p.config.conditions.groups.forEach((group) =>
     group.conditions.forEach((c) => {
-      if (bad(c.min)) issues.push({ step: 2, message: 'A condition is missing its minimum.' });
+      if (bad(c.min)) issues.push({ step: 2, key: 'conditionMinimumRequired' });
     })
   );
-  if (p.config.rewards.length === 0) issues.push({ step: 3, message: 'Add at least one reward.' });
+  if (p.config.rewards.length === 0) issues.push({ step: 3, key: 'rewardRequired' });
   p.config.rewards.forEach((r, i) => {
     const n = i + 1;
-    if ((r.type === 'percent_off' || r.type === 'order_percent_off') && bad(r.percent)) issues.push({ step: 3, message: `Reward ${n}: enter the percentage.` });
-    if ((r.type === 'fixed_off' || r.type === 'order_fixed_off') && bad(r.amount)) issues.push({ step: 3, message: `Reward ${n}: enter the amount.` });
-    if (r.type === 'fixed_price' && bad(r.price)) issues.push({ step: 3, message: `Reward ${n}: enter the price.` });
-    if (r.type === 'gift' && r.items.length === 0) issues.push({ step: 3, message: `Reward ${n}: choose the gift product.` });
-    if (r.type === 'gift_choice' && r.fromGroup === null && r.options.length < 2) issues.push({ step: 3, message: `Reward ${n}: offer at least 2 gifts to choose from, or use a product group.` });
+    if ((r.type === 'percent_off' || r.type === 'order_percent_off') && bad(r.percent)) issues.push({ step: 3, key: 'rewardPercentageRequired', values: { count: n } });
+    if ((r.type === 'fixed_off' || r.type === 'order_fixed_off') && bad(r.amount)) issues.push({ step: 3, key: 'rewardAmountRequired', values: { count: n } });
+    if (r.type === 'fixed_price' && bad(r.price)) issues.push({ step: 3, key: 'rewardPriceRequired', values: { count: n } });
+    if (r.type === 'gift' && r.items.length === 0) issues.push({ step: 3, key: 'giftProductRequired', values: { count: n } });
+    if (r.type === 'gift_choice' && r.fromGroup === null && r.options.length < 2) issues.push({ step: 3, key: 'giftChoicesRequired', values: { count: n } });
   });
   return issues;
 }
@@ -332,7 +338,7 @@ export function inCairo(iso: string | null): string | null {
   return new Intl.DateTimeFormat('en-GB', { timeZone: 'Africa/Cairo', dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso));
 }
 
-export const money = (n: number) => `${n.toLocaleString('en-US')} EGP`;
+export const money = (n: number, locale = 'en-US') => `${n.toLocaleString(locale)} EGP`;
 
 export const STATUS_STYLE: Record<string, { label: string; bg: string; color: string }> = {
   draft: { label: 'Draft', bg: 'rgba(107,114,128,0.12)', color: '#4b5563' },

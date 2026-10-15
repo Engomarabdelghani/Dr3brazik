@@ -1,5 +1,6 @@
 /** Small form pieces shared by the Promotion Builder's steps. */
 import { useEffect, useId, useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FiInfo } from 'react-icons/fi';
 
 export function Section({ title, description, children, aside }: { title: string; description?: string; children: ReactNode; aside?: ReactNode }) {
@@ -45,6 +46,7 @@ export function TextField({ label, hint, value, onChange, placeholder, maxLength
 export function NumberField({ label, hint, value, onChange, min = 0, max, step = 1, suffix, optional = false, placeholder }: {
   label: string; hint?: string; value: number | null; onChange: (v: number | null) => void; min?: number; max?: number; step?: number; suffix?: string; optional?: boolean; placeholder?: string;
 }) {
+  const { t } = useTranslation();
   const id = useId();
   const shown = value === null || Number.isNaN(value) ? '' : String(value);
   const [text, setText] = useState(shown);
@@ -66,7 +68,7 @@ export function NumberField({ label, hint, value, onChange, min = 0, max, step =
           max={max}
           step={step}
           value={text}
-          placeholder={placeholder ?? (optional ? 'No limit' : undefined)}
+          placeholder={placeholder ?? (optional ? t('adminPromotionBuilder.noLimit') : undefined)}
           onChange={(e) => {
             setText(e.target.value);
             onChange(e.target.value === '' ? (optional ? null : Number.NaN) : Number(e.target.value));

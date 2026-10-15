@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { FiArrowLeft, FiArrowRight, FiCheck, FiSave, FiZap } from 'react-icons/fi';
 import { isApiError } from '../../../api/client';
 import type { PromotionInput, PromotionStatus } from '../../../api/promotionTypes';
 import { fetchCategoryRows, fetchSubcategoryRows } from '../../../lib/api/categories';
 import { fetchProductsByIds } from '../../../lib/api/products';
 import { createPromotion, fetchAdminPromotion, fetchPromotionMeta, updatePromotion } from '../../../lib/api/promotions';
-import { blankPromotion, localIssues, STATUS_STYLE, stepOfError, STEPS, toInput, toPicked } from './builderModel';
+import { blankPromotion, localIssues, STATUS_STYLE, stepOfError, STEPS, toInput, toPicked, type LocalIssue } from './builderModel';
 import { Note, StatusPill } from './builderUi';
 import type { PickedProduct } from './ProductPicker';
 import Simulator from './Simulator';
@@ -31,6 +32,7 @@ interface Problem {
 }
 
 export default function PromotionBuilder() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const isNew = !id;
   const navigate = useNavigate();
@@ -41,7 +43,7 @@ export default function PromotionBuilder() {
   const { data: categories = [] } = useQuery({ queryKey: ['admin', 'categories-raw'], queryFn: fetchCategoryRows });
   const { data: subcategories = [] } = useQuery({ queryKey: ['admin', 'subcategories-raw'], queryFn: fetchSubcategoryRows });
 
-  const [value, setValue] = useState<PromotionInput>(blankPromotion);
+  const [value, setValue] = useState<PromotionInput>(() => blankPromotion(t('adminPromotionBuilder.products.qualifyingProducts')));
   const [known, setKnown] = useState<Record<string, PickedProduct>>({});
   const [step, setStep] = useState(0);
   const [problems, setProblems] = useState<Problem[]>([]);
@@ -72,10 +74,14 @@ export default function PromotionBuilder() {
   };
 
   const stepsWithProblems = useMemo(() => new Set(problems.map((p) => p.step)), [problems]);
-  const currentProblems = localIssues(value).filter((p) => p.step === step);
+  const getLocalProblems = () => localIssues(value).map((issue: LocalIssue) => ({
+    step: issue.step,
+    message: t(`adminPromotionBuilder.validation.${issue.key}`, issue.values),
+  }));
+  const currentProblems = getLocalProblems().filter((p) => p.step === step);
 
   const save = async (status: PromotionStatus, kind: 'save' | 'activate') => {
-    const local = localIssues(value);
+    const local = getLocalProblems();
     if (local.length) {
       setProblems(local);
       goTo(local[0]!.step);
@@ -95,7 +101,7 @@ export default function PromotionBuilder() {
       const found: Problem[] =
         isApiError(err) && err.errors.length
           ? err.errors.map((e) => ({ step: stepOfError(e.path), message: e.message }))
-          : [{ step, message: err instanceof Error ? err.message : 'The promotion could not be saved.' }];
+          : [{ step, message: err instanceof Error ? err.message : t('adminPromotionBuilder.saveError') }];
       setProblems(found);
       goTo(found[0]!.step);
     } finally {
@@ -103,13 +109,13 @@ export default function PromotionBuilder() {
     }
   };
 
-  if (!isNew && isLoading) return <div className="card-luxe p-8 text-center" style={{ color: 'var(--color-muted)' }}>Loading…</div>;
+  if (!isNew && isLoading) return <div className="card-luxe p-8 text-center" style={{ color: 'var(--color-muted)' }}>{t('common.loading')}</div>;
   if (!isNew && (loadError || (!isLoading && !saved))) {
     return (
       <div className="card-luxe p-10 text-center">
-        <p className="font-medium">This promotion could not be loaded</p>
-        <p className="text-sm mt-1" style={{ color: 'var(--color-muted)' }}>It may have been deleted.</p>
-        <Link to="/admin/promotions" className="btn-secondary mt-5">Back to Promotions</Link>
+        <p className="font-medium">{t('adminPromotionBuilder.loadError')}</p>
+        <p className="text-sm mt-1" style={{ color: 'var(--color-muted)' }}>{t('adminPromotionBuilder.mayBeDeleted')}</p>
+        <Link to="/admin/promotions" className="btn-secondary mt-5">{t('adminPromotionBuilder.backToPromotions')}</Link>
       </div>
     );
   }
@@ -122,24 +128,24 @@ export default function PromotionBuilder() {
   return (
     <div>
       <Link to="/admin/promotions" className="inline-flex items-center gap-2 text-sm font-medium mb-6 hover:text-[var(--color-gold)] transition-colors">
-        <FiArrowLeft className="rtl-flip" /> Back to Promotions
+        <FiArrowLeft className="rtl-flip" /> {t('adminPromotionBuilder.backToPromotions')}
       </Link>
       <div className="flex flex-wrap items-center gap-3 mb-6">
-        <h1 className="text-2xl font-bold">{isNew ? 'New promotion' : value.name || 'Edit promotion'}</h1>
-        <StatusPill status={status} />
-        {saved && saved.usageCount > 0 && <span className="text-xs" style={{ color: 'var(--color-muted)' }}>Used by {saved.usageCount} order{saved.usageCount === 1 ? '' : 's'}</span>}
+        <h1 className="text-2xl font-bold">{isNew ? t('adminPromotionBuilder.newPromotion') : value.name || t('adminPromotionBuilder.editPromotion')}</h1>
+        <StatusPill status={{ ...status, label: t(`adminPromotions.statuses.${saved?.effectiveStatus ?? 'draft'}`) }} />
+        {saved && saved.usageCount > 0 && <span className="text-xs" style={{ color: 'var(--color-muted)' }}>{t('adminPromotionBuilder.usedCount', { count: saved.usageCount })}</span>}
       </div>
 
       {live && (
         <div className="mb-6">
           <Note tone="warn">
-            This promotion is {saved!.effectiveStatus === 'active' ? 'live' : 'scheduled'}. Saving applies your changes to new carts and orders straight away. Orders already placed keep the price and the promotion details they were placed with.
+            {t(saved!.effectiveStatus === 'active' ? 'adminPromotionBuilder.liveNotice' : 'adminPromotionBuilder.scheduledNotice')}
           </Note>
         </div>
       )}
 
       {/* Steps: every step is reachable at any time; a dot marks steps that need attention. */}
-      <nav aria-label="Promotion builder steps" className="mb-6 overflow-x-auto scrollbar-hide">
+      <nav aria-label={t('adminPromotionBuilder.stepsLabel')} className="mb-6 overflow-x-auto scrollbar-hide">
         <ol className="flex gap-2 min-w-max">
           {STEPS.map((s, i) => {
             const current = i === step;
@@ -155,8 +161,8 @@ export default function PromotionBuilder() {
                   <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ backgroundColor: current ? 'rgba(255,255,255,0.2)' : 'var(--color-cream)' }}>
                     {i < step && !stepsWithProblems.has(i) ? <FiCheck size={12} aria-hidden="true" /> : i + 1}
                   </span>
-                  <span className="text-sm font-semibold whitespace-nowrap">{s.title}</span>
-                  {stepsWithProblems.has(i) && <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" title="Needs attention"><span className="sr-only">Needs attention</span></span>}
+                  <span className="text-sm font-semibold whitespace-nowrap">{t(`adminPromotionBuilder.steps.${s.id}.title`)}</span>
+                  {stepsWithProblems.has(i) && <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" title={t('adminPromotionBuilder.needsAttention')}><span className="sr-only">{t('adminPromotionBuilder.needsAttention')}</span></span>}
                 </button>
               </li>
             );
@@ -165,14 +171,14 @@ export default function PromotionBuilder() {
       </nav>
 
       <h2 ref={heading} tabIndex={-1} className="text-lg font-bold mb-1" style={{ outline: 'none' }}>
-        Step {step + 1} of {STEPS.length}: {STEPS[step]!.title}
+        {t('adminPromotionBuilder.stepHeading', { current: step + 1, total: STEPS.length, title: t(`adminPromotionBuilder.steps.${STEPS[step]!.id}.title`) })}
       </h2>
-      <p className="text-sm mb-5" style={{ color: 'var(--color-muted)' }}>{STEPS[step]!.hint}</p>
+      <p className="text-sm mb-5" style={{ color: 'var(--color-muted)' }}>{t(`adminPromotionBuilder.steps.${STEPS[step]!.id}.hint`)}</p>
 
       {problems.filter((p) => p.step === step).length > 0 && (
         <div className="mb-5">
           <Note tone="error">
-            <p className="font-semibold">Please fix the following:</p>
+            <p className="font-semibold">{t('adminPromotionBuilder.fixFollowing')}</p>
             <ul className="list-disc ps-4 mt-1 space-y-0.5">
               {problems.filter((p) => p.step === step).map((p) => <li key={p.message}>{p.message}</li>)}
             </ul>
@@ -187,14 +193,14 @@ export default function PromotionBuilder() {
       {step === 4 && <RulesStep {...props} />}
       {step === 5 && (
         <div className="space-y-6">
-          {localIssues(value).length > 0 && (
+          {getLocalProblems().length > 0 && (
             <Note tone="warn">
-              <p className="font-semibold">Not ready to save yet:</p>
+              <p className="font-semibold">{t('adminPromotionBuilder.notReady')}</p>
               <ul className="list-disc ps-4 mt-1 space-y-0.5">
-                {localIssues(value).map((p) => (
+                {getLocalProblems().map((p) => (
                   <li key={p.message}>
                     {p.message}{' '}
-                    <button type="button" onClick={() => goTo(p.step)} className="underline font-semibold">Go to {STEPS[p.step]!.title}</button>
+                    <button type="button" onClick={() => goTo(p.step)} className="underline font-semibold">{t('adminPromotionBuilder.goToStep', { title: t(`adminPromotionBuilder.steps.${STEPS[p.step]!.id}.title`) })}</button>
                   </li>
                 ))}
               </ul>
@@ -207,9 +213,9 @@ export default function PromotionBuilder() {
       {problems.some((p) => p.step !== step) && (
         <div className="mt-5">
           <Note tone="error">
-            Other steps need attention:{' '}
+            {t('adminPromotionBuilder.otherStepsNeedAttention')}{' '}
             {[...stepsWithProblems].filter((s) => s !== step).map((s) => (
-              <button type="button" key={s} onClick={() => goTo(s)} className="underline font-semibold me-2">{STEPS[s]!.title}</button>
+              <button type="button" key={s} onClick={() => goTo(s)} className="underline font-semibold me-2">{t(`adminPromotionBuilder.steps.${STEPS[s]!.id}.title`)}</button>
             ))}
           </Note>
         </div>
@@ -217,22 +223,22 @@ export default function PromotionBuilder() {
 
       <div className="flex flex-wrap items-center justify-between gap-3 mt-8 pt-6 border-t" style={{ borderColor: 'var(--color-border)' }}>
         <button type="button" onClick={() => goTo(step - 1)} disabled={step === 0} className="btn-secondary disabled:opacity-40">
-          <FiArrowLeft className="rtl-flip" /> Back
+          <FiArrowLeft className="rtl-flip" /> {t('adminPromotionBuilder.back')}
         </button>
         <div className="flex flex-wrap items-center gap-3">
           {!last && currentProblems.length > 0 && <span className="text-xs" style={{ color: 'var(--color-muted)' }}>{currentProblems[0]!.message}</span>}
           <button type="button" onClick={() => save(saved?.status ?? 'draft', 'save')} disabled={saving !== null} className={last ? 'btn-secondary' : 'text-sm font-semibold px-3 py-2 hover:text-[var(--color-gold)]'}>
-            <span className="inline-flex items-center gap-2"><FiSave /> {saving === 'save' ? 'Saving…' : saved ? 'Save changes' : 'Save as draft'}</span>
+            <span className="inline-flex items-center gap-2"><FiSave /> {saving === 'save' ? t('adminPromotionBuilder.saving') : saved ? t('adminPromotionBuilder.saveChanges') : t('adminPromotionBuilder.saveDraft')}</span>
           </button>
           {last ? (
             canActivate && (
               <button type="button" onClick={() => save('active', 'activate')} disabled={saving !== null} className="btn-primary">
-                <FiZap /> {saving === 'activate' ? 'Activating…' : value.startsAt && new Date(value.startsAt) > new Date() ? 'Save and schedule' : 'Save and activate'}
+                <FiZap /> {saving === 'activate' ? t('adminPromotionBuilder.activating') : value.startsAt && new Date(value.startsAt) > new Date() ? t('adminPromotionBuilder.saveAndSchedule') : t('adminPromotionBuilder.saveAndActivate')}
               </button>
             )
           ) : (
             <button type="button" onClick={() => goTo(step + 1)} className="btn-primary">
-              Next: {STEPS[step + 1]!.title} <FiArrowRight className="rtl-flip" />
+              {t('adminPromotionBuilder.nextStep', { title: t(`adminPromotionBuilder.steps.${STEPS[step + 1]!.id}.title`) })} <FiArrowRight className="rtl-flip" />
             </button>
           )}
         </div>
