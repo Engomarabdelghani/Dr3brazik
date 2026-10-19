@@ -26,8 +26,8 @@ const SEND_AS_IS_BYTES = 700 * 1024;
 /** Phones set to Arabic type ٠١٢…; the number is stored in Latin digits. */
 const toLatinDigits = (value: string) => value.replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x660)).replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x6f0));
 
-function CopyButton({ value }: { value: string }) {
-  const { t } = useTranslation();
+/** Copies `value`; `copied` stays true for a moment so the button can say so. */
+export function useCopy(value: string) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
@@ -38,6 +38,12 @@ function CopyButton({ value }: { value: string }) {
       /* clipboard blocked: the value is on screen anyway */
     }
   };
+  return { copied, copy };
+}
+
+export function CopyButton({ value }: { value: string }) {
+  const { t } = useTranslation();
+  const { copied, copy } = useCopy(value);
   return (
     <button
       type="button"
