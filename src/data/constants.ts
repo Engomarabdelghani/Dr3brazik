@@ -7,6 +7,9 @@ export const CURRENCY = 'EGP';
 export const INSTAPAY_LINK = 'https://ipn.eg/S/kama100m/instapay/2sY7gj';
 export const INSTAPAY_ADDRESS = 'kama100m@instapay';
 
+/** Where Vodafone Cash transfers go. */
+export const VODAFONE_CASH_NUMBER = '01063919780';
+
 export const NAV_LINKS = [
   { label: 'Home', path: '/' },
   { label: 'Shop', path: '/shop' },

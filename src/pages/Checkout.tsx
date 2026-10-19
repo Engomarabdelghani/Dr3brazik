@@ -15,6 +15,7 @@ import { cld } from '../utils/cloudinary';
 import Button from '../components/ui/Button';
 import { AppliedGiftRows, CartGiftChoices, CartGiftLines, CartOfferMessages, DiscountRows } from '../components/cart/CartPromotions';
 import InstapayPanel, { isPayerNumber, type InstapayErrors, type PaymentProof } from '../components/checkout/InstapayPanel';
+import WalletPanel from '../components/checkout/WalletPanel';
 import { useSeo } from '../hooks/useSeo';
 import { useTranslation } from 'react-i18next';
 
@@ -315,13 +316,29 @@ export default function Checkout() {
                   )}
                 </AnimatePresence>
               </div>
-              <label className="flex items-center gap-3 p-4 rounded-2xl border cursor-pointer" style={{ borderColor: payment === 'card' ? 'var(--color-gold)' : 'var(--color-border)' }}>
-                <input type="radio" name="payment" checked={payment === 'card'} onChange={() => setPayment('card')} className="accent-[var(--color-gold)]" />
-                <div>
-                  <p className="font-semibold text-sm">{t('checkout.walletPayment')}</p>
-                  <p className="text-xs" style={{ color: 'var(--color-muted)' }}>{t('checkout.cardPaymentDetails')}</p>
-                </div>
-              </label>
+              <div className="rounded-2xl border transition-colors" style={{ borderColor: payment === 'card' ? 'var(--color-gold)' : 'var(--color-border)' }}>
+                <label className="flex items-center gap-3 p-4 cursor-pointer">
+                  <input type="radio" name="payment" checked={payment === 'card'} onChange={() => setPayment('card')} className="accent-[var(--color-gold)]" />
+                  <div>
+                    <p className="font-semibold text-sm">{t('checkout.walletPayment')}</p>
+                    <p className="text-xs" style={{ color: 'var(--color-muted)' }}>{t('checkout.walletDetails')}</p>
+                  </div>
+                </label>
+                <AnimatePresence initial={false}>
+                  {payment === 'card' && (
+                    <motion.div
+                      key="wallet"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <WalletPanel amount={grandTotal} amountReady={hasValidShippingSelection} pricing={isPricing} />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </div>
         </div>
