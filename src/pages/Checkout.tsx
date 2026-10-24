@@ -22,10 +22,13 @@ import { useTranslation } from 'react-i18next';
 /** card: Vodafone Cash (the name the wallet option has always had here). */
 type PaymentMethod = 'cod' | 'card' | 'instapay';
 
+/** Paid by transfer before delivery: both need the number paid from and a screenshot of the transfer. */
+const isTransfer = (method: PaymentMethod) => method === 'instapay' || method === 'card';
+
 export default function Checkout() {
   const { t } = useTranslation();
   useSeo({ title: 'Checkout', path: '/checkout', noindex: true });
-  const { items, subtotal, discount, coupon, applyCoupon, removeCoupon, clearCart, quote, giftSelections, isPricing, setCustomerPhone, promotions } = useCart();
+  const { items, subtotal, discount, coupon, applyCoupon, removeCoupon, clearCart, quote, giftSelections, isPricing, setCustomerPhone, promotions, freeShipping } = useCart();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   // One key per checkout visit: a double click or a retry after a network error can't create two orders.
@@ -34,12 +37,15 @@ export default function Checkout() {
   // What was typed before leaving for the InstaPay app, if the phone reloaded the page on the way back.
   const [draft] = useState(readCheckoutDraft);
   const [form, setForm] = useState(draft?.form ?? { name: '', phone: '', address: '', governorateId: '', cityId: '', notes: '' });
-  const [payment, setPayment] = useState<PaymentMethod>(draft?.payment ?? 'cod');
+  const [payment, setPaymentMethod] = useState<PaymentMethod>(draft?.payment ?? 'cod');
   const [payerNumber, setPayerNumber] = useState(draft?.payerNumber ?? '');
   const [proof, setProof] = useState<PaymentProof | null>(draft?.proof ?? null);
   const [proofUploading, setProofUploading] = useState(false);
   const [instapayErrors, setInstapayErrors] = useState<InstapayErrors>({});
   const instapayOption = useRef<HTMLDivElement>(null);
+  const walletOption = useRef<HTMLDivElement>(null);
+  // The method the screenshot was uploaded for: an InstaPay receipt is no proof of a Vodafone Cash transfer.
+  const proofMethod = useRef<PaymentMethod | null>(draft?.proof ? (draft.payment ?? null) : null);
   const [error, setError] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState('');
   const [couponError, setCouponError] = useState('');
@@ -65,6 +71,15 @@ export default function Checkout() {
 
   if (items.length === 0 && !orderPlaced.current) return <Navigate to="/cart" replace />;
 
+  const setPayment = (next: PaymentMethod) => {
+    if (isTransfer(next) && proofMethod.current && proofMethod.current !== next) {
+      setProof(null);
+      setInstapayErrors({});
+      proofMethod.current = null;
+    }
+    setPaymentMethod(next);
+  };
+
   const enabledZones = shippingZones.filter((z) => z.isEnabled);
   const selectedZone = enabledZones.find((z) => z.id === form.governorateId);
   const enabledCities = (selectedZone?.cities ?? []).filter((c) => c.isEnabled);
@@ -72,7 +87,8 @@ export default function Checkout() {
 
   const total = Math.max(subtotal - discount, 0);
   const cityRequired = enabledCities.length > 0;
-  const shipping = cityRequired ? (selectedCity?.price ?? 0) : (selectedZone?.price ?? 0);
+  // A free-delivery promotion: the server charges 0 for any governorate, so the summary does too.
+  const shipping = freeShipping ? 0 : cityRequired ? (selectedCity?.price ?? 0) : (selectedZone?.price ?? 0);
   const hasValidShippingSelection = !selectedZone ? false : cityRequired ? !!selectedCity : true;
   // Same formula as the server (floored at 0 after shipping), so the total on screen is the total charged.
   const grandTotal = hasValidShippingSelection ? Math.max(subtotal - discount + shipping, 0) : total;
@@ -106,15 +122,15 @@ export default function Checkout() {
       setError(t('checkout.chooseCityError'));
       return;
     }
-    if (payment === 'instapay') {
+    if (isTransfer(payment)) {
       const missing: InstapayErrors = {
         payerNumber: isPayerNumber(payerNumber) ? undefined : t('checkout.instapayNumberError'),
         proof: proof ? undefined : t('checkout.instapayProofError'),
       };
       setInstapayErrors(missing);
       if (missing.payerNumber || missing.proof) {
-        setError(t('checkout.instapayIncomplete'));
-        instapayOption.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setError(t(payment === 'instapay' ? 'checkout.instapayIncomplete' : 'checkout.walletIncomplete'));
+        (payment === 'instapay' ? instapayOption : walletOption).current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
     }
@@ -140,7 +156,7 @@ export default function Checkout() {
           zoneId: selectedZone.id,
           cityId: selectedCity?.id ?? null,
           paymentMethod: payment,
-          ...(payment === 'instapay' && proof ? { payerNumber: payerNumber.trim(), paymentProof: proof.key } : {}),
+          ...(isTransfer(payment) && proof ? { payerNumber: payerNumber.trim(), paymentProof: proof.key } : {}),
           couponCode: coupon,
           items: toCartRefs(items),
           giftSelections,
@@ -307,6 +323,7 @@ export default function Checkout() {
                         proof={proof}
                         onProofChange={(next) => {
                           setProof(next);
+                          proofMethod.current = next ? 'instapay' : null;
                           if (next) setInstapayErrors((e) => ({ ...e, proof: undefined }));
                         }}
                         onUploadingChange={setProofUploading}
@@ -316,7 +333,7 @@ export default function Checkout() {
                   )}
                 </AnimatePresence>
               </div>
-              <div className="rounded-2xl border transition-colors" style={{ borderColor: payment === 'card' ? 'var(--color-gold)' : 'var(--color-border)' }}>
+              <div ref={walletOption} className="rounded-2xl border transition-colors" style={{ borderColor: payment === 'card' ? 'var(--color-gold)' : 'var(--color-border)' }}>
                 <label className="flex items-center gap-3 p-4 cursor-pointer">
                   <input type="radio" name="payment" checked={payment === 'card'} onChange={() => setPayment('card')} className="accent-[var(--color-gold)]" />
                   <div>
@@ -334,7 +351,25 @@ export default function Checkout() {
                       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                       className="overflow-hidden"
                     >
-                      <WalletPanel amount={grandTotal} amountReady={hasValidShippingSelection} pricing={isPricing} />
+                      <WalletPanel
+                        amount={grandTotal}
+                        amountReady={hasValidShippingSelection}
+                        pricing={isPricing}
+                        customerPhone={form.phone}
+                        payerNumber={payerNumber}
+                        onPayerNumberChange={(value) => {
+                          setPayerNumber(value);
+                          setInstapayErrors((e) => ({ ...e, payerNumber: undefined }));
+                        }}
+                        proof={proof}
+                        onProofChange={(next) => {
+                          setProof(next);
+                          proofMethod.current = next ? 'card' : null;
+                          if (next) setInstapayErrors((e) => ({ ...e, proof: undefined }));
+                        }}
+                        onUploadingChange={setProofUploading}
+                        errors={instapayErrors}
+                      />
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -391,7 +426,9 @@ export default function Checkout() {
             <div className="flex justify-between">
               <span style={{ color: 'var(--color-muted)' }}>{t('checkout.shipping')}</span>
               <span>
-                {!selectedZone
+                {freeShipping ? (
+                  <span className="font-semibold" style={{ color: '#15803d' }}>{t('promotions.freeShipping')}</span>
+                ) : !selectedZone
                   ? t('checkout.selectGovernorateShort')
                   : cityRequired && !selectedCity
                     ? t('checkout.selectCityShort')

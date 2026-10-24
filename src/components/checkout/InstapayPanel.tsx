@@ -57,7 +57,7 @@ export function CopyButton({ value }: { value: string }) {
   );
 }
 
-function Step({ index, title, done, last, children }: { index: number; title: string; done: boolean; last?: boolean; children: ReactNode }) {
+export function Step({ index, title, done, last, children }: { index: number; title: string; done: boolean; last?: boolean; children: ReactNode }) {
   return (
     <li className="flex gap-3.5">
       <div className="flex flex-col items-center">
@@ -85,46 +85,84 @@ const FieldError = ({ id, message }: { id?: string; message?: string }) =>
     </p>
   ) : null;
 
-/**
- * The three things an InstaPay order needs, in the order the customer does them:
- * transfer the total, say which number it came from, attach the screenshot.
- * The screenshot is uploaded as soon as it is picked, so placing the order stays instant.
- */
-export default function InstapayPanel({
-  amount,
-  amountReady,
-  pricing,
+/** "Number you transferred from", with a shortcut to the phone number already typed. */
+export function PayerNumberStep({
+  index,
   customerPhone,
   payerNumber,
   onPayerNumberChange,
-  proof,
-  onProofChange,
-  onUploadingChange,
-  errors,
+  error,
 }: {
-  /** The order total, delivery included. */
-  amount: number;
-  /** False until delivery is known: the customer is told to choose it first, so the total they transfer is final. */
-  amountReady: boolean;
-  pricing: boolean;
+  index: number;
   customerPhone: string;
   payerNumber: string;
   onPayerNumberChange: (value: string) => void;
+  error?: string;
+}) {
+  const { t } = useTranslation();
+  const ids = useId();
+  const phone = customerPhone.trim();
+  const canReusePhone = isPayerNumber(phone) && payerNumber.trim() !== phone;
+
+  return (
+    <Step index={index} title={t('checkout.instapayStepNumber')} done={isPayerNumber(payerNumber)}>
+      <input
+        type="tel"
+        inputMode="tel"
+        autoComplete="tel"
+        dir="ltr"
+        value={payerNumber}
+        onChange={(e) => onPayerNumberChange(toLatinDigits(e.target.value))}
+        placeholder={t('checkout.instapayNumberPlaceholder')}
+        aria-label={t('checkout.instapayStepNumber')}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? `${ids}-number-error` : undefined}
+        className="input-luxe text-start"
+        style={error ? { borderColor: '#dc2626' } : undefined}
+      />
+      {canReusePhone && (
+        <button
+          type="button"
+          onClick={() => onPayerNumberChange(toLatinDigits(phone))}
+          className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+          style={{ backgroundColor: 'var(--color-cream)', color: 'var(--color-coffee)' }}
+        >
+          {t('checkout.instapaySamePhone')} · <span dir="ltr">{phone}</span>
+        </button>
+      )}
+      <FieldError id={`${ids}-number-error`} message={error} />
+    </Step>
+  );
+}
+
+/**
+ * The transfer screenshot (InstaPay receipt, Vodafone Cash SMS…). It is uploaded as
+ * soon as it is picked, so placing the order stays instant. Always the last step.
+ */
+export function ProofStep({
+  index,
+  title,
+  chooseHint,
+  proof,
+  onProofChange,
+  onUploadingChange,
+  error,
+}: {
+  index: number;
+  title: string;
+  chooseHint: string;
   proof: PaymentProof | null;
   onProofChange: (proof: PaymentProof | null) => void;
   onUploadingChange: (uploading: boolean) => void;
-  errors: InstapayErrors;
+  error?: string;
 }) {
   const { t } = useTranslation();
   const ids = useId();
   const fileInput = useRef<HTMLInputElement>(null);
-  const [opened, setOpened] = useState(false);
   const [uploading, setUploading] = useState<{ name: string; previewUrl: string } | null>(null);
   const [uploadError, setUploadError] = useState('');
 
-  const phone = customerPhone.trim();
-  const canReusePhone = isPayerNumber(phone) && payerNumber.trim() !== phone;
-  const proofError = uploadError || errors.proof;
+  const proofError = uploadError || error;
   const shown = uploading ?? proof;
 
   const replaceProof = (next: PaymentProof | null) => {
@@ -156,6 +194,121 @@ export default function InstapayPanel({
       onUploadingChange(false);
     }
   };
+
+  return (
+    <Step index={index} title={title} done={Boolean(proof) && !uploading} last>
+      {/* Kept mounted so "Change" can reopen the picker; reset after each pick so the same file can be chosen again. */}
+      <input
+        ref={fileInput}
+        type="file"
+        accept="image/*"
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden="true"
+        disabled={Boolean(uploading)}
+        onChange={(e) => {
+          void onPick(e.target.files?.[0]);
+          e.target.value = '';
+        }}
+      />
+
+      {shown ? (
+        // On a phone the two actions sit on their own line instead of squeezing the text.
+        <div className="grid grid-cols-[auto_1fr] sm:grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-2 rounded-2xl p-3" style={{ border: '1.5px solid var(--color-border)', backgroundColor: '#fff' }}>
+          {shown.previewUrl ? (
+            <img src={shown.previewUrl} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0" style={{ opacity: uploading ? 0.5 : 1 }} />
+          ) : (
+            <span className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--color-cream)', color: 'var(--color-gold)' }}>
+              <FiImage size={20} />
+            </span>
+          )}
+          <div className="min-w-0" aria-live="polite">
+            <p className="text-sm font-semibold flex items-center gap-1.5" style={{ color: uploading ? 'var(--color-coffee)' : '#16a34a' }}>
+              {uploading ? (
+                <span className="w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin shrink-0" aria-hidden="true" />
+              ) : (
+                <FiCheck size={15} className="shrink-0" />
+              )}
+              {t(uploading ? 'checkout.instapayUploading' : 'checkout.instapayUploaded')}
+            </p>
+            <p className="text-xs truncate" style={{ color: 'var(--color-muted)' }}><bdi>{shown.name}</bdi></p>
+          </div>
+          {!uploading && (
+            <div className="col-span-2 sm:col-span-1 flex items-center justify-end gap-1">
+              <button type="button" onClick={() => fileInput.current?.click()} className="px-3 py-1.5 rounded-full text-xs font-semibold" style={{ backgroundColor: 'var(--color-cream)', color: 'var(--color-coffee)' }}>
+                {t('checkout.instapayChange')}
+              </button>
+              <button
+                type="button"
+                onClick={() => replaceProof(null)}
+                aria-label={t('checkout.remove')}
+                title={t('checkout.remove')}
+                className="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:bg-red-50"
+                style={{ color: '#dc2626' }}
+              >
+                <FiTrash2 size={14} />
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => fileInput.current?.click()}
+          aria-describedby={proofError ? `${ids}-proof-error` : undefined}
+          className="w-full flex flex-col items-center gap-1.5 rounded-2xl px-4 py-6 text-center cursor-pointer transition-colors hover:bg-[var(--color-cream)]"
+          style={{ border: `1.5px dashed ${proofError ? '#dc2626' : 'var(--color-gold)'}` }}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            void onPick(e.dataTransfer.files?.[0]);
+          }}
+        >
+          <FiUploadCloud size={24} style={{ color: 'var(--color-gold)' }} />
+          <span className="font-semibold text-sm">{t('checkout.instapayChoose')}</span>
+          <span className="text-xs" style={{ color: 'var(--color-muted)' }}>{chooseHint}</span>
+        </button>
+      )}
+      <FieldError id={`${ids}-proof-error`} message={proofError} />
+
+      <p className="flex items-center gap-1.5 text-xs mt-4" style={{ color: 'var(--color-muted)' }}>
+        <FiInfo size={13} className="shrink-0" /> {t('checkout.instapayReview')}
+      </p>
+    </Step>
+  );
+}
+
+/**
+ * The three things an InstaPay order needs, in the order the customer does them:
+ * transfer the total, say which number it came from, attach the screenshot.
+ */
+export default function InstapayPanel({
+  amount,
+  amountReady,
+  pricing,
+  customerPhone,
+  payerNumber,
+  onPayerNumberChange,
+  proof,
+  onProofChange,
+  onUploadingChange,
+  errors,
+}: {
+  /** The order total, delivery included. */
+  amount: number;
+  /** False until delivery is known: the customer is told to choose it first, so the total they transfer is final. */
+  amountReady: boolean;
+  pricing: boolean;
+  customerPhone: string;
+  payerNumber: string;
+  onPayerNumberChange: (value: string) => void;
+  proof: PaymentProof | null;
+  onProofChange: (proof: PaymentProof | null) => void;
+  onUploadingChange: (uploading: boolean) => void;
+  errors: InstapayErrors;
+}) {
+  const { t } = useTranslation();
+  const [opened, setOpened] = useState(false);
 
   return (
     <div className="px-4 pb-5 pt-1 md:px-5">
@@ -198,113 +351,16 @@ export default function InstapayPanel({
           )}
         </Step>
 
-        <Step index={2} title={t('checkout.instapayStepNumber')} done={isPayerNumber(payerNumber)}>
-          <input
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            dir="ltr"
-            value={payerNumber}
-            onChange={(e) => onPayerNumberChange(toLatinDigits(e.target.value))}
-            placeholder={t('checkout.instapayNumberPlaceholder')}
-            aria-label={t('checkout.instapayStepNumber')}
-            aria-invalid={Boolean(errors.payerNumber)}
-            aria-describedby={errors.payerNumber ? `${ids}-number-error` : undefined}
-            className="input-luxe text-start"
-            style={errors.payerNumber ? { borderColor: '#dc2626' } : undefined}
-          />
-          {canReusePhone && (
-            <button
-              type="button"
-              onClick={() => onPayerNumberChange(toLatinDigits(phone))}
-              className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
-              style={{ backgroundColor: 'var(--color-cream)', color: 'var(--color-coffee)' }}
-            >
-              {t('checkout.instapaySamePhone')} · <span dir="ltr">{phone}</span>
-            </button>
-          )}
-          <FieldError id={`${ids}-number-error`} message={errors.payerNumber} />
-        </Step>
-
-        <Step index={3} title={t('checkout.instapayStepProof')} done={Boolean(proof) && !uploading} last>
-          {/* Kept mounted so "Change" can reopen the picker; reset after each pick so the same file can be chosen again. */}
-          <input
-            ref={fileInput}
-            type="file"
-            accept="image/*"
-            className="sr-only"
-            tabIndex={-1}
-            aria-hidden="true"
-            disabled={Boolean(uploading)}
-            onChange={(e) => {
-              void onPick(e.target.files?.[0]);
-              e.target.value = '';
-            }}
-          />
-
-          {shown ? (
-            // On a phone the two actions sit on their own line instead of squeezing the text.
-            <div className="grid grid-cols-[auto_1fr] sm:grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-2 rounded-2xl p-3" style={{ border: '1.5px solid var(--color-border)', backgroundColor: '#fff' }}>
-              {shown.previewUrl ? (
-                <img src={shown.previewUrl} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0" style={{ opacity: uploading ? 0.5 : 1 }} />
-              ) : (
-                <span className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--color-cream)', color: 'var(--color-gold)' }}>
-                  <FiImage size={20} />
-                </span>
-              )}
-              <div className="min-w-0" aria-live="polite">
-                <p className="text-sm font-semibold flex items-center gap-1.5" style={{ color: uploading ? 'var(--color-coffee)' : '#16a34a' }}>
-                  {uploading ? (
-                    <span className="w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin shrink-0" aria-hidden="true" />
-                  ) : (
-                    <FiCheck size={15} className="shrink-0" />
-                  )}
-                  {t(uploading ? 'checkout.instapayUploading' : 'checkout.instapayUploaded')}
-                </p>
-                <p className="text-xs truncate" style={{ color: 'var(--color-muted)' }}><bdi>{shown.name}</bdi></p>
-              </div>
-              {!uploading && (
-                <div className="col-span-2 sm:col-span-1 flex items-center justify-end gap-1">
-                  <button type="button" onClick={() => fileInput.current?.click()} className="px-3 py-1.5 rounded-full text-xs font-semibold" style={{ backgroundColor: 'var(--color-cream)', color: 'var(--color-coffee)' }}>
-                    {t('checkout.instapayChange')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => replaceProof(null)}
-                    aria-label={t('checkout.remove')}
-                    title={t('checkout.remove')}
-                    className="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:bg-red-50"
-                    style={{ color: '#dc2626' }}
-                  >
-                    <FiTrash2 size={14} />
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => fileInput.current?.click()}
-              aria-describedby={proofError ? `${ids}-proof-error` : undefined}
-              className="w-full flex flex-col items-center gap-1.5 rounded-2xl px-4 py-6 text-center cursor-pointer transition-colors hover:bg-[var(--color-cream)]"
-              style={{ border: `1.5px dashed ${proofError ? '#dc2626' : 'var(--color-gold)'}` }}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                void onPick(e.dataTransfer.files?.[0]);
-              }}
-            >
-              <FiUploadCloud size={24} style={{ color: 'var(--color-gold)' }} />
-              <span className="font-semibold text-sm">{t('checkout.instapayChoose')}</span>
-              <span className="text-xs" style={{ color: 'var(--color-muted)' }}>{t('checkout.instapayChooseHint')}</span>
-            </button>
-          )}
-          <FieldError id={`${ids}-proof-error`} message={proofError} />
-
-          <p className="flex items-center gap-1.5 text-xs mt-4" style={{ color: 'var(--color-muted)' }}>
-            <FiInfo size={13} className="shrink-0" /> {t('checkout.instapayReview')}
-          </p>
-        </Step>
+        <PayerNumberStep index={2} customerPhone={customerPhone} payerNumber={payerNumber} onPayerNumberChange={onPayerNumberChange} error={errors.payerNumber} />
+        <ProofStep
+          index={3}
+          title={t('checkout.instapayStepProof')}
+          chooseHint={t('checkout.instapayChooseHint')}
+          proof={proof}
+          onProofChange={onProofChange}
+          onUploadingChange={onUploadingChange}
+          error={errors.proof}
+        />
       </ol>
     </div>
   );

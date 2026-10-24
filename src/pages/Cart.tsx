@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 export default function Cart() {
   const { t } = useTranslation();
   useSeo({ title: 'Shopping Cart', path: '/cart', noindex: true });
-  const { items, updateQuantity, removeItem, subtotal, coupon, discount, applyCoupon, removeCoupon, quote, promotions, isPricing } = useCart();
+  const { items, updateQuantity, removeItem, subtotal, coupon, discount, applyCoupon, removeCoupon, quote, promotions, freeShipping, isPricing } = useCart();
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [applying, setApplying] = useState(false);
@@ -153,7 +153,11 @@ export default function Cart() {
             <AppliedGiftRows />
             <div className="flex justify-between">
               <span style={{ color: 'var(--color-muted)' }}>{t('cart.shipping')}</span>
-              <span className="font-semibold">{t('cart.calculatedCheckout')}</span>
+              {freeShipping ? (
+                <span className="font-semibold" style={{ color: '#15803d' }}>{t('promotions.freeShipping')}</span>
+              ) : (
+                <span className="font-semibold">{t('cart.calculatedCheckout')}</span>
+              )}
             </div>
           </div>
 

@@ -124,6 +124,8 @@ export function newReward(type: RewardType, group = 'A'): PromotionReward {
       return { type, percent: 10 };
     case 'order_fixed_off':
       return { type, amount: 100 };
+    case 'free_shipping':
+      return { type };
   }
 }
 
@@ -149,6 +151,7 @@ export const REWARD_TYPES: { type: RewardType; label: string; help: string; exam
   { type: 'gift_choice', label: 'Gift of the customer’s choice', help: 'The customer picks from a list of gifts in their cart.', example: 'Choose 1 of 3 minis', level: 'Gift' },
   { type: 'order_percent_off', label: 'Percentage off the cart', help: 'Takes a percentage off the whole cart, after the product offers.', example: '10% off orders over 1,000 EGP', level: 'Cart' },
   { type: 'order_fixed_off', label: 'Amount off the cart', help: 'Takes a fixed amount off the whole cart, after the product offers.', example: '100 EGP off orders over 1,500 EGP', level: 'Cart' },
+  { type: 'free_shipping', label: 'Free delivery', help: 'The order is delivered for free, whatever the governorate.', example: 'Free delivery on orders over 1,500 EGP', level: 'Cart' },
 ];
 
 export const CONDITION_TYPES: { type: PromotionCondition['type']; label: string; help: string }[] = [
@@ -261,6 +264,15 @@ export const TEMPLATES: Template[] = [
     build: () => ({
       groups: [],
       config: config({ conditions: { match: 'all', groups: [{ match: 'all', conditions: [newCondition('cart_subtotal')] }] }, rewards: [newReward('order_percent_off')] }),
+    }),
+  },
+  {
+    id: 'free-shipping',
+    title: 'Free delivery',
+    example: 'Free delivery on orders over 1,500 EGP',
+    build: () => ({
+      groups: [],
+      config: config({ conditions: { match: 'all', groups: [{ match: 'all', conditions: [{ type: 'cart_subtotal', min: 1500, max: null }] }] }, rewards: [newReward('free_shipping')] }),
     }),
   },
 ];

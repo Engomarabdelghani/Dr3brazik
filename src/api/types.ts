@@ -67,6 +67,8 @@ export interface CartQuote {
   promotions: CartPromotions;
   /** Promotions + coupon. */
   discount: number;
+  /** A promotion makes delivery free, whatever the governorate. */
+  freeShipping?: boolean;
   shipping: { ok: true; zoneId: string; cityId: string | null; price: number } | { ok: false; reason: string } | null;
   total: number;
 }
@@ -77,7 +79,7 @@ export interface PlaceOrderInput {
   cityId?: string | null;
   /** card: Vodafone Cash (the server stores it as "wallet"). */
   paymentMethod: 'cod' | 'card' | 'instapay';
-  /** InstaPay only: the number the customer transferred from, and the key of the uploaded transfer screenshot. */
+  /** InstaPay / Vodafone Cash only: the number the customer transferred from, and the key of the uploaded transfer screenshot. */
   payerNumber?: string;
   paymentProof?: string;
   couponCode?: string | null;

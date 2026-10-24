@@ -25,6 +25,8 @@ interface CartContextValue {
   promotionDiscount: number;
   /** Applied promotions, free gifts, gift choices and hints, as priced by the server. */
   promotions: CartPromotions;
+  /** A promotion makes delivery free (checkout then charges 0 for any governorate). */
+  freeShipping: boolean;
   /** Gifts the customer picked, sent with every quote and with the order. */
   giftSelections: GiftSelection[];
   selectGifts: (promotionId: string, productIds: string[]) => void;
@@ -200,6 +202,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     promotionDiscount,
     // An API still on an older version (mid-deploy) sends a quote without promotions; the page must not crash on it.
     promotions: (hasItems && quote?.promotions) || NO_PROMOTIONS,
+    freeShipping: hasItems && quote?.freeShipping === true,
     giftSelections,
     selectGifts,
     quote: hasItems ? quote : null,

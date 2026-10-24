@@ -1,4 +1,4 @@
-import { FiGift, FiLayers, FiPercent, FiShoppingBag, FiTag } from 'react-icons/fi';
+import { FiGift, FiLayers, FiPercent, FiShoppingBag, FiTag, FiTruck } from 'react-icons/fi';
 import type { Localized, PromotionKind } from '../../api/promotionTypes';
 import { useLocalized } from '../../hooks/usePromotions';
 
@@ -11,6 +11,7 @@ const ICONS: Record<PromotionKind, typeof FiTag> = {
   gift: FiGift,
   gift_choice: FiGift,
   order: FiShoppingBag,
+  free_shipping: FiTruck,
 };
 
 /** Three quiet treatments: quantity offers (dark), gifts (light, gift icon), price offers (cream). */
@@ -19,6 +20,7 @@ const TONE: Record<PromotionKind, 'quantity' | 'gift' | 'price'> = {
   fixed: 'price',
   fixed_price: 'price',
   order: 'price',
+  free_shipping: 'price',
   bxgy: 'quantity',
   tiered: 'quantity',
   gift: 'gift',

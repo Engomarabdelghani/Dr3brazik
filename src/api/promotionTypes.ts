@@ -9,7 +9,7 @@ export interface Localized {
   ar: string;
 }
 
-export type PromotionKind = 'percent' | 'fixed' | 'fixed_price' | 'bxgy' | 'tiered' | 'gift' | 'gift_choice' | 'order';
+export type PromotionKind = 'percent' | 'fixed' | 'fixed_price' | 'bxgy' | 'tiered' | 'gift' | 'gift_choice' | 'order' | 'free_shipping';
 
 export interface PromotionGift {
   productId: string;
@@ -83,7 +83,7 @@ export interface CartGiftChoice {
 }
 
 export interface CartPromotions {
-  applied: { id: string; kind: PromotionKind; badge: Localized; title: Localized; summary: Localized; applications: number; discount: number; giftValue: number; couponCode: string | null }[];
+  applied: { id: string; kind: PromotionKind; badge: Localized; title: Localized; summary: Localized; applications: number; discount: number; giftValue: number; freeShipping?: boolean; couponCode: string | null }[];
   gifts: CartGift[];
   giftChoices: CartGiftChoice[];
   hints: { promotionId: string; badge: Localized; message: Localized }[];
@@ -135,7 +135,8 @@ export type PromotionReward =
   /** Gifts are either listed (`options`) or every product of a product group (`fromGroup`), optionally up to a price. */
   | { type: 'gift_choice'; options: string[]; fromGroup: string | null; maxValue: number | null; choose: number; requireStock: boolean }
   | { type: 'order_percent_off'; percent: number }
-  | { type: 'order_fixed_off'; amount: number };
+  | { type: 'order_fixed_off'; amount: number }
+  | { type: 'free_shipping' };
 
 export type RewardType = PromotionReward['type'];
 
@@ -230,6 +231,7 @@ export interface PreviewResult {
     discount: number;
     orderDiscount: number;
     giftValue: number;
+    freeShipping: boolean;
     conditions: PreviewConditionGroup[];
     lines: { key: string; name: string; qualifyingUnits: number; rewardedUnits: number; discount: number }[];
     steps: { index: number; qualifying: { name: string; units: number }[]; rewarded: { name: string; units: number; discount: number }[]; gifts: { name: string; quantity: number }[] }[];
@@ -244,6 +246,7 @@ export interface PreviewResult {
     couponDiscount: number;
     discount: number;
     total: number;
+    freeShipping: boolean;
   };
 }
 

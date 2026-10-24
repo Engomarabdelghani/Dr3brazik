@@ -35,10 +35,10 @@ function CopyButton({ value, label }: { value: string; label: string }) {
 }
 
 /**
- * The customer's InstaPay transfer screenshot. It is not a public image: it is
+ * The customer's InstaPay / Vodafone Cash transfer screenshot. It is not a public image: it is
  * fetched with the admin token and shown from a blob URL (so is the full-size view).
  */
-function TransferScreenshot({ orderId, total }: { orderId: string; total: number }) {
+function TransferScreenshot({ orderId, total, method }: { orderId: string; total: number; method: string }) {
   const { data: blob, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin', 'order', orderId, 'payment-proof'],
     queryFn: () => fetchAdminPaymentProof(orderId),
@@ -71,11 +71,11 @@ function TransferScreenshot({ orderId, total }: { orderId: string; total: number
       )}
       {url && (
         <a href={url} target="_blank" rel="noopener noreferrer" className="block rounded-xl overflow-hidden" style={{ backgroundColor: 'var(--color-cream)' }}>
-          <img src={url} alt="InstaPay transfer screenshot sent by the customer" className="w-full max-h-96 object-contain" />
+          <img src={url} alt={`${method} transfer screenshot sent by the customer`} className="w-full max-h-96 object-contain" />
         </a>
       )}
       <p className="text-xs mt-3" style={{ color: 'var(--color-muted)' }}>
-        Check that it shows {money(total)} received on your InstaPay account before confirming the order.
+        Check that it shows {money(total)} received on your {method} account before confirming the order.
       </p>
     </section>
   );
@@ -346,7 +346,7 @@ export default function OrderDrawer({
                     )}
                   </section>
 
-                  {order.hasPaymentProof && <TransferScreenshot orderId={order.id} total={order.total} />}
+                  {order.hasPaymentProof && <TransferScreenshot orderId={order.id} total={order.total} method={paymentLabel(order.paymentMethod)} />}
 
                   {/* Items */}
                   <section className="rounded-2xl bg-white p-5 shadow-sm" style={{ border: '1px solid var(--color-border)' }}>

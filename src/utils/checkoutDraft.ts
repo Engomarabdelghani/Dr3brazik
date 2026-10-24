@@ -1,6 +1,6 @@
 /**
  * What the customer has typed at checkout, kept for the life of the tab.
- * Paying by InstaPay means leaving for the banking app, and phones often reload
+ * Paying by InstaPay or Vodafone Cash means leaving for another app, and phones often reload
  * the page on the way back: without this the form would come back empty.
  */
 export interface CheckoutDraft {

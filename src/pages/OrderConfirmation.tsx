@@ -128,7 +128,10 @@ export default function OrderConfirmation() {
     {
       icon: FiPhoneCall,
       title: t('orderConfirmation.confirmTitle'),
-      text: t(order.paymentMethod === 'instapay' ? 'orderConfirmation.instapayConfirmText' : 'orderConfirmation.confirmText', { phone: order.phone }),
+      text: t(
+        order.paymentMethod === 'instapay' ? 'orderConfirmation.instapayConfirmText' : order.paymentMethod === 'card' ? 'orderConfirmation.walletConfirmText' : 'orderConfirmation.confirmText',
+        { phone: order.phone }
+      ),
     },
     {
       icon: FiTruck,

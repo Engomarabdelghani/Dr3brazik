@@ -468,6 +468,7 @@ function RewardEditor({ reward, index, props }: { reward: PromotionReward; index
           <NumberField label={t('adminPromotionBuilder.rewards.cartAmountOff')} value={reward.amount} onChange={(amount) => replace({ ...reward, amount: amount ?? Number.NaN })} min={0.01} step={0.01} suffix="EGP" hint={t('adminPromotionBuilder.rewards.cartAmountHint')} />
         </div>
       )}
+      {reward.type === 'free_shipping' && <Note tone="info">{t('adminPromotionBuilder.rewards.freeShippingNote')}</Note>}
     </Section>
   );
 }
