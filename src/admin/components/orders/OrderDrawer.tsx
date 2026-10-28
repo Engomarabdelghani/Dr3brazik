@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { FaWhatsapp } from 'react-icons/fa';
@@ -7,6 +7,7 @@ import { fetchAdminOrder, fetchAdminPaymentProof } from '../../../lib/api/orders
 import type { OrderStatus } from '../../../types';
 import { FLOW, STATUS_META, orderLabel, fullDate, money, nextStep, paymentLabel, timeAgo, whatsappLink } from './orderUi';
 import StatusBadge from './StatusBadge';
+import OrderItemDetails, { ItemThumb, type OrderLine } from './OrderItemDetails';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -140,10 +141,13 @@ export default function OrderDrawer({
     enabled: open,
   });
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [openLine, setOpenLine] = useState<OrderLine | null>(null);
+  const closeLine = useCallback(() => setOpenLine(null), []);
 
   useEffect(() => {
     if (!open) return;
     setConfirmCancel(false);
+    setOpenLine(null);
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
     const overflow = document.body.style.overflow;
@@ -360,9 +364,15 @@ export default function OrderDrawer({
                           initial={{ opacity: 0, x: 12 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 0.05 * i, duration: 0.3 }}
-                          className="py-3 flex items-start justify-between gap-3 text-sm"
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setOpenLine(l)}
+                          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setOpenLine(l))}
+                          title="View item details"
+                          className="py-3 -mx-2 px-2 rounded-xl flex items-start justify-between gap-3 text-sm cursor-pointer transition-colors hover:bg-black/[0.03]"
                         >
-                          <div className="min-w-0">
+                          <ItemThumb src={l.image} alt={l.name} />
+                          <div className="min-w-0 flex-1">
                             <p className="font-medium">{l.name}</p>
                             <p className="text-xs mt-0.5" style={{ color: 'var(--color-muted)' }}>
                               {l.quantity} × {l.itemType === 'gift' ? 'Free' : money(l.unitPrice)}
@@ -421,6 +431,7 @@ export default function OrderDrawer({
               )}
             </div>
           </motion.aside>
+          {openLine && <OrderItemDetails key="item" line={openLine} onClose={closeLine} />}
         </>
       )}
     </AnimatePresence>

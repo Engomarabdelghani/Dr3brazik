@@ -174,6 +174,8 @@ export interface AdminOrder {
     lineTotal: number;
     promotionDiscount: number;
     stockShortfall: number;
+    /** The product's current main image (the banner's for deals); null when there is none. */
+    image: string | null;
   }[];
   /** As applied when the order was placed; later edits to a promotion do not change this. */
   promotions: {
