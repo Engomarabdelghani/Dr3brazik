@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FiCheck, FiCopy, FiInfo } from 'react-icons/fi';
-import { VODAFONE_CASH_NUMBER } from '../../data/constants';
+import { usePaymentSettings } from '../../lib/api/settings';
 import { CopyButton, PayerNumberStep, ProofStep, Step, useCopy, type InstapayErrors, type PaymentProof } from './InstapayPanel';
 
 /** 01063919780 → "010 6391 9780", the way Egyptian numbers are read out. */
@@ -38,7 +38,8 @@ export default function WalletPanel({
   errors: InstapayErrors;
 }) {
   const { t } = useTranslation();
-  const { copied, copy } = useCopy(VODAFONE_CASH_NUMBER);
+  const { vodafoneCashNumber } = usePaymentSettings();
+  const { copied, copy } = useCopy(vodafoneCashNumber);
   const [numberCopied, setNumberCopied] = useState(false);
 
   return (
@@ -63,14 +64,14 @@ export default function WalletPanel({
               void copy();
             }}
             className="instapay-pay mt-3"
-            aria-label={`${t('checkout.walletNumber')} ${VODAFONE_CASH_NUMBER}`}
+            aria-label={`${t('checkout.walletNumber')} ${vodafoneCashNumber}`}
           >
             <span className="w-13 h-13 rounded-xl bg-white shrink-0 flex items-center justify-center" style={{ color: copied ? '#16a34a' : '#e60000' }}>
               {copied ? <FiCheck size={22} /> : <FiCopy size={22} />}
             </span>
             <span className="flex-1 min-w-0 text-start">
               <span className="block text-xs opacity-80">{t('checkout.walletNumber')}</span>
-              <span className="block font-bold text-lg tabular-nums whitespace-nowrap" dir="ltr" style={{ textAlign: 'inherit' }}>{spaced(VODAFONE_CASH_NUMBER)}</span>
+              <span className="block font-bold text-lg tabular-nums whitespace-nowrap" dir="ltr" style={{ textAlign: 'inherit' }}>{spaced(vodafoneCashNumber)}</span>
             </span>
             <span className="text-xs font-semibold shrink-0 whitespace-nowrap" aria-live="polite">{copied ? t('checkout.copied') : t('checkout.walletTapToCopy')}</span>
           </button>

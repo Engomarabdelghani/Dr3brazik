@@ -2,7 +2,7 @@ import { useId, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FiAlertCircle, FiCheck, FiCopy, FiExternalLink, FiImage, FiInfo, FiTrash2, FiUploadCloud } from 'react-icons/fi';
 import { isApiError } from '../../api/client';
-import { INSTAPAY_ADDRESS, INSTAPAY_LINK } from '../../data/constants';
+import { usePaymentSettings } from '../../lib/api/settings';
 import { uploadPaymentProof } from '../../lib/api/orders';
 import { compressImage } from '../../utils/imageCompression';
 
@@ -308,6 +308,7 @@ export default function InstapayPanel({
   errors: InstapayErrors;
 }) {
   const { t } = useTranslation();
+  const { instapayAddress, instapayLink } = usePaymentSettings();
   const [opened, setOpened] = useState(false);
 
   return (
@@ -329,14 +330,14 @@ export default function InstapayPanel({
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-xs" style={{ color: 'var(--color-muted)' }}>{t('checkout.instapayTo')}</p>
-                <p className="font-semibold text-sm truncate" dir="ltr">{INSTAPAY_ADDRESS}</p>
+                <p className="font-semibold text-sm truncate" dir="ltr">{instapayAddress}</p>
               </div>
-              <CopyButton value={INSTAPAY_ADDRESS} />
+              <CopyButton value={instapayAddress} />
             </div>
           </div>
 
           {/* Opens the InstaPay app (or its web page) straight on the shop's account. */}
-          <a href={INSTAPAY_LINK} target="_blank" rel="noopener noreferrer" onClick={() => setOpened(true)} className="instapay-pay mt-3">
+          <a href={instapayLink} target="_blank" rel="noopener noreferrer" onClick={() => setOpened(true)} className="instapay-pay mt-3">
             <img src="/images/instapay.png" alt="" width={52} height={52} className="w-13 h-13 rounded-xl bg-white shrink-0" />
             <span className="flex-1 min-w-0 text-start">
               <span className="block font-bold text-base">{t('checkout.instapayOpen')}</span>

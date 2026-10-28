@@ -52,7 +52,7 @@ export default function OrderItemDetails({ line, onClose }: { line: OrderLine; o
     queryFn: () => fetchProductById(line.productId!),
     enabled: line.productId !== null,
   });
-  const images = product?.images.length ? product.images : line.image ? [line.image] : [];
+  const images = product?.images?.length ? product.images : line.image ? [line.image] : [];
   const [active, setActive] = useState(0);
 
   useEffect(() => {
@@ -202,23 +202,25 @@ export default function OrderItemDetails({ line, onClose }: { line: OrderLine; o
                     </span>
                   </Row>
                 )}
+                {/* Older products can hold a single string or null instead of a list. */}
                 {product.attributes &&
-                  Object.entries(product.attributes).map(([k, values]) => (
-                    <Row key={k} label={k}>{values.join(', ')}</Row>
-                  ))}
+                  Object.entries(product.attributes as Record<string, unknown>)
+                    .map(([k, v]) => [k, (Array.isArray(v) ? v : [v]).filter((x) => x !== null && x !== undefined && x !== '').join(', ')] as const)
+                    .filter(([, text]) => text)
+                    .map(([k, text]) => <Row key={k} label={k}>{text}</Row>)}
               </div>
 
               {product.shortDescription && <Block title="Short description">{product.shortDescription}</Block>}
               {product.description && <Block title="Description">{product.description}</Block>}
-              {product.benefits.length > 0 && (
+              {!!product.benefits?.length && (
                 <Block title="Benefits">
                   <ul className="list-disc pl-5 space-y-0.5">{product.benefits.map((b) => <li key={b}>{b}</li>)}</ul>
                 </Block>
               )}
-              {product.ingredients.length > 0 && <Block title="Ingredients">{product.ingredients.join(', ')}</Block>}
+              {!!product.ingredients?.length && <Block title="Ingredients">{product.ingredients.join(', ')}</Block>}
               {product.howToUse && <Block title="How to use">{product.howToUse}</Block>}
               {product.warnings && <Block title="Warnings">{product.warnings}</Block>}
-              {product.tags.length > 0 && (
+              {!!product.tags?.length && (
                 <div className="flex flex-wrap gap-1.5">
                   {product.tags.map((t) => (
                     <span key={t} className="text-[11px] px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--color-cream)', color: 'var(--color-coffee)' }}>#{t}</span>
