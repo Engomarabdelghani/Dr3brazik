@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { FiHeart, FiEye, FiShoppingBag, FiInfo } from 'react-icons/fi';
+import { FiHeart, FiEye, FiShoppingBag } from 'react-icons/fi';
 import type { Product } from '../../types';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
@@ -11,6 +11,7 @@ import RatingStars from '../ui/RatingStars';
 import PriceTag from '../ui/PriceTag';
 import Badge from '../ui/Badge';
 import PromoBadge from './PromoBadge';
+import PromoRibbon from './PromoRibbon';
 import { PromotionDetailsModal } from './PromotionDetails';
 import { useTranslation } from 'react-i18next';
 
@@ -150,19 +151,11 @@ export default function ProductCard({ product, onQuickView }: { product: Product
           />
         </div>
 
-        {/* What the offer is, in one line. The conditions (quantity, coupon) are part of the sentence. */}
+        {/* What the offers are, drifting by on a ribbon. The conditions (quantity, coupon) are part of each sentence. */}
         {lead && (
-          <button
-            type="button"
-            onClick={() => setDetailsOpen(true)}
-            aria-haspopup="dialog"
-            aria-label={`${t('promotions.viewDetails')}: ${text(lead.summary)}`}
-            className="promo-line mt-2.5"
-          >
-            <span className="promo-line-text">{text(lead.summary)}</span>
-            {others > 0 && <span className="promo-line-more" aria-hidden="true">{t('promotions.moreOffers', { count: others })}</span>}
-            <FiInfo size={13} className="shrink-0" aria-hidden="true" />
-          </button>
+          <div className="mt-2.5">
+            <PromoRibbon promotions={[lead, ...promotions.filter((p) => p !== lead)]} onOpen={() => setDetailsOpen(true)} />
+          </div>
         )}
       </div>
 

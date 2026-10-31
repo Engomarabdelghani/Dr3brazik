@@ -111,6 +111,11 @@ body {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
+/* Right-to-left text drifts the other way, so the next words arrive where the eye is heading. */
+@keyframes marquee-rtl {
+  from { transform: translateX(0); }
+  to { transform: translateX(50%); }
+}
 
 .divider-gold {
   height: 2px;
@@ -279,42 +284,84 @@ body {
 }
 .promo-badge-gift .promo-badge-icon { color: var(--color-gold); }
 
-/* The one-line offer summary under a card's price; opens the details. */
-.promo-line {
+/* The card's offers, drifting by slowly under the price; opens the details. */
+.promo-ribbon {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.45rem;
   width: 100%;
-  min-height: 1.75rem;
-  padding: 0.25rem 0.55rem;
-  border-radius: 10px;
-  background-color: var(--color-cream);
+  height: 2rem;
+  padding-inline: 0.3rem 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-cream), var(--color-blush), var(--color-cream));
+  box-shadow: inset 0 0 0 1px var(--color-border);
   color: var(--color-plum);
   font-size: 0.72rem;
-  font-weight: 600;
-  text-align: start;
-  transition: background-color 0.2s ease;
+  font-weight: 700;
+  overflow: hidden;
+  transition: box-shadow 0.25s ease;
 }
-.promo-line:hover { background-color: var(--color-blush); }
-/* Up to two lines, so the sentence survives the narrow two-column mobile grid. */
-.promo-line-text {
+.promo-ribbon:hover,
+.promo-ribbon:focus-visible { box-shadow: inset 0 0 0 1px var(--color-gold-light), var(--shadow-luxe-sm); }
+.promo-ribbon-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.45rem;
+  height: 1.45rem;
+  border-radius: 999px;
+  background-color: var(--color-coffee);
+  color: var(--color-gold-light);
+}
+/* The text fades in and out at both ends instead of being cut. */
+.promo-ribbon-viewport {
   flex: 1;
   min-width: 0;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
   overflow: hidden;
-  line-height: 1.3;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 1rem, #000 calc(100% - 1rem), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 1rem, #000 calc(100% - 1rem), transparent);
 }
-.promo-line-more {
+.promo-ribbon-track {
+  display: flex;
+  width: max-content;
+  animation: marquee linear infinite;
+}
+[dir='rtl'] .promo-ribbon-track { animation-name: marquee-rtl; }
+.promo-ribbon:hover .promo-ribbon-track,
+.promo-ribbon:focus-visible .promo-ribbon-track { animation-play-state: paused; }
+.promo-ribbon-text { white-space: nowrap; letter-spacing: 0.01em; }
+.promo-ribbon-sep { padding-inline: 0.85rem; font-size: 0.6rem; color: var(--color-gold); }
+@media (min-width: 640px) {
+  .promo-ribbon { height: 2.15rem; font-size: 0.78rem; }
+}
+
+/* The strip above the Navbar: one offer at a time. */
+.announcement-bar {
+  background: linear-gradient(90deg, var(--color-plum), var(--color-coffee) 50%, var(--color-plum));
+  letter-spacing: 0.01em;
+}
+.announcement-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  max-width: 100%;
+  text-underline-offset: 3px;
+}
+.announcement-link:hover { text-decoration: underline; text-decoration-color: var(--color-gold-light); }
+.announcement-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  padding: 0.05rem 0.4rem;
+  width: 1.75rem;
+  height: 1.75rem;
   border-radius: 999px;
-  background-color: #fff;
-  font-weight: 700;
-  color: var(--color-coffee);
+  color: rgba(255, 255, 255, 0.75);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
+.announcement-arrow:hover { background-color: rgba(255, 255, 255, 0.12); color: #fff; }
 
 /* Free gifts and the gift chooser in the cart: set apart from paid lines. */
 .gift-line {
@@ -455,6 +502,7 @@ html:has(.modal-luxe[open]) { overflow: hidden; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
 @media (prefers-reduced-motion: reduce) {
+  .promo-ribbon-track { animation: none; }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;

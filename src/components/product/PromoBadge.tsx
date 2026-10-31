@@ -2,7 +2,7 @@ import { FiGift, FiLayers, FiPercent, FiShoppingBag, FiTag, FiTruck } from 'reac
 import type { Localized, PromotionKind } from '../../api/promotionTypes';
 import { useLocalized } from '../../hooks/usePromotions';
 
-const ICONS: Record<PromotionKind, typeof FiTag> = {
+export const PROMO_ICONS: Record<PromotionKind, typeof FiTag> = {
   percent: FiPercent,
   fixed: FiTag,
   fixed_price: FiTag,
@@ -30,7 +30,7 @@ const TONE: Record<PromotionKind, 'quantity' | 'gift' | 'price'> = {
 /** The short label of a promotion, as written by the server. */
 export default function PromoBadge({ kind, label, size = 'md' }: { kind: PromotionKind; label: Localized; /** auto: small on phones, regular from tablets up. */ size?: 'sm' | 'md' | 'auto' }) {
   const text = useLocalized()(label);
-  const Icon = ICONS[kind];
+  const Icon = PROMO_ICONS[kind];
   return (
     <span className={`promo-badge promo-badge-${TONE[kind]} ${size === 'sm' ? 'promo-badge-sm' : size === 'auto' ? 'promo-badge-auto' : ''}`} title={text}>
       <Icon aria-hidden="true" className="promo-badge-icon" />
